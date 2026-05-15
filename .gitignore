@@ -19,6 +19,7 @@ yarn-error.log
 *.sqlite3
 HANDOFF.md
 DEPLOY.sh
+images/
 .DS_Store
 .claude/
 storage/framework/views/
