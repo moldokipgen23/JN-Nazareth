@@ -56,9 +56,14 @@ class SiteSettingsSeeder extends Seeder
             'hero_youtube_url' => '',
 
             // About preview
-            'about_preview'   => 'We are a vibrant community built around shared values, care for one another, and a commitment to service. Whether you are joining us for the first time or have been with us for years, you belong here.',
-            'about_btn_text'  => 'Learn More About Us',
-            'about_btn_link'  => '/about',
+            'about_section_label' => 'Who We Are',
+            'about_section_title' => 'A Community Built on Connection & Care',
+            'about_preview'       => 'We are a vibrant community built around shared values, care for one another, and a commitment to service. Whether you are joining us for the first time or have been with us for years, you belong here.',
+            'about_btn_text'      => 'Learn More About Us',
+            'about_btn_link'      => '/about',
+            'about_pills'         => 'Connect,Support,Serve,Grow',
+            'about_image_1'       => 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&h=600&fit=crop&q=80',
+            'about_image_2'       => 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&h=600&fit=crop&q=80',
 
             // Story / Leadership
             'leader_name'        => 'Your Leader Name',

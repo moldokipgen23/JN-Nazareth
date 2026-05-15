@@ -422,11 +422,11 @@ $allSections = [
     'hero'              => ['label'=>'Hero Banner',             'icon'=>'🖼️',  'pinned'=>true],
     'stats'             => ['label'=>'Statistics Bar',          'icon'=>'📊',  'pinned'=>false],
     'story-video'     => ['label'=>'Story Showcase Video',  'icon'=>'🎥',  'pinned'=>false],
-    'about'             => ['label'=>'About the Church',        'icon'=>'⛪',  'pinned'=>false],
+    'about'             => ['label'=>'About Us',                'icon'=>'ℹ️',  'pinned'=>false],
     'story'           => ['label'=>'Leadership & Our Story',    'icon'=>'🏘️', 'pinned'=>false],
     'programs'              => ['label'=>'Programmes Community',          'icon'=>'🤝',  'pinned'=>false],
     'map'               => ['label'=>'Story Map',             'icon'=>'🗺️', 'pinned'=>false],
-    'gallery'           => ['label'=>'Church Gallery',          'icon'=>'📸',  'pinned'=>false],
+    'gallery'           => ['label'=>'Community Gallery',       'icon'=>'📸',  'pinned'=>false],
     'events'            => ['label'=>'Upcoming Events',         'icon'=>'📅',  'pinned'=>false],
     'blog'              => ['label'=>'Latest Blog Posts',       'icon'=>'✍️',  'pinned'=>false],
     'videos'            => ['label'=>'Sermons & Videos',        'icon'=>'🎬',  'pinned'=>false],
@@ -500,7 +500,7 @@ $currentOrder = array_unique(array_merge($currentOrder, $defaultOrder));
     <form method="POST" action="{{ route('admin.customizer.update-sections') }}">
     @csrf
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:18px;">
-        @foreach([1=>'Church Members',2=>'Events Held',3=>'Blog Posts',4=>'Years of Grace'] as $sn=>$sdef)
+        @foreach([1=>'Members',2=>'Events Held',3=>'Blog Posts',4=>'Years Active'] as $sn=>$sdef)
         <div style="background:#f8fafc;border-radius:9px;padding:13px;border:1px solid #e2e8f0;">
             <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#64748b;margin-bottom:9px;">Stat {{ $sn }}</div>
             <label class="flabel">Value</label>
@@ -551,7 +551,7 @@ $currentOrder = array_unique(array_merge($currentOrder, $defaultOrder));
         <div>
             <label class="flabel">Section Heading</label>
             <input type="text" name="about_section_title" class="finput" maxlength="200"
-                   value="{{ old('about_section_title',\App\Helpers\Settings::get('about_section_title','A Church Rooted in Faith & Community')) }}">
+                   value="{{ old('about_section_title',\App\Helpers\Settings::get('about_section_title','A Community Built on Connection & Care')) }}">
         </div>
     </div>
     <div class="mb14">
@@ -674,7 +674,7 @@ $currentOrder = array_unique(array_merge($currentOrder, $defaultOrder));
         <div>
             <label class="flabel">Section Title</label>
             <input type="text" name="sec_title_gallery" class="finput" maxlength="120"
-                   value="{{ old('sec_title_gallery',\App\Helpers\Settings::get('sec_title_gallery','Church Gallery')) }}">
+                   value="{{ old('sec_title_gallery',\App\Helpers\Settings::get('sec_title_gallery','Community Gallery')) }}">
         </div>
     </div>
     <div class="mb18">
@@ -717,7 +717,7 @@ $currentOrder = array_unique(array_merge($currentOrder, $defaultOrder));
         <div>
             <label class="flabel">Section Label</label>
             <input type="text" name="sec_label_blog" class="finput" maxlength="80"
-                   value="{{ old('sec_label_blog',\App\Helpers\Settings::get('sec_label_blog','From the Church')) }}">
+                   value="{{ old('sec_label_blog',\App\Helpers\Settings::get('sec_label_blog','From the Community')) }}">
         </div>
         <div>
             <label class="flabel">Section Title</label>
@@ -813,7 +813,7 @@ $currentOrder = array_unique(array_merge($currentOrder, $defaultOrder));
         <div>
             <label class="flabel">Section Heading</label>
             <input type="text" name="sec_title_cta" class="finput" maxlength="120"
-                   value="{{ old('sec_title_cta',\App\Helpers\Settings::get('sec_title_cta','Come Worship With Us')) }}">
+                   value="{{ old('sec_title_cta',\App\Helpers\Settings::get('sec_title_cta','Visit Us, Get Involved')) }}">
         </div>
         <div>
             <label class="flabel">Contact Phone</label>
@@ -1162,7 +1162,7 @@ $_routeSteps = json_decode(\App\Helpers\Settings::get('location_route_steps','')
     ['place'=>'City Centre',     'note'=>'Starting Point',    'dist'=>'~10 km',  'icon'=>'🏙️', 'color'=>'#2d6a4f'],
     ['place'=>'Main Road',       'note'=>'Take the highway',  'dist'=>'~5 km',   'icon'=>'🚗',  'color'=>'#0369a1'],
     ['place'=>'Local Town',      'note'=>'Turn at the market','dist'=>'~2 km',   'icon'=>'🏘️', 'color'=>'#b45309'],
-    ['place'=>'Our Church',      'note'=>'Final Destination', 'dist'=>'Arrived', 'icon'=>'⛪',  'color'=>'#166534'],
+    ['place'=>'Our Centre',     'note'=>'Final Destination', 'dist'=>'Arrived', 'icon'=>'🏠',  'color'=>'#166534'],
 ];
 $_nearbyPlaces = json_decode(\App\Helpers\Settings::get('location_nearby_places',''), true) ?: [
     ['name'=>'Community Park',   'desc'=>'A great place to relax and enjoy nature.',       'link'=>'https://maps.google.com', 'icon'=>'🌳'],

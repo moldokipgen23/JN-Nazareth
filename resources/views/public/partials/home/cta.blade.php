@@ -5,7 +5,7 @@
 @php
     $ctaAddr   = \App\Helpers\Settings::get('contact_address', '');
     $ctaPhone  = \App\Helpers\Settings::get('contact_phone');
-    $ctaTitle  = \App\Helpers\Settings::get('sec_title_cta', 'Come Worship With Us');
+    $ctaTitle  = \App\Helpers\Settings::get('sec_title_cta', 'Visit Us, Get Involved');
     $ctaSub    = \App\Helpers\Settings::get('sec_sub_cta', 'You are always welcome. Come and experience the warmth and fellowship of our community.');
     $btn1Text  = \App\Helpers\Settings::get('cta_btn1_text', 'Learn About Us');
     $btn1Link  = \App\Helpers\Settings::get('cta_btn1_link', '/about');

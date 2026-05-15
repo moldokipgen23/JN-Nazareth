@@ -39,6 +39,9 @@ class Settings
     public static function storageUrl(?string $path): string
     {
         if (!$path) return '';
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
         $cdn = static::get('cdn_base_url');
         if ($cdn) {
             $cdn = rtrim($cdn, '/');

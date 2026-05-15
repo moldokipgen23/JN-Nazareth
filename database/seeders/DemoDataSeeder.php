@@ -18,20 +18,22 @@ class DemoDataSeeder extends Seeder
 
         $adminId = $admin?->id ?? 1;
 
-        // Banner slides (images uploaded later via admin panel)
         $slides = [
             ['title' => 'Welcome to Our Community',
              'subtitle' => 'A place to connect, share, and grow together.',
              'button_text' => 'Learn More', 'button_link' => '/about',
-             'sort_order' => 1, 'active' => true, 'image' => ''],
+             'sort_order' => 1, 'active' => true,
+             'image' => 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1920&h=1080&fit=crop&q=80'],
             ['title' => 'Discover Our Programmes',
              'subtitle' => 'Get involved in events, classes, and activities all year round.',
              'button_text' => 'See What\'s On', 'button_link' => '/events',
-             'sort_order' => 2, 'active' => true, 'image' => ''],
+             'sort_order' => 2, 'active' => true,
+             'image' => 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=1920&h=1080&fit=crop&q=80'],
             ['title' => 'Be Part of Our Story',
              'subtitle' => 'Everyone is welcome. Come as you are.',
              'button_text' => 'Join Us', 'button_link' => '/contact',
-             'sort_order' => 3, 'active' => true, 'image' => ''],
+             'sort_order' => 3, 'active' => true,
+             'image' => 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=1920&h=1080&fit=crop&q=80'],
         ];
         foreach ($slides as $s) {
             BannerSlide::firstOrCreate(['title' => $s['title']], $s);
@@ -62,13 +64,13 @@ class DemoDataSeeder extends Seeder
 
         // Gallery and Programme folders (mix of verticals to show breadth)
         $galleries = [
-            ['name' => 'Annual Gathering 2024',       'type' => 'gallery',  'description' => 'Photos from our biggest community event of the year.',                          'sort_order' => 1, 'created_by' => $adminId],
-            ['name' => 'Holiday Celebration 2024',    'type' => 'gallery',  'description' => 'Memories from our seasonal celebration with members and families.',             'sort_order' => 2, 'created_by' => $adminId],
-            ['name' => 'Youth Camp 2024',             'type' => 'gallery',  'description' => 'Five days of activities, learning, and friendship at our annual youth camp.',  'sort_order' => 3, 'created_by' => $adminId],
-            ['name' => 'Founders Day Dinner',         'type' => 'gallery',  'description' => 'Celebrating our founding anniversary with a special dinner and programme.',     'sort_order' => 4, 'created_by' => $adminId],
-            ['name' => 'Community Clean-Up Day',      'type' => 'programs', 'description' => 'Volunteers came together to clean local public spaces and parks.',              'sort_order' => 1, 'created_by' => $adminId],
-            ['name' => 'Back-to-School Supply Drive', 'type' => 'programs', 'description' => 'Collecting and distributing school supplies to local families.',                'sort_order' => 2, 'created_by' => $adminId],
-            ['name' => 'Food Bank Outreach',          'type' => 'programs', 'description' => 'Partnering with local food banks to support neighbours in need.',               'sort_order' => 3, 'created_by' => $adminId],
+            ['name' => 'Annual Gathering 2024',       'type' => 'gallery',  'description' => 'Photos from our biggest community event of the year.',                          'sort_order' => 1, 'created_by' => $adminId, 'cover_image' => 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&h=600&fit=crop&q=80'],
+            ['name' => 'Holiday Celebration 2024',    'type' => 'gallery',  'description' => 'Memories from our seasonal celebration with members and families.',             'sort_order' => 2, 'created_by' => $adminId, 'cover_image' => 'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&h=600&fit=crop&q=80'],
+            ['name' => 'Youth Camp 2024',             'type' => 'gallery',  'description' => 'Five days of activities, learning, and friendship at our annual youth camp.',  'sort_order' => 3, 'created_by' => $adminId, 'cover_image' => 'https://images.unsplash.com/photo-1529390079861-591de354faf5?w=800&h=600&fit=crop&q=80'],
+            ['name' => 'Founders Day Dinner',         'type' => 'gallery',  'description' => 'Celebrating our founding anniversary with a special dinner and programme.',     'sort_order' => 4, 'created_by' => $adminId, 'cover_image' => 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&h=600&fit=crop&q=80'],
+            ['name' => 'Community Clean-Up Day',      'type' => 'programs', 'description' => 'Volunteers came together to clean local public spaces and parks.',              'sort_order' => 1, 'created_by' => $adminId, 'cover_image' => 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop&q=80'],
+            ['name' => 'Back-to-School Supply Drive', 'type' => 'programs', 'description' => 'Collecting and distributing school supplies to local families.',                'sort_order' => 2, 'created_by' => $adminId, 'cover_image' => 'https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=800&h=600&fit=crop&q=80'],
+            ['name' => 'Food Bank Outreach',          'type' => 'programs', 'description' => 'Partnering with local food banks to support neighbours in need.',               'sort_order' => 3, 'created_by' => $adminId, 'cover_image' => 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&h=600&fit=crop&q=80'],
         ];
         foreach ($galleries as $g) {
             GalleryFolder::firstOrCreate(['name' => $g['name']], $g);

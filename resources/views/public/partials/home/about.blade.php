@@ -3,9 +3,10 @@
 ══════════════════════════════════════════════════════════════ --}}
 @php
     $aboutLabel   = \App\Helpers\Settings::get('about_section_label', 'Who We Are');
-    $aboutTitle   = \App\Helpers\Settings::get('about_section_title', 'A Church Rooted in Faith & Community');
-    $aboutPreview = \App\Helpers\Settings::get('about_preview', 'We are a vibrant community committed to spreading the love of God and serving our neighbours.');
+    $aboutTitle   = \App\Helpers\Settings::get('about_section_title', 'A Community Built on Connection & Care');
+    $aboutPreview = \App\Helpers\Settings::get('about_preview', 'We are a vibrant community committed to bringing people together, supporting one another, and serving our neighbourhood.');
     $aboutBtnText = \App\Helpers\Settings::get('about_btn_text', 'Our Story');
+    $aboutPills   = \App\Helpers\Settings::get('about_pills', 'Connect,Support,Serve,Grow');
     $aboutBtnLink = \App\Helpers\Settings::get('about_btn_link', route('about'));
 @endphp
 @if(\App\Helpers\Settings::get('sec_show_about', '1'))
@@ -18,8 +19,8 @@
                 @php
                     $aboutImg1 = \App\Helpers\Settings::get('about_image_1', '');
                     $aboutImg2 = \App\Helpers\Settings::get('about_image_2', '');
-                    $img1Src = $aboutImg1 ? asset('storage/'.$aboutImg1) : '/images/community-1.jpg';
-                    $img2Src = $aboutImg2 ? asset('storage/'.$aboutImg2) : '/images/community-2.jpg';
+                    $img1Src = $aboutImg1 ? \App\Helpers\Settings::storageUrl($aboutImg1) : '/images/community-1.jpg';
+                    $img2Src = $aboutImg2 ? \App\Helpers\Settings::storageUrl($aboutImg2) : '/images/community-2.jpg';
                 @endphp
                 <img src="{{ $img1Src }}" alt="Community"
                      style="position:absolute; top:0; left:0; width:65%; height:72%; object-fit:cover; border-radius:16px; box-shadow:0 12px 40px rgba(0,0,0,0.18);">
@@ -41,7 +42,7 @@
                 <p style="color:#57534e; font-size:1.05rem; line-height:1.8; margin-bottom:28px;">{{ $aboutPreview }}</p>
 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:32px;">
-                    @foreach(['Worship', 'Fellowship', 'Service', 'Discipleship'] as $val)
+                    @foreach(array_filter(array_map('trim', explode(',', $aboutPills))) as $val)
                     <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; font-weight:600; color:#44403c;">
                         <span style="width:8px; height:8px; border-radius:50%; background:var(--accent); flex-shrink:0;"></span>
                         {{ $val }}

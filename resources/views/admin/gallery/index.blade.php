@@ -66,7 +66,7 @@
         <div style="margin-bottom:14px;">
             <label style="font-size:12px; font-weight:600; color:#374151; display:block; margin-bottom:5px;">Caption / Title <span style="color:#94a3b8; font-weight:400;">(optional — applies to all uploaded images)</span></label>
             <input type="text" name="title" value="{{ old('title') }}" maxlength="255"
-                   placeholder="e.g. Sunday Worship — April 2026"
+                   placeholder="e.g. Annual Gathering — April 2026"
                    style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid #e2e8f0; font-size:13px; outline:none; box-sizing:border-box;"
                    onfocus="this.style.borderColor='#14b8a6'" onblur="this.style.borderColor='#e2e8f0'">
         </div>

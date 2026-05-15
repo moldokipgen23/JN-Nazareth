@@ -29,7 +29,7 @@
                     Event Title <span class="text-red-500">*</span>
                 </label>
                 <input type="text" id="title" name="title" value="{{ old('title') }}" required
-                       placeholder="e.g. Sunday Worship Service"
+                       placeholder="e.g. Weekly Community Meet-Up"
                        class="w-full px-3 py-2 border @error('title') border-red-400 @else border-gray-300 @enderror rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
                 @error('title')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
