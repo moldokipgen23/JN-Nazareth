@@ -66,10 +66,10 @@ class SiteSettingsSeeder extends Seeder
             'about_image_2'       => 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&h=600&fit=crop&q=80',
 
             // Story / Leadership
-            'leader_name'        => 'Your Leader Name',
+            'leader_name'        => 'Alex Carter',
             'leader_title'       => 'Director',
-            'leader_description' => 'Our leadership team works to support members, set direction, and ensure the organisation serves its community well. Update this section in Admin → Site Customizer with your real leader\'s name, photo, and bio.',
-            'leader_photo'       => '',
+            'leader_description' => 'Alex leads our organisation with over fifteen years of community-building experience. Under their guidance, we have grown from a small group of volunteers into a thriving community of 500+ members running programmes across education, outreach, and youth development.',
+            'leader_photo'       => 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&h=800&fit=crop&q=80',
             'story_title'        => 'Our Story',
             'story_content'      => "Our organisation began with a simple goal: to bring people together and make a difference. Over the years we've grown into a thriving community of members, volunteers, and supporters.\n\nFrom day one, we've been built on the principles of inclusion, service, and shared purpose. Whether through events, programmes, or everyday encounters, our mission has always been to enrich the lives of those around us.\n\nToday, we continue that work — running programmes, hosting events, and welcoming everyone who wishes to be part of our story.",
 

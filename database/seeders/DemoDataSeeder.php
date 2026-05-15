@@ -3,7 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\BannerSlide;
+use App\Models\GalleryItem;
 use App\Models\HallOfFame;
+use App\Models\Member;
+use App\Models\ProgramItem;
 use App\Models\Video;
 use App\Models\GalleryFolder;
 use App\Models\User;
@@ -82,30 +85,144 @@ class DemoDataSeeder extends Seeder
              'achievement_title' => 'Founding Member',
              'description'       => 'Eleanor was instrumental in establishing the organisation. Her vision of an inclusive, service-driven community shaped everything we do today.',
              'year'              => 2008,
+             'photo'             => 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&q=80',
              'featured'          => true, 'active' => true, 'sort_order' => 1],
             ['name' => 'Dr. Marcus Wei',
              'achievement_title' => 'First Educational Programme Director',
              'description'       => 'Dr. Wei designed our first educational outreach programme, which now serves over 200 students each year through scholarships and mentoring.',
              'year'              => 2012,
+             'photo'             => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&q=80',
              'featured'          => true, 'active' => true, 'sort_order' => 2],
             ['name' => 'Amara Okafor',
              'achievement_title' => 'Lifetime Service Award',
              'description'       => 'Over twenty years of volunteering, Amara has led food drives, mentored youth, and organised community events that have touched thousands of lives.',
              'year'              => 2023,
+             'photo'             => 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=400&fit=crop&q=80',
              'featured'          => true, 'active' => true, 'sort_order' => 3],
             ['name' => 'James Sullivan',
              'achievement_title' => 'Youth Programme Pioneer',
              'description'       => 'James launched the first youth leadership programme, which has graduated more than 150 young leaders into roles across the community.',
              'year'              => 2015,
+             'photo'             => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&q=80',
              'featured'          => false, 'active' => true, 'sort_order' => 4],
             ['name' => 'Priya Sharma',
              'achievement_title' => 'Community Impact Award',
              'description'       => 'Priya led the community garden initiative, transforming an abandoned lot into a thriving space that feeds families and brings neighbours together.',
              'year'              => 2020,
+             'photo'             => 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&q=80',
              'featured'          => false, 'active' => true, 'sort_order' => 5],
         ];
         foreach ($entries as $f) {
             HallOfFame::firstOrCreate(['name' => $f['name']], $f);
+        }
+
+        // Gallery items — populate every folder with 6 photos
+        $folderPhotos = [
+            'Annual Gathering 2024' => [
+                'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&h=600&fit=crop&q=80',
+            ],
+            'Holiday Celebration 2024' => [
+                'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1482275548304-a58859dc31b7?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1485872299712-c2dec6acc4d2?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=800&h=600&fit=crop&q=80',
+            ],
+            'Youth Camp 2024' => [
+                'https://images.unsplash.com/photo-1529390079861-591de354faf5?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1496080174650-637e3f22fa03?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&h=600&fit=crop&q=80',
+            ],
+            'Founders Day Dinner' => [
+                'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1555244162-803834f70033?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1467810563316-b5476525c0f9?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1559329007-40df8a9345d8?w=800&h=600&fit=crop&q=80',
+            ],
+            'Community Clean-Up Day' => [
+                'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800&h=600&fit=crop&q=80',
+            ],
+            'Back-to-School Supply Drive' => [
+                'https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1532619675605-1ede6c2ed2b0?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1503676593-a52119bf66f3?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&h=600&fit=crop&q=80',
+            ],
+            'Food Bank Outreach' => [
+                'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1577563908411-5077b6dc7624?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1546552768-9e3a94b38a59?w=800&h=600&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800&h=600&fit=crop&q=80',
+            ],
+        ];
+        foreach ($folderPhotos as $folderName => $photos) {
+            $folder = GalleryFolder::where('name', $folderName)->first();
+            if (!$folder) continue;
+
+            if ($folder->type === 'programs') {
+                foreach ($photos as $i => $url) {
+                    ProgramItem::firstOrCreate(
+                        ['title' => $folderName . ' — Photo ' . ($i + 1)],
+                        [
+                            'title'         => $folderName . ' — Photo ' . ($i + 1),
+                            'path'          => $url,
+                            'caption'       => 'Moment from ' . $folderName,
+                            'category'      => 'general',
+                            'sort_order'    => $i + 1,
+                            'active'        => true,
+                            'activity_date' => now()->subDays(rand(10, 200)),
+                        ]
+                    );
+                }
+            } else {
+                foreach ($photos as $i => $url) {
+                    GalleryItem::firstOrCreate(
+                        ['title' => $folderName . ' — Photo ' . ($i + 1)],
+                        [
+                            'gallery_folder_id' => $folder->id,
+                            'title'             => $folderName . ' — Photo ' . ($i + 1),
+                            'caption'           => 'Moment from ' . $folderName,
+                            'path'              => $url,
+                            'uploaded_by'       => $adminId,
+                        ]
+                    );
+                }
+            }
+        }
+
+        // Add photos to members
+        $memberPhotos = [
+            'Alex Carter'     => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&q=80',
+            'Sam Rivera'      => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop&q=80',
+            'Jordan Lee'      => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&q=80',
+            'Taylor Morgan'   => 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&q=80',
+            'Casey Nguyen'    => 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=400&fit=crop&q=80',
+            'Robin Patel'     => 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&q=80',
+            'Drew Kim'        => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&q=80',
+            'Avery Johnson'   => 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=400&fit=crop&q=80',
+        ];
+        foreach ($memberPhotos as $name => $url) {
+            Member::where('name', $name)->update(['photo' => $url]);
         }
     }
 }
