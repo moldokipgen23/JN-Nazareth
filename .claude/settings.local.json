@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sI \"https://source.unsplash.com/1200x800/?church\")",
+      "Bash(npm -v)",
+      "Bash(curl -sSL -o community-__TRACKED_VAR__.jpg https://picsum.photos/seed/community__TRACKED_VAR__/1600/1000)",
+      "Bash(file community-*.jpg)",
+      "Bash(npm run *)",
+      "Bash(mv app/Models/ByDoGallery.php app/Models/ProgramItem.php)",
+      "Bash(mv app/Http/Controllers/Admin/ByDoGalleryController.php app/Http/Controllers/Admin/ProgramItemController.php)",
+      "Bash(mv database/migrations/2026_04_16_132305_create_bydo_gallery_table.php database/migrations/2026_04_16_132305_create_program_items_table.php)",
+      "Bash(mv database/migrations/2026_04_17_000003_add_fields_to_bydo_gallery_table.php database/migrations/2026_04_17_000003_add_fields_to_program_items_table.php)",
+      "Bash(mv resources/views/admin/bydo-gallery resources/views/admin/programs)",
+      "Bash(python3)",
+      "Bash(php artisan *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000)",
+      "Bash(curl -s http://localhost:8000)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080)",
+      "Read(//private/tmp/**)",
+      "Bash(curl -s http://localhost:8080)",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}

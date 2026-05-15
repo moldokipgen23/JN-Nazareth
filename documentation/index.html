@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ehlom Blog CMS — Documentation</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.65;
+    color: #1f2937;
+    margin: 0;
+    background: #f9fafb;
+  }
+  .wrap { display: flex; min-height: 100vh; }
+  nav.sidebar {
+    width: 260px;
+    background: #1f2937;
+    color: #e5e7eb;
+    padding: 32px 24px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  nav.sidebar h1 {
+    font-size: 18px;
+    margin: 0 0 4px 0;
+    color: #fff;
+  }
+  nav.sidebar .ver { font-size: 12px; color: #9ca3af; margin-bottom: 24px; display: block; }
+  nav.sidebar ul { list-style: none; padding: 0; margin: 0; }
+  nav.sidebar li { margin: 6px 0; }
+  nav.sidebar a { color: #d1d5db; text-decoration: none; font-size: 14px; display: block; padding: 6px 10px; border-radius: 6px; }
+  nav.sidebar a:hover { background: #374151; color: #fff; }
+  main {
+    flex: 1;
+    padding: 48px 56px;
+    max-width: 880px;
+  }
+  h1.page { font-size: 32px; margin: 0 0 8px 0; color: #111827; }
+  h2 { font-size: 24px; margin: 40px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; color: #111827; }
+  h3 { font-size: 18px; margin: 24px 0 8px 0; color: #1f2937; }
+  p { margin: 12px 0; }
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
+    font-size: 13px;
+    color: #be185d;
+  }
+  pre {
+    background: #1f2937;
+    color: #e5e7eb;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+  th { background: #f3f4f6; font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  .note {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 12px 16px;
+    margin: 16px 0;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  .warn {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 12px 16px;
+    margin: 16px 0;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  ul, ol { padding-left: 24px; }
+  li { margin: 4px 0; }
+  .step {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 16px 0;
+  }
+  .step-num {
+    display: inline-block;
+    background: #2563eb;
+    color: #fff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 28px;
+    font-weight: 600;
+    margin-right: 10px;
+  }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 40px 0; }
+  .lead { font-size: 17px; color: #4b5563; }
+  @media (max-width: 768px) {
+    .wrap { flex-direction: column; }
+    nav.sidebar { width: 100%; height: auto; position: static; padding: 20px; }
+    main { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="sidebar">
+    <h1>Ehlom Blog CMS</h1>
+    <span class="ver">Version 1.0.0</span>
+    <ul>
+      <li><a href="#intro">Introduction</a></li>
+      <li><a href="#requirements">1. Requirements</a></li>
+      <li><a href="#installation">2. Installation</a></li>
+      <li><a href="#admin">3. Admin Panel Guide</a></li>
+      <li><a href="#customization">4. Customization</a></li>
+      <li><a href="#sections">5. Homepage Sections</a></li>
+      <li><a href="#content">6. Managing Content</a></li>
+      <li><a href="#users">7. Users &amp; Roles</a></li>
+      <li><a href="#updating">8. Updating</a></li>
+      <li><a href="#troubleshooting">9. Troubleshooting</a></li>
+      <li><a href="#changelog">10. Changelog</a></li>
+      <li><a href="#support">Support</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <section id="intro">
+      <h1 class="page">Ehlom Blog CMS Documentation</h1>
+      <p class="lead">Thank you for purchasing Ehlom Blog CMS. This guide will walk you through installation, configuration, and day-to-day use of your new website.</p>
+      <div class="note" style="margin-top:16px;"><strong>Who is this for?</strong> Schools (showcase staff, alumni, events, news), churches (services, ministries, sermons, congregation), NGOs (mission, programmes, impact, donate CTA), community groups and villages (members, activities, photo galleries), and anyone who wants a polished blog-style website with no coding required.</div>
+      <p>Ehlom Blog CMS is a complete content management system built for <strong>schools, churches, NGOs, community groups, villages, and any organisation that needs a blog-style website</strong>. Whether you run a school, a faith group, a non-profit, a club, or a community association, this CMS gives you everything you need. Everything on the website — colours, logo, text, sections, photos — is editable from the admin panel without touching code.</p>
+    </section>
+
+    <hr>
+
+    <section id="requirements">
+      <h2>1. Server Requirements</h2>
+      <p>Ehlom Blog CMS runs on any standard shared or VPS hosting that supports modern PHP. Most cPanel hosts (Hostinger, Namecheap, SiteGround, Bluehost, A2 Hosting, etc.) meet these requirements out of the box.</p>
+
+      <h3>Minimum Requirements</h3>
+      <table>
+        <tr><th>Component</th><th>Required</th></tr>
+        <tr><td>PHP</td><td>8.2 or higher (8.3 recommended)</td></tr>
+        <tr><td>Database</td><td>MySQL 5.7+ / MariaDB 10.3+ <em>or</em> SQLite 3.8+</td></tr>
+        <tr><td>Web Server</td><td>Apache (with mod_rewrite) or Nginx</td></tr>
+        <tr><td>Disk Space</td><td>200 MB minimum (500 MB recommended)</td></tr>
+        <tr><td>Memory Limit</td><td>128 MB minimum (256 MB recommended)</td></tr>
+      </table>
+
+      <h3>Required PHP Extensions</h3>
+      <ul>
+        <li><code>PDO</code> &amp; <code>pdo_mysql</code> or <code>pdo_sqlite</code></li>
+        <li><code>OpenSSL</code></li>
+        <li><code>Mbstring</code></li>
+        <li><code>Tokenizer</code></li>
+        <li><code>XML</code></li>
+        <li><code>Ctype</code></li>
+        <li><code>JSON</code></li>
+        <li><code>BCMath</code></li>
+        <li><code>Fileinfo</code></li>
+        <li><code>GD</code> or <code>Imagick</code> (for image processing)</li>
+      </ul>
+
+      <div class="note"><strong>Tip:</strong> If you are unsure whether your host supports these, the web installer at <code>/install.php</code> will check automatically and tell you what is missing.</div>
+    </section>
+
+    <hr>
+
+    <section id="installation">
+      <h2>2. Installation</h2>
+      <p>Installation takes about 5 minutes. <strong>No terminal commands required.</strong></p>
+
+      <div class="step">
+        <h3><span class="step-num">1</span>Upload the Files</h3>
+        <p>Unzip the purchased package on your computer. Inside you will find a <code>source/</code> folder — this is your website.</p>
+        <p>Using cPanel File Manager or FTP (FileZilla):</p>
+        <ul>
+          <li>Upload <strong>all files</strong> from <code>source/</code> into your hosting account.</li>
+          <li>If installing on the main domain, upload to <code>public_html/</code>.</li>
+          <li>If installing in a subdirectory, upload to <code>public_html/yoursubfolder/</code>.</li>
+        </ul>
+        <div class="warn"><strong>Important:</strong> Set your domain's document root to the <code>/public</code> folder of the upload. In cPanel this is done under <em>Domains → Manage → Document Root</em>. If you cannot change the document root, see the <a href="#subfolder">subfolder workaround</a>.</div>
+      </div>
+
+      <div class="step">
+        <h3><span class="step-num">2</span>Create a Database (MySQL only)</h3>
+        <p>If you want to use MySQL (recommended for production), create a database first:</p>
+        <ol>
+          <li>Log into cPanel.</li>
+          <li>Open <strong>MySQL Databases</strong>.</li>
+          <li>Create a new database (e.g. <code>yourname_ehlom</code>).</li>
+          <li>Create a database user with a strong password.</li>
+          <li>Add the user to the database with <strong>ALL PRIVILEGES</strong>.</li>
+          <li>Note the database name, username, and password — you will need them in step 3.</li>
+        </ol>
+        <p>If you prefer <strong>SQLite</strong>, you can skip this step entirely. SQLite needs no setup.</p>
+      </div>
+
+      <div class="step">
+        <h3><span class="step-num">3</span>Run the Web Installer</h3>
+        <p>Open your browser and visit:</p>
+        <pre><code>https://yourdomain.com/install.php</code></pre>
+        <p>The installer will guide you through four screens:</p>
+        <ol>
+          <li><strong>Requirements Check</strong> — green ticks mean you are good to go.</li>
+          <li><strong>Database &amp; Site Info</strong> — choose SQLite or MySQL, enter your site name and details.</li>
+          <li><strong>Admin Account</strong> — create your first admin user (email + password).</li>
+          <li><strong>Finalising</strong> — the installer runs migrations, seeds default content, creates the storage symlink, and caches the config.</li>
+        </ol>
+        <p>When it finishes, you will see a success page with links to your homepage and admin panel.</p>
+      </div>
+
+      <div class="step">
+        <h3><span class="step-num">4</span>Delete the Installer (Security)</h3>
+        <p>After a successful install, <strong>delete</strong> <code>install.php</code> from your server (both the root one and <code>public/install.php</code>). This prevents anyone from re-running it.</p>
+      </div>
+
+      <h3 id="subfolder">If You Cannot Change the Document Root</h3>
+      <p>Some shared hosts do not let you point the domain to <code>/public</code>. In that case:</p>
+      <ol>
+        <li>Move everything inside <code>/public</code> up one level into <code>public_html/</code>.</li>
+        <li>Open <code>index.php</code> and update the two <code>require</code> paths from <code>__DIR__.'/../'</code> to <code>__DIR__.'/'</code>.</li>
+      </ol>
+      <div class="note">If you are not comfortable doing this, contact your hosting provider's support — they can change the document root for you in 2 minutes.</div>
+    </section>
+
+    <hr>
+
+    <section id="admin">
+      <h2>3. Admin Panel Guide</h2>
+      <p>Access the admin panel at:</p>
+      <pre><code>https://yourdomain.com/admin</code></pre>
+      <p>Log in with the admin email and password you created during installation.</p>
+
+      <h3>Dashboard</h3>
+      <p>The dashboard shows quick stats — total posts, gallery items, events, and recent activity. Use the sidebar to navigate to each content area.</p>
+
+      <h3>Main Sections</h3>
+      <table>
+        <tr><th>Menu Item</th><th>What It Does</th></tr>
+        <tr><td><strong>Site Customizer</strong></td><td>Edit colours, logo, footer, contact info, social links, and toggle homepage sections on/off.</td></tr>
+        <tr><td><strong>Blog Posts</strong></td><td>Create, edit, and publish articles with featured images and categories.</td></tr>
+        <tr><td><strong>Events</strong></td><td>Manage upcoming events with dates, locations, and descriptions.</td></tr>
+        <tr><td><strong>Gallery</strong></td><td>Upload images organised into folders/albums.</td></tr>
+        <tr><td><strong>Videos</strong></td><td>Embed YouTube/Vimeo videos shown on the homepage.</td></tr>
+        <tr><td><strong>Banner Slides</strong></td><td>Manage the homepage hero slider.</td></tr>
+        <tr><td><strong>Hall of Fame</strong></td><td>Highlight notable community members or achievements.</td></tr>
+        <tr><td><strong>Pages</strong></td><td>Edit static pages such as About, Contact, Privacy Policy.</td></tr>
+        <tr><td><strong>Users</strong></td><td>Manage admin, staff, and viewer accounts.</td></tr>
+      </table>
+    </section>
+
+    <hr>
+
+    <section id="customization">
+      <h2>4. Customization</h2>
+      <p>Everything visual is editable. Go to <strong>Admin → Site Customizer</strong> — you will see tabs for each area.</p>
+
+      <h3>Branding Tab</h3>
+      <ul>
+        <li><strong>Site name</strong> — appears in the header, footer, browser tab, and emails.</li>
+        <li><strong>Tagline</strong> — short description shown in the header and on social previews.</li>
+        <li><strong>Logo</strong> — upload PNG/JPG/SVG. Recommended 200×60 px transparent PNG.</li>
+        <li><strong>Favicon</strong> — small icon for browser tabs. Use a 32×32 or 64×64 PNG/ICO.</li>
+      </ul>
+
+      <h3>Colours Tab</h3>
+      <ul>
+        <li><strong>Primary colour</strong> — main theme colour (buttons, links, accents).</li>
+        <li><strong>Secondary colour</strong> — used for highlights and CTAs.</li>
+        <li>Pick any hex value or use the colour picker. Changes apply immediately after saving.</li>
+      </ul>
+
+      <h3>Contact Tab</h3>
+      <p>Address, phone, email, and Google Maps embed code — all displayed on the Contact page and in the footer.</p>
+
+      <h3>Social Tab</h3>
+      <p>Facebook, Twitter/X, Instagram, YouTube, WhatsApp — leave blank to hide the icon.</p>
+
+      <h3>Footer Tab</h3>
+      <ul>
+        <li>Footer description text.</li>
+        <li>Column headings ("Quick Links", "Contact Us") — fully customisable.</li>
+        <li>Copyright line.</li>
+        <li>Optional credit text ("Designed by Ehlom Digital") — toggle on/off.</li>
+      </ul>
+
+      <h3>SEO Tab</h3>
+      <p>Meta title, meta description, and keywords for search engines. Add Google Analytics tracking ID here.</p>
+    </section>
+
+    <hr>
+
+    <section id="sections">
+      <h2>5. Homepage Sections</h2>
+      <p>The homepage is built from modular sections. Each can be turned on or off, and you can drag them to reorder.</p>
+
+      <h3>Available Sections</h3>
+      <table>
+        <tr><th>Section</th><th>Description</th></tr>
+        <tr><td><strong>Hero</strong></td><td>Top banner slider with images and CTA buttons.</td></tr>
+        <tr><td><strong>Stats</strong></td><td>Counter cards (e.g. "150 Members", "12 Years").</td></tr>
+        <tr><td><strong>About</strong></td><td>Short intro about your organisation.</td></tr>
+        <tr><td><strong>Story</strong></td><td>Leadership profile + story / heritage section. Use it for your director, chairperson, founder, or head of organisation.</td></tr>
+        <tr><td><strong>Programmes</strong></td><td>Carousel of programme / activity photo albums (outreach, events, volunteering, classes).</td></tr>
+        <tr><td><strong>Map</strong></td><td>Embedded Google Map of your location.</td></tr>
+        <tr><td><strong>Videos</strong></td><td>YouTube/Vimeo gallery of selected videos.</td></tr>
+        <tr><td><strong>Events</strong></td><td>Latest 3–6 upcoming events.</td></tr>
+        <tr><td><strong>Gallery</strong></td><td>Preview of recent photo albums.</td></tr>
+        <tr><td><strong>Blog</strong></td><td>Latest articles preview.</td></tr>
+        <tr><td><strong>Hall of Fame</strong></td><td>Notable members, founders, or award recipients. Works for school alumni, NGO pioneers, community leaders, etc.</td></tr>
+        <tr><td><strong>CTA</strong></td><td>Call-to-action banner near the footer.</td></tr>
+        <tr><td><strong>Reach</strong></td><td>Newsletter signup / "stay in touch" block.</td></tr>
+      </table>
+
+      <h3>Reordering Sections</h3>
+      <p>Go to <strong>Site Customizer → Sections tab</strong>. Drag each section up or down to change its order on the homepage. Toggle the switch to hide a section entirely.</p>
+    </section>
+
+    <hr>
+
+    <section id="content">
+      <h2>6. Managing Content</h2>
+
+      <h3>Writing a Blog Post</h3>
+      <ol>
+        <li>Go to <strong>Admin → Blog Posts → Add New</strong>.</li>
+        <li>Enter a title, choose a category, and write your content using the rich-text editor.</li>
+        <li>Upload a featured image (recommended 1200×630 px).</li>
+        <li>Set status to <em>Published</em> and click <strong>Save</strong>.</li>
+      </ol>
+
+      <h3>Adding an Event</h3>
+      <ol>
+        <li>Go to <strong>Admin → Events → Add New</strong>.</li>
+        <li>Set the title, date/time, location, and description.</li>
+        <li>Upload a poster image (optional).</li>
+        <li>Save. The event appears in the Events section and Events page automatically.</li>
+      </ol>
+
+      <h3>Uploading Gallery Images</h3>
+      <ol>
+        <li>Go to <strong>Admin → Gallery</strong>.</li>
+        <li>Create a folder (e.g. "Annual Gathering 2025", "Volunteer Day").</li>
+        <li>Click the folder and upload images — you can drag-drop multiple files.</li>
+      </ol>
+
+      <h3>Managing Hero Slides</h3>
+      <ol>
+        <li>Go to <strong>Admin → Banner Slides</strong>.</li>
+        <li>Add up to 5 slides with an image, headline, subtext, and optional button link.</li>
+        <li>Reorder by dragging.</li>
+      </ol>
+    </section>
+
+    <hr>
+
+    <section id="users">
+      <h2>7. Users &amp; Roles</h2>
+      <p>Ehlom Blog CMS has three built-in roles:</p>
+      <table>
+        <tr><th>Role</th><th>What They Can Do</th></tr>
+        <tr><td><strong>Admin</strong></td><td>Full access — settings, users, all content.</td></tr>
+        <tr><td><strong>Staff</strong></td><td>Create &amp; edit content (blog, events, gallery). Cannot change settings or manage users.</td></tr>
+        <tr><td><strong>Viewer</strong></td><td>Read-only access to the admin dashboard.</td></tr>
+      </table>
+      <p>To add a new user: <strong>Admin → Users → Add New</strong>. Choose their role from the dropdown.</p>
+    </section>
+
+    <hr>
+
+    <section id="updating">
+      <h2>8. Updating to a New Version</h2>
+      <p>When a new version of Ehlom Blog CMS is released:</p>
+      <ol>
+        <li><strong>Back up</strong> your files and database first. Use cPanel's backup tool or export the database from phpMyAdmin.</li>
+        <li>Download the new version from your CodeCanyon downloads page.</li>
+        <li>Upload the new files, overwriting the old ones. <strong>Do not</strong> overwrite the <code>.env</code> file or the <code>storage/</code> folder.</li>
+        <li>Visit <code>yourdomain.com/admin</code> — if the new version requires database changes, you will be prompted to apply them.</li>
+      </ol>
+      <div class="warn"><strong>Always back up before updating.</strong> If anything goes wrong, you can restore in minutes.</div>
+    </section>
+
+    <hr>
+
+    <section id="troubleshooting">
+      <h2>9. Troubleshooting</h2>
+
+      <h3>500 Internal Server Error after install</h3>
+      <p>Usually a file permissions issue. Set <code>storage/</code> and <code>bootstrap/cache/</code> to <code>775</code> (or <code>755</code> on stricter hosts). In cPanel File Manager, right-click each folder → Change Permissions.</p>
+
+      <h3>Uploaded images don't show</h3>
+      <p>The storage symlink may not have been created. Visit <code>yourdomain.com/install.php?step=fix-storage</code> to recreate it, or contact support.</p>
+
+      <h3>"Page not found" on every link except homepage</h3>
+      <p>Apache's <code>mod_rewrite</code> is not enabled, or <code>.htaccess</code> is being ignored. Contact your host to enable mod_rewrite and <code>AllowOverride All</code>.</p>
+
+      <h3>Admin panel blank or broken styling</h3>
+      <p>Clear the cache: <strong>Admin → Settings → Clear Cache</strong>. If that fails, delete the contents of <code>bootstrap/cache/</code> (but not the folder itself).</p>
+
+      <h3>Forgot admin password</h3>
+      <p>Use the <em>Forgot password?</em> link on the login page — it will email a reset link. If email is not configured, contact support for a manual reset script.</p>
+    </section>
+
+    <hr>
+
+    <section id="changelog">
+      <h2>10. Changelog</h2>
+      <h3>Version 1.0.0 — Initial Release</h3>
+      <ul>
+        <li>Full content management for blog posts, events, gallery, videos.</li>
+        <li>Drag-and-drop homepage section reordering.</li>
+        <li>Live customisation: colours, logo, footer, contact info.</li>
+        <li>Hall of Fame feature for highlighting members or achievements.</li>
+        <li>Three-role permission system (Admin / Staff / Viewer).</li>
+        <li>Web-based installer — zero terminal commands.</li>
+        <li>SQLite or MySQL support.</li>
+        <li>Mobile-responsive Tailwind CSS theme.</li>
+        <li>SEO meta tags &amp; Google Analytics integration.</li>
+        <li>Social media link integration.</li>
+      </ul>
+    </section>
+
+    <hr>
+
+    <section id="support">
+      <h2>Support</h2>
+      <p>If you need help that is not covered in this documentation:</p>
+      <ul>
+        <li>Open a support ticket through your CodeCanyon item page.</li>
+        <li>Include your domain, hosting provider, and a clear description of the issue.</li>
+        <li>Screenshots help us help you faster.</li>
+      </ul>
+      <p>Support covers bug fixes, installation help, and answering questions about included features. Custom modifications are outside the scope of standard support.</p>
+      <p style="margin-top: 40px; padding-top: 24px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 13px;">
+        Thank you for purchasing Ehlom Blog CMS. We hope it serves your community well.
+      </p>
+    </section>
+  </main>
+</div>
+</body>
+</html>
