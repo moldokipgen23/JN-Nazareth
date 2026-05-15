@@ -21,3 +21,7 @@ HANDOFF.md
 DEPLOY.sh
 .DS_Store
 .claude/
+storage/framework/views/
+storage/framework/sessions/
+storage/framework/cache/
+storage/logs/
