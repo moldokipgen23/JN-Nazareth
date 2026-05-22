@@ -140,6 +140,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SiteSettingsSeeder::class,
             DemoDataSeeder::class,
+            SchoolSettingsSeeder::class,
+            SchoolDemoSeeder::class,
         ]);
     }
 }
