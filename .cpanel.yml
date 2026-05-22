@@ -1,0 +1,14 @@
+---
+deployment:
+  tasks:
+    # ── EDIT THIS to your cPanel home + repo folder ──────────────
+    - export DEPLOYPATH=/home/CPANELUSER/jn-nazareth
+    # Install PHP dependencies (vendor/ is not in git)
+    - /opt/cpanel/composer/bin/composer install --no-dev --optimize-autoloader --no-interaction --working-dir=$DEPLOYPATH
+    # Run new migrations (safe: only applies un-run migrations)
+    - /usr/local/bin/php $DEPLOYPATH/artisan migrate --force
+    # Refresh caches
+    - /usr/local/bin/php $DEPLOYPATH/artisan config:clear
+    - /usr/local/bin/php $DEPLOYPATH/artisan route:clear
+    - /usr/local/bin/php $DEPLOYPATH/artisan view:clear
+    - /usr/local/bin/php $DEPLOYPATH/artisan storage:link
