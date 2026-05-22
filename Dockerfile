@@ -32,9 +32,12 @@ RUN mkdir -p storage/framework/views storage/framework/cache/data storage/framew
 
 EXPOSE 8080
 
-CMD mkdir -p storage/framework/views storage/framework/cache/data storage/framework/sessions storage/logs storage/app/public bootstrap/cache \
+CMD mkdir -p storage/framework/views storage/framework/cache/data storage/framework/sessions storage/logs storage/app/public bootstrap/cache database \
     && chmod -R 775 storage bootstrap/cache \
+    && touch database/database.sqlite \
     && php artisan migrate --force \
-    && php artisan db:seed --class=DatabaseSeeder --force \
+    && ( [ -f storage/.seeded ] || ( php artisan db:seed --class=DatabaseSeeder --force && touch storage/.seeded ) ) \
     && php artisan storage:link --force \
+    && php artisan config:cache \
+    && php artisan route:cache \
     && php -S 0.0.0.0:${PORT:-8080} -t public
