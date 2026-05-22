@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('page-title', $type === 'programs' ? 'Programmes Folders' : 'Gallery Folders')
+@section('page-title', $type === 'programs' ? 'Student Life Albums' : 'Gallery Folders')
 
 @section('content')
 
@@ -13,17 +13,17 @@
     <a href="{{ route('admin.gallery-folders.index', ['type' => 'programs']) }}"
        style="padding:7px 18px; border-radius:8px; font-size:12px; font-weight:600; text-decoration:none;
               {{ $type === 'programs' ? 'background:#0f766e; color:#fff; box-shadow:0 2px 8px rgba(15,118,110,.3);' : 'color:#64748b;' }}">
-        Programmes
+        Student Life
     </a>
 </div>
 
 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
     <div>
         <h2 style="font-size:18px; font-weight:700; color:#0f172a; margin:0;">
-            {{ $type === 'programs' ? 'Programmes Gallery Folders' : 'Gallery Folders' }}
+            {{ $type === 'programs' ? 'Student Life Albums' : 'Gallery Folders' }}
         </h2>
         <p style="font-size:12px; color:#64748b; margin:4px 0 0;">
-            {{ $type === 'programs' ? 'Organise Programmes/NGO photos into albums.' : 'Organise church photos into albums.' }}
+            {{ $type === 'programs' ? 'Organise student life, programme & event photos into albums.' : 'Organise school photos into albums.' }}
             Each folder appears as a 3D card on the public site.
         </p>
     </div>
@@ -37,7 +37,7 @@
         <a href="{{ route('admin.gallery-folders.create', ['type' => $type]) }}"
            style="background:linear-gradient(135deg,#0f766e,#14b8a6); color:#fff; border:none; padding:8px 18px; border-radius:8px; font-size:12px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
-            New {{ $type === 'programs' ? 'Programmes' : 'Gallery' }} Folder
+            {{ $type === 'programs' ? 'New Student Life Album' : 'New Gallery Folder' }}
         </a>
     </div>
 </div>
@@ -115,7 +115,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h3l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
     </svg>
     <p style="font-size:14px; font-weight:600; color:#334155; margin:0 0 6px;">No folders yet</p>
-    <p style="font-size:13px; color:#94a3b8; margin:0 0 16px;">Create your first {{ $type === 'programs' ? 'Programmes' : 'gallery' }} album.</p>
+    <p style="font-size:13px; color:#94a3b8; margin:0 0 16px;">Create your first {{ $type === 'programs' ? 'student life' : 'gallery' }} album.</p>
     <a href="{{ route('admin.gallery-folders.create', ['type' => $type]) }}"
        style="display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg,#0f766e,#14b8a6); color:#fff; padding:9px 20px; border-radius:8px; font-size:13px; font-weight:600; text-decoration:none;">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>

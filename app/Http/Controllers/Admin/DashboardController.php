@@ -5,47 +5,41 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Blog;
-use App\Models\Document;
+use App\Models\Download;
 use App\Models\Event;
-use App\Models\Folder;
-use App\Models\GalleryItem;
+use App\Models\GalleryFolder;
+use App\Models\Inquiry;
 use App\Models\Member;
-use App\Models\User;
-use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
+        // Teacher-only accounts land on their own classes page.
+        if (auth()->user()->isTeacherOnly()) {
+            return redirect()->route('admin.classes.index');
+        }
+
         $stats = [
-            'members'    => Member::count(),
-            'blogs'      => Blog::count(),
-            'events'     => Event::count(),
-            'documents'  => Document::count(),
-            'folders'    => Folder::count(),
-            'gallery'    => GalleryItem::count(),
-            'users'      => User::count(),
-            'published'  => Blog::where('published', true)->count(),
-            'upcoming'   => Event::where('starts_at', '>=', now())->count(),
+            'active_students' => Member::where('is_active', true)->count(),
+            'total_students'  => Member::count(),
+            'news'            => Blog::where('published', true)->count(),
+            'gallery'         => GalleryFolder::count(),
+            'downloads'       => Download::count(),
+            'events'          => Event::count(),
+            'upcoming'        => Event::where('starts_at', '>=', now())->count(),
+            'new_inquiries'   => Inquiry::where('status', 'new')->count(),
         ];
 
-        // Members added per month (last 6 months) — compatible with MySQL and SQLite
-        $dbDriver = config('database.default');
-        $monthExpr = $dbDriver === 'sqlite'
-            ? "strftime('%Y-%m', created_at)"
-            : "DATE_FORMAT(created_at, '%Y-%m')";
-
-        $memberGrowth = Member::selectRaw("{$monthExpr} as month, count(*) as total")
-            ->where('created_at', '>=', now()->subMonths(6))
-            ->groupBy('month')
-            ->orderBy('month')
-            ->pluck('total', 'month');
-
-        // Build 6-month label array
-        $months = collect();
-        for ($i = 5; $i >= 0; $i--) {
-            $key = now()->subMonths($i)->format('Y-m');
-            $months[$key] = $memberGrowth[$key] ?? 0;
+        // Students per class
+        $classCounts = [];
+        $rawCounts = Member::selectRaw('class, count(*) as total')
+            ->whereNotNull('class')
+            ->groupBy('class')
+            ->pluck('total', 'class')
+            ->toArray();
+        foreach (Member::classes() as $class) {
+            $classCounts[$class] = $rawCounts[$class] ?? 0;
         }
 
         // Recent 8 activity logs
@@ -54,7 +48,7 @@ class DashboardController extends Controller
             ->take(8)
             ->get();
 
-        // Recent 5 members
+        // Recent 5 students
         $recentMembers = Member::orderByDesc('created_at')->take(5)->get();
 
         // Upcoming events
@@ -64,7 +58,7 @@ class DashboardController extends Controller
             ->get();
 
         return view('admin.dashboard', compact(
-            'stats', 'months', 'recentActivity', 'recentMembers', 'upcomingEvents'
+            'stats', 'classCounts', 'recentActivity', 'recentMembers', 'upcomingEvents'
         ));
     }
 }

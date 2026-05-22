@@ -15,7 +15,7 @@ class GalleryFolderController extends Controller
 
     public function index(Request $request)
     {
-        $type    = $request->get('type', 'gallery');
+        $type    = 'programs';
         $folders = GalleryFolder::where('type', $type)
                                 ->withCount('items')
                                 ->with(['previewImages'])
@@ -30,7 +30,7 @@ class GalleryFolderController extends Controller
 
     public function create(Request $request)
     {
-        $type = $request->get('type', 'gallery');
+        $type = 'programs';
         return view('admin.gallery-folders.create', compact('type'));
     }
 

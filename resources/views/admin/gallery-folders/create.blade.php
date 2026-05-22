@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('page-title', $type === 'programs' ? 'New Programme Folder' : 'New Gallery Folder')
+@section('page-title', $type === 'programs' ? 'New Student Life Album' : 'New Gallery Folder')
 
 @section('content')
 
@@ -7,7 +7,7 @@
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
         <a href="{{ route('admin.gallery-folders.index', ['type' => $type]) }}" style="color:#64748b; text-decoration:none; font-size:13px; display:flex; align-items:center; gap:5px;">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
-            {{ $type === 'programs' ? 'Programme Folders' : 'Gallery Folders' }}
+            {{ $type === 'programs' ? 'Student Life Albums' : 'Gallery Folders' }}
         </a>
         <span style="color:#cbd5e1;">/</span>
         <span style="font-size:13px; color:#0f172a; font-weight:600;">New Folder</span>
@@ -15,7 +15,7 @@
 
     <div style="background:#fff; border-radius:14px; border:1px solid #f1f5f9; box-shadow:0 1px 8px rgba(0,0,0,.06); padding:28px;">
         <h2 style="font-size:16px; font-weight:700; color:#0f172a; margin:0 0 20px;">
-            Create {{ $type === 'programs' ? 'Programme' : 'Gallery' }} Folder
+            {{ $type === 'programs' ? 'Create Student Life Album' : 'Create Gallery Folder' }}
         </h2>
 
         @if($errors->any())

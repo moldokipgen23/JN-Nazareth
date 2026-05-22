@@ -76,6 +76,7 @@
 
         {{-- Nav --}}
         <nav style="flex:1; padding:14px 12px; display:flex; flex-direction:column; gap:2px;">
+            @php $teacherOnly = Auth::user()->isTeacherOnly(); @endphp
 
             <div style="color:#475569;font-size:10px;font-weight:700;letter-spacing:.08em;padding:8px 6px 4px;text-transform:uppercase;">Main</div>
 
@@ -84,9 +85,24 @@
                 Dashboard
             </a>
 
+            @if(Auth::user()->hasRole('admin'))
+            <a href="{{ route('admin.teachers.index') }}" class="sidebar-link {{ request()->routeIs('admin.teachers.*') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+                Teachers
+            </a>
+            @endif
+
+            @if(Auth::user()->hasAnyRole(['admin','teacher']))
+            <a href="{{ route('admin.classes.index') }}" class="sidebar-link {{ request()->routeIs('admin.classes.*') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.42A12 12 0 0112 21a12 12 0 01-6.16-10.42L12 14z"/></svg>
+                Classes
+            </a>
+            @endif
+
+            @unless($teacherOnly)
             <a href="{{ route('admin.members.index') }}" class="sidebar-link {{ request()->routeIs('admin.members.*') ? 'active' : '' }}">
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m6-4.13a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-2-3.46"/></svg>
-                Members
+                Students
             </a>
 
             <a href="{{ route('admin.folders.index') }}" class="sidebar-link {{ request()->routeIs('admin.folders.*') || request()->routeIs('admin.documents.*') ? 'active' : '' }}">
@@ -98,7 +114,7 @@
 
             <a href="{{ route('admin.blogs.index') }}" class="sidebar-link {{ request()->routeIs('admin.blogs.*') ? 'active' : '' }}">
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V7a2 2 0 012-2h10l4 4v11a2 2 0 01-2 2z"/></svg>
-                Blog Posts
+                News &amp; Notices
             </a>
 
             <a href="{{ route('admin.events.index') }}" class="sidebar-link {{ request()->routeIs('admin.events.*') ? 'active' : '' }}">
@@ -113,19 +129,33 @@
             </a>
             @endif
 
-            <a href="{{ route('admin.gallery-folders.index', ['type' => 'gallery']) }}" class="sidebar-link {{ request()->routeIs('admin.gallery-folders.*') && request()->get('type','gallery') === 'gallery' ? 'active' : '' }}">
+            <a href="{{ route('admin.gallery-folders.index', ['type' => 'programs']) }}" class="sidebar-link {{ request()->routeIs('admin.gallery-folders.*') ? 'active' : '' }}">
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h3l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
-                Gallery Albums
-            </a>
-
-            <a href="{{ route('admin.gallery-folders.index', ['type' => 'programs']) }}" class="sidebar-link {{ request()->routeIs('admin.gallery-folders.*') && request()->get('type') === 'programs' ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h3l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
-                Programme Albums
+                Photo Albums
             </a>
 
             <a href="{{ route('admin.videos.index') }}" class="sidebar-link {{ request()->routeIs('admin.videos.*') ? 'active' : '' }}">
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.868V15.13a1 1 0 01-1.447.897L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                 Videos
+            </a>
+
+            <a href="{{ route('admin.downloads.index') }}" class="sidebar-link {{ request()->routeIs('admin.downloads.*') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Downloads
+            </a>
+
+            <a href="{{ route('admin.important-links.index') }}" class="sidebar-link {{ request()->routeIs('admin.important-links.*') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5m6.656-2.828a4 4 0 00-5.656 0l-3 3a4 4 0 000 5.656"/></svg>
+                Important Links
+            </a>
+
+            @php $newInquiries = \App\Models\Inquiry::where('status', 'new')->count(); @endphp
+            <a href="{{ route('admin.inquiries.index') }}" class="sidebar-link {{ request()->routeIs('admin.inquiries.*') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                Inquiries
+                @if($newInquiries > 0)
+                    <span style="margin-left:auto;background:#dc2626;color:#fff;border-radius:99px;font-size:10px;padding:1px 7px;font-weight:700;">{{ $newInquiries }}</span>
+                @endif
             </a>
 
             @if(Auth::user()->hasRole('admin'))
@@ -151,6 +181,7 @@
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 Activity Logs
             </a>
+            @endunless
         </nav>
 
         {{-- Logout --}}
@@ -228,22 +259,26 @@
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         Home
     </a>
+    @if(Auth::user()->hasAnyRole(['admin','teacher']))
+    <a href="{{ route('admin.classes.index') }}" class="bottom-nav-link {{ request()->routeIs('admin.classes.*') ? 'active' : '' }}">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/></svg>
+        Classes
+    </a>
+    @endif
+    @unless($teacherOnly)
     <a href="{{ route('admin.members.index') }}" class="bottom-nav-link {{ request()->routeIs('admin.members.*') ? 'active' : '' }}">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m6-4.13a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-        Members
+        Students
     </a>
     <a href="{{ route('admin.folders.index') }}" class="bottom-nav-link {{ request()->routeIs('admin.folders.*') || request()->routeIs('admin.documents.*') ? 'active' : '' }}">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
         Docs
     </a>
-    <a href="{{ route('admin.gallery.index') }}" class="bottom-nav-link {{ request()->routeIs('admin.gallery.*') ? 'active' : '' }}">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        Gallery
-    </a>
     <a href="{{ route('admin.blogs.index') }}" class="bottom-nav-link {{ request()->routeIs('admin.blogs.*') ? 'active' : '' }}">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V7a2 2 0 012-2h10l4 4v11a2 2 0 01-2 2z"/></svg>
-        Blog
+        News
     </a>
+    @endunless
 </nav>
 
 <script>

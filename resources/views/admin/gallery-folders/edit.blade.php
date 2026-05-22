@@ -7,7 +7,7 @@
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
         <a href="{{ route('admin.gallery-folders.index', ['type' => $folder->type]) }}" style="color:#64748b; text-decoration:none; font-size:13px; display:flex; align-items:center; gap:5px;">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
-            {{ $folder->type === 'programs' ? 'Programme Folders' : 'Gallery Folders' }}
+            {{ $folder->type === 'programs' ? 'Student Life Albums' : 'Gallery Folders' }}
         </a>
         <span style="color:#cbd5e1;">/</span>
         <span style="font-size:13px; color:#0f172a; font-weight:600;">Edit: {{ $folder->name }}</span>

@@ -11,16 +11,37 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
+/*
+ * Configurable login URLs. The admin/teacher login slugs are editable in
+ * Site Customizer → General. The default /login route is intentionally NOT
+ * registered, so it returns 404. EMERGENCY_LOGIN_PATH is a hardcoded
+ * fallback that always works, in case a bad slug is saved.
+ *
+ * NOTE: after changing a login slug, the route cache must be cleared
+ * (the customizer save does this automatically).
+ */
+const EMERGENCY_LOGIN_PATH = 'cms-recovery-7k3';
+
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])
+    // Admin login — named 'login' (used by the auth middleware redirect).
+    Route::get(login_path('admin'), [AuthenticatedSessionController::class, 'create'])
         ->name('login');
+    Route::post(login_path('admin'), [AuthenticatedSessionController::class, 'store']);
 
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    // Teacher login — separate branded page, same authentication.
+    Route::get(login_path('teacher'), [AuthenticatedSessionController::class, 'createTeacher'])
+        ->name('teacher.login');
+    Route::post(login_path('teacher'), [AuthenticatedSessionController::class, 'store'])
+        ->name('teacher.login.store');
+
+    // Emergency fallback — always available.
+    Route::get(EMERGENCY_LOGIN_PATH, [AuthenticatedSessionController::class, 'create']);
+    Route::post(EMERGENCY_LOGIN_PATH, [AuthenticatedSessionController::class, 'store']);
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');

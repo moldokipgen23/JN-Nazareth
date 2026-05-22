@@ -12,7 +12,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'phone', 'designation', 'photo', 'assigned_classes'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -29,6 +29,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'assigned_classes' => 'array',
         ];
     }
 
@@ -50,5 +51,32 @@ class User extends Authenticatable
     public function blogs(): HasMany
     {
         return $this->hasMany(Blog::class, 'author_id');
+    }
+
+    /** Class names this teacher is assigned to teach. */
+    public function teachingClasses(): array
+    {
+        return $this->assigned_classes ?? [];
+    }
+
+    public function teachesClass(string $class): bool
+    {
+        return in_array($class, $this->teachingClasses(), true);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    public function isTeacher(): bool
+    {
+        return $this->hasRole('teacher');
+    }
+
+    /** True for accounts whose only admin-area role is teacher. */
+    public function isTeacherOnly(): bool
+    {
+        return $this->hasRole('teacher') && ! $this->hasAnyRole(['admin', 'staff']);
     }
 }

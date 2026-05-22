@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DownloadController;
+use App\Http\Controllers\Admin\ImportantLinkController;
+use App\Http\Controllers\Admin\InquiryController;
 use App\Http\Controllers\Admin\ActivityLogController;
-use App\Http\Controllers\Admin\ProgramItemController;
 use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\DocumentController;
 use App\Http\Controllers\Admin\EventController;
@@ -13,11 +15,14 @@ use App\Http\Controllers\Admin\MemberController;
 use App\Http\Controllers\Admin\MemberFileController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\HallOfFameController;
+use App\Http\Controllers\Admin\ClassroomController;
 use App\Http\Controllers\Admin\SiteCustomizerController;
+use App\Http\Controllers\Admin\TeacherController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VideoController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PublicController;
+use App\Http\Controllers\WebsiteController;
+use App\Http\Controllers\InquiryController as PublicInquiryController;
 use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,15 +33,32 @@ use Illuminate\Support\Facades\Route;
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap']);
 Route::get('/robots.txt',  [SitemapController::class, 'robots']);
 
-Route::get('/', [PublicController::class, 'home'])->name('home');
-Route::get('/about', [PublicController::class, 'about'])->name('about');
-Route::get('/blogs', [PublicController::class, 'blogs'])->name('blogs');
-Route::get('/blogs/{slug}', [PublicController::class, 'blogShow'])->name('blogs.show');
-Route::get('/events', [PublicController::class, 'events'])->name('events');
-Route::get('/gallery', [PublicController::class, 'gallery'])->name('gallery');
-Route::get('/gallery/folder/{galleryFolder}', [PublicController::class, 'galleryFolder'])->name('gallery.folder');
-Route::get('/videos', [PublicController::class, 'videos'])->name('videos');
-Route::get('/page/{slug}', [PublicController::class, 'page'])->name('page');
+Route::get('/', [WebsiteController::class, 'home'])->name('home');
+Route::get('/about', [WebsiteController::class, 'about'])->name('about');
+Route::get('/academics', [WebsiteController::class, 'academics'])->name('academics');
+Route::get('/academics/fee-structure', [WebsiteController::class, 'feeStructure'])->name('academics.fee');
+Route::get('/academics/school-timing', [WebsiteController::class, 'schoolTiming'])->name('academics.timing');
+Route::get('/academics/calendar', [WebsiteController::class, 'academicCalendar'])->name('academics.calendar');
+Route::get('/academics/curriculum', [WebsiteController::class, 'curriculum'])->name('academics.curriculum');
+Route::get('/academics/textbooks', [WebsiteController::class, 'textbooks'])->name('academics.textbooks');
+Route::get('/academics/results', [WebsiteController::class, 'results'])->name('academics.results');
+Route::get('/admission', [WebsiteController::class, 'admission'])->name('admission');
+// Gallery merged into Student Life — /gallery redirects there.
+Route::redirect('/gallery', '/student-life')->name('gallery');
+Route::get('/gallery/folder/{galleryFolder}', [WebsiteController::class, 'galleryFolder'])->name('gallery.folder');
+Route::get('/student-life', [WebsiteController::class, 'studentLife'])->name('student-life');
+Route::get('/news', [WebsiteController::class, 'news'])->name('news');
+Route::get('/news/{slug}', [WebsiteController::class, 'newsShow'])->name('news.show');
+Route::get('/contact', [WebsiteController::class, 'contact'])->name('contact');
+Route::get('/hall-of-fame', [WebsiteController::class, 'hallOfFame'])->name('hall-of-fame');
+
+// Legacy redirects
+Route::get('/blogs', fn () => redirect()->route('news'));
+Route::get('/blogs/{slug}', fn ($slug) => redirect()->route('news.show', $slug))->name('blogs.show');
+
+// Public admission inquiry submission
+Route::post('/inquiry', [PublicInquiryController::class, 'store'])
+     ->middleware('throttle:5,1')->name('inquiry.store');
 
 // ---------------------------------------------------------------------------
 // Breeze auth routes
@@ -60,13 +82,32 @@ require __DIR__.'/auth.php';
 
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth', 'role:admin,staff'])
+    ->middleware(['auth'])
     ->group(function () {
 
-        // Dashboard
-        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        // Dashboard — available to every admin-area role
+        Route::middleware('role:admin,staff,teacher')->group(function () {
+            Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        });
+
+        // ── Classes — teachers see their own, admins see all ──────
+        Route::middleware('role:admin,teacher')->group(function () {
+            Route::get('classes', [ClassroomController::class, 'index'])
+                 ->name('classes.index');
+            Route::get('classes/{class}', [ClassroomController::class, 'show'])
+                 ->name('classes.show');
+        });
+
+        // ── Staff + admin area ────────────────────────────────────
+        Route::middleware('role:admin,staff')->group(function () {
 
         // Members
+        Route::get('members/import', [MemberController::class, 'importForm'])
+             ->name('members.import.form');
+        Route::post('members/import', [MemberController::class, 'import'])
+             ->name('members.import');
+        Route::get('members/import-template', [MemberController::class, 'importTemplate'])
+             ->name('members.import.template');
         Route::resource('members', MemberController::class);
 
         // Member files
@@ -110,11 +151,21 @@ Route::prefix('admin')
         Route::delete('gallery-images/{galleryItem}', [GalleryFolderController::class, 'destroyImage'])
              ->name('gallery-folders.images.destroy');
 
-        // Programs (community activity photos)
-        Route::get('programs', [ProgramItemController::class, 'index'])->name('programs.index');
-        Route::post('programs', [ProgramItemController::class, 'store'])->name('programs.store');
-        Route::post('programs/{programItem}/toggle', [ProgramItemController::class, 'toggle'])->name('programs.toggle');
-        Route::delete('programs/{programItem}', [ProgramItemController::class, 'destroy'])->name('programs.destroy');
+        // Downloads (notices, circulars, forms)
+        Route::resource('downloads', DownloadController::class)
+             ->except(['show'])->names('downloads');
+
+        // Important Links (link CRUD)
+        Route::resource('important-links', ImportantLinkController::class)
+             ->except(['show'])->names('important-links');
+
+        // Inquiries (admission enquiries from the public site)
+        Route::prefix('inquiries')->name('inquiries.')->group(function () {
+            Route::get('/', [InquiryController::class, 'index'])->name('index');
+            Route::get('{inquiry}', [InquiryController::class, 'show'])->name('show');
+            Route::patch('{inquiry}/mark-replied', [InquiryController::class, 'markReplied'])->name('markReplied');
+            Route::delete('{inquiry}', [InquiryController::class, 'destroy'])->name('destroy');
+        });
 
         // Videos
         Route::get('videos', [VideoController::class, 'index'])->name('videos.index');
@@ -132,26 +183,22 @@ Route::prefix('admin')
         Route::middleware('role:admin')->group(function () {
             Route::get('customizer', [SiteCustomizerController::class, 'index'])
                  ->name('customizer.index');
-            Route::post('customizer/general', [SiteCustomizerController::class, 'updateGeneral'])
-                 ->name('customizer.update-general');
-            Route::post('customizer/appearance', [SiteCustomizerController::class, 'updateAppearance'])
-                 ->name('customizer.update-appearance');
-            Route::post('customizer/seo', [SiteCustomizerController::class, 'updateSeo'])
-                 ->name('customizer.update-seo');
-            Route::post('customizer/hero', [SiteCustomizerController::class, 'updateHero'])
-                 ->name('customizer.update-hero');
-            Route::post('customizer/story', [SiteCustomizerController::class, 'updateStory'])
-                 ->name('customizer.update-story');
-            Route::post('customizer/sections', [SiteCustomizerController::class, 'updateSections'])
-                 ->name('customizer.update-sections');
-            Route::post('customizer/section-order', [SiteCustomizerController::class, 'updateSectionOrder'])
-                 ->name('customizer.update-section-order');
+            Route::post('customizer/save', [SiteCustomizerController::class, 'save'])
+                 ->name('customizer.save');
             Route::post('customizer/toggle-section', [SiteCustomizerController::class, 'toggleSection'])
                  ->name('customizer.toggle-section');
-            Route::post('customizer/stats', [SiteCustomizerController::class, 'updateStats'])
-                 ->name('customizer.update-stats');
-            Route::post('customizer/location', [SiteCustomizerController::class, 'updateLocation'])
-                 ->name('customizer.update-location');
+            Route::post('customizer/reorder-sections', [SiteCustomizerController::class, 'reorderSections'])
+                 ->name('customizer.reorder-sections');
+            Route::post('customizer/admission', [SiteCustomizerController::class, 'saveAdmission'])
+                 ->name('customizer.admission.save');
+            Route::post('customizer/certificates', [SiteCustomizerController::class, 'saveCertificates'])
+                 ->name('customizer.certificates.save');
+            Route::post('customizer/people', [SiteCustomizerController::class, 'savePeople'])
+                 ->name('customizer.people.save');
+            Route::post('customizer/calendar', [SiteCustomizerController::class, 'saveCalendar'])
+                 ->name('customizer.calendar.save');
+            Route::post('customizer/curriculum', [SiteCustomizerController::class, 'saveCurriculum'])
+                 ->name('customizer.curriculum.save');
             Route::post('customizer/slides', [SiteCustomizerController::class, 'storeSlide'])
                  ->name('customizer.slides.store');
             Route::post('customizer/slides/{slide}/toggle', [SiteCustomizerController::class, 'toggleSlide'])
@@ -189,5 +236,11 @@ Route::prefix('admin')
 
             // Users — admin only
             Route::resource('users', UserController::class);
+
+            // Teachers — admin only
+            Route::resource('teachers', TeacherController::class)
+                 ->except(['show']);
         });
+
+        }); // end of role:admin,staff group
     });

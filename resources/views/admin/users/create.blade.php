@@ -73,16 +73,31 @@
                 <label for="role" class="block text-sm font-medium text-gray-700 mb-1">
                     Role <span class="text-red-500">*</span>
                 </label>
-                <select id="role" name="role" required
+                <select id="role" name="role" required onchange="toggleClassAccess()"
                         class="w-full px-3 py-2 border @error('role') border-red-400 @else border-gray-300 @enderror rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
                     <option value="">— Select a role —</option>
-                    <option value="admin"  {{ old('role') === 'admin'  ? 'selected' : '' }}>Admin — full access</option>
-                    <option value="staff"  {{ old('role') === 'staff'  ? 'selected' : '' }}>Staff — manage content</option>
-                    <option value="viewer" {{ old('role') === 'viewer' ? 'selected' : '' }}>Viewer — read only</option>
+                    <option value="admin"   {{ old('role') === 'admin'   ? 'selected' : '' }}>Admin — full access</option>
+                    <option value="staff"   {{ old('role') === 'staff'   ? 'selected' : '' }}>Staff — manage content</option>
+                    <option value="teacher" {{ old('role') === 'teacher' ? 'selected' : '' }}>Teacher — view assigned classes</option>
+                    <option value="viewer"  {{ old('role') === 'viewer'  ? 'selected' : '' }}>Viewer — read only</option>
                 </select>
                 @error('role')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
+            </div>
+
+            {{-- Class access (teacher role only) --}}
+            <div id="classAccess" style="display:none;">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Class Access</label>
+                <p class="text-xs text-gray-500 mb-2">A teacher account can view students in the classes ticked below.</p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    @foreach($classes as $c)
+                    <label class="flex items-center gap-2 text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 cursor-pointer">
+                        <input type="checkbox" name="classes[]" value="{{ $c }}" {{ in_array($c, old('classes', [])) ? 'checked' : '' }}>
+                        {{ $c }}
+                    </label>
+                    @endforeach
+                </div>
             </div>
 
             {{-- Actions --}}
@@ -99,4 +114,11 @@
         </form>
     </div>
 </div>
+<script>
+  function toggleClassAccess(){
+    document.getElementById('classAccess').style.display =
+      document.getElementById('role').value === 'teacher' ? 'block' : 'none';
+  }
+  toggleClassAccess();
+</script>
 @endsection

@@ -12,11 +12,19 @@ use Illuminate\View\View;
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Display the login view.
+     * Display the admin login view.
      */
     public function create(): View
     {
         return view('auth.login');
+    }
+
+    /**
+     * Display the teacher login view.
+     */
+    public function createTeacher(): View
+    {
+        return view('auth.teacher-login');
     }
 
     /**
@@ -27,6 +35,13 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+
+        // Role-aware landing page: teachers go straight to their classes.
+        $user = $request->user();
+        if ($user && $user->hasRole('teacher')
+            && ! $user->hasAnyRole(['admin', 'staff'])) {
+            return redirect()->intended(route('admin.classes.index'));
+        }
 
         return redirect()->intended(route('dashboard', absolute: false));
     }

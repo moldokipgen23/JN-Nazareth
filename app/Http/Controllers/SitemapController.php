@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Helpers\Settings;
 use App\Models\Blog;
-use App\Models\Event;
-use App\Models\Page;
 use App\Models\GalleryFolder;
 use Illuminate\Http\Response;
 
@@ -16,54 +14,42 @@ class SitemapController extends Controller
         $now = now()->toAtomString();
         $urls = [];
 
-        // Static pages
+        // Static public pages — current site routes.
         $staticPages = [
-            ['loc' => url('/'),        'lastmod' => $now, 'priority' => '1.0', 'changefreq' => 'weekly'],
-            ['loc' => url('/about'),   'lastmod' => $now, 'priority' => '0.8', 'changefreq' => 'monthly'],
-            ['loc' => url('/blogs'),   'lastmod' => $now, 'priority' => '0.8', 'changefreq' => 'weekly'],
-            ['loc' => url('/events'),  'lastmod' => $now, 'priority' => '0.8', 'changefreq' => 'weekly'],
-            ['loc' => url('/gallery'), 'lastmod' => $now, 'priority' => '0.7', 'changefreq' => 'weekly'],
-            ['loc' => url('/videos'),  'lastmod' => $now, 'priority' => '0.7', 'changefreq' => 'weekly'],
+            ['/',                        '1.0', 'weekly'],
+            ['/about',                   '0.8', 'monthly'],
+            ['/academics',               '0.8', 'monthly'],
+            ['/academics/fee-structure', '0.6', 'yearly'],
+            ['/academics/school-timing', '0.6', 'yearly'],
+            ['/academics/calendar',      '0.6', 'monthly'],
+            ['/academics/curriculum',    '0.6', 'yearly'],
+            ['/academics/textbooks',     '0.6', 'yearly'],
+            ['/academics/results',       '0.6', 'monthly'],
+            ['/admission',               '0.9', 'monthly'],
+            ['/student-life',            '0.7', 'weekly'],
+            ['/hall-of-fame',            '0.7', 'monthly'],
+            ['/news',                    '0.8', 'weekly'],
+            ['/contact',                 '0.7', 'yearly'],
         ];
-        foreach ($staticPages as $p) $urls[] = $p;
+        foreach ($staticPages as [$path, $priority, $freq]) {
+            $urls[] = ['loc' => url($path), 'lastmod' => $now, 'priority' => $priority, 'changefreq' => $freq];
+        }
 
-        // Blog posts (individual pages)
+        // News / notice / announcement posts (individual pages).
         Blog::where('published', true)->orderByDesc('created_at')->each(function ($blog) use (&$urls) {
             $urls[] = [
-                'loc'        => url('/blogs/' . $blog->slug),
-                'lastmod'    => $blog->updated_at->toAtomString(),
+                'loc'        => url('/news/' . $blog->slug),
+                'lastmod'    => optional($blog->updated_at)->toAtomString(),
                 'priority'   => '0.7',
                 'changefreq' => 'monthly',
             ];
         });
 
-        // Events — /events is already added above; use most-recent updated_at as its lastmod
-        $latestEvent = Event::orderByDesc('updated_at')->first();
-        if ($latestEvent) {
-            foreach ($urls as &$u) {
-                if ($u['loc'] === url('/events')) {
-                    $u['lastmod'] = $latestEvent->updated_at->toAtomString();
-                    break;
-                }
-            }
-            unset($u);
-        }
-
-        // Gallery folders (individual pages)
+        // Photo albums (individual pages).
         GalleryFolder::orderByDesc('created_at')->each(function ($folder) use (&$urls) {
             $urls[] = [
                 'loc'        => url('/gallery/folder/' . $folder->id),
-                'lastmod'    => $folder->updated_at->toAtomString(),
-                'priority'   => '0.6',
-                'changefreq' => 'monthly',
-            ];
-        });
-
-        // Custom pages
-        Page::orderBy('title')->each(function ($page) use (&$urls) {
-            $urls[] = [
-                'loc'        => url('/page/' . $page->slug),
-                'lastmod'    => $page->updated_at->toAtomString(),
+                'lastmod'    => optional($folder->updated_at)->toAtomString(),
                 'priority'   => '0.6',
                 'changefreq' => 'monthly',
             ];

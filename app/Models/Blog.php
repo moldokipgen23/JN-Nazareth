@@ -10,17 +10,22 @@ class Blog extends Model
     protected $fillable = [
         'title',
         'slug',
+        'post_type',
         'content',
         'image',
         'published',
+        'is_featured',
         'published_at',
         'author_id',
     ];
+
+    public const TYPES = ['news', 'notice', 'announcement'];
 
     protected function casts(): array
     {
         return [
             'published' => 'boolean',
+            'is_featured' => 'boolean',
             'published_at' => 'datetime',
         ];
     }

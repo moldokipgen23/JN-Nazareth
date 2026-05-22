@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('page-title', 'Add Member')
+@section('page-title', 'Add Student')
 
 @section('content')
 <div class="max-w-2xl">
@@ -12,108 +12,21 @@
             </svg>
         </a>
         <div>
-            <h2 class="text-xl font-bold text-gray-900">Add New Member</h2>
-            <p class="text-sm text-gray-500 mt-0.5">Fill in the details below to register a new member.</p>
+            <h2 class="text-xl font-bold text-gray-900">Add New Student</h2>
+            <p class="text-sm text-gray-500 mt-0.5">Fill in the details below to admit a new student.</p>
         </div>
     </div>
 
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8">
         <form method="POST" action="{{ route('admin.members.store') }}" enctype="multipart/form-data" class="space-y-5">
             @csrf
-
-            {{-- Name --}}
-            <div>
-                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name <span class="text-red-500">*</span>
-                </label>
-                <input type="text" id="name" name="name" value="{{ old('name') }}" required
-                       class="w-full px-3 py-2 border @error('name') border-red-400 @else border-gray-300 @enderror rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none">
-                @error('name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-            </div>
-
-            {{-- Phone & Email --}}
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                    <input type="text" id="phone" name="phone" value="{{ old('phone') }}"
-                           class="w-full px-3 py-2 border @error('phone') border-red-400 @else border-gray-300 @enderror rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
-                    @error('phone')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                </div>
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" id="email" name="email" value="{{ old('email') }}"
-                           class="w-full px-3 py-2 border @error('email') border-red-400 @else border-gray-300 @enderror rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
-                    @error('email')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                </div>
-            </div>
-
-            {{-- Date of Birth & Status --}}
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label for="date_of_birth" class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                    <input type="date" id="date_of_birth" name="date_of_birth" value="{{ old('date_of_birth') }}"
-                           class="w-full px-3 py-2 border @error('date_of_birth') border-red-400 @else border-gray-300 @enderror rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
-                    @error('date_of_birth')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                </div>
-                <div>
-                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select id="status" name="status"
-                            class="w-full px-3 py-2 border @error('status') border-red-400 @else border-gray-300 @enderror rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
-                        <option value="active"    {{ old('status','active') === 'active'    ? 'selected' : '' }}>Active</option>
-                        <option value="inactive"  {{ old('status') === 'inactive'  ? 'selected' : '' }}>Inactive</option>
-                        <option value="moved_out" {{ old('status') === 'moved_out' ? 'selected' : '' }}>Moved Out</option>
-                        <option value="deceased"  {{ old('status') === 'deceased'  ? 'selected' : '' }}>Deceased</option>
-                    </select>
-                    @error('status')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                </div>
-            </div>
-
-            {{-- Address --}}
-            <div>
-                <label for="address" class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                <input type="text" id="address" name="address" value="{{ old('address') }}"
-                       class="w-full px-3 py-2 border @error('address') border-red-400 @else border-gray-300 @enderror rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
-                @error('address')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-            </div>
-
-            {{-- Role --}}
-            <div>
-                <label for="role" class="block text-sm font-medium text-gray-700 mb-1">
-                    Role <span class="text-red-500">*</span>
-                </label>
-                <select id="role" name="role" required
-                        class="w-full px-3 py-2 border @error('role') border-red-400 @else border-gray-300 @enderror rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
-                    <option value="">— Select a role —</option>
-                    @foreach(['Pastor', 'Elder', 'Deacon', 'Member', 'Youth', 'Other'] as $r)
-                        <option value="{{ $r }}" {{ old('role') === $r ? 'selected' : '' }}>{{ $r }}</option>
-                    @endforeach
-                </select>
-                @error('role')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-            </div>
-
-            {{-- Photo --}}
-            <div>
-                <label for="photo" class="block text-sm font-medium text-gray-700 mb-1">Photo</label>
-                <input type="file" id="photo" name="photo" accept="image/*"
-                       class="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 transition">
-                @error('photo')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-            </div>
-
-            {{-- Notes --}}
-            <div>
-                <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea id="notes" name="notes" rows="3"
-                          class="w-full px-3 py-2 border @error('notes') border-red-400 @else border-gray-300 @enderror rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none resize-none">{{ old('notes') }}</textarea>
-                @error('notes')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-            </div>
+            @include('admin.members._form', ['member' => null])
 
             <div class="flex items-center gap-3 pt-2">
-                <button type="submit"
-                        class="px-6 py-2 bg-teal-600 text-white text-sm font-semibold rounded-lg hover:bg-teal-700 transition shadow-sm">
-                    Save Member
+                <button type="submit" class="px-6 py-2 bg-teal-600 text-white text-sm font-semibold rounded-lg hover:bg-teal-700 transition shadow-sm">
+                    Save Student
                 </button>
-                <a href="{{ route('admin.members.index') }}"
-                   class="px-6 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
+                <a href="{{ route('admin.members.index') }}" class="px-6 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
                     Cancel
                 </a>
             </div>
