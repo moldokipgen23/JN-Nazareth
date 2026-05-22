@@ -36,7 +36,7 @@
         <ul class="list-disc list-inside space-y-1 text-blue-800">
             <li>The first row of the CSV must be column headers.</li>
             <li>Required column: <code class="bg-white px-1 rounded">name</code>.</li>
-            <li>Optional columns: <code class="bg-white px-1 rounded">roll_number, father_name, mother_name, parent_phone, phone, email, date_of_birth, address, class, section</code>.</li>
+            <li>Optional columns: <code class="bg-white px-1 rounded">roll_number, admission_number, father_name, mother_name, parent_phone, phone, email, date_of_birth, aadhar_number, address, class, section</code>.</li>
             <li>If a row leaves <code class="bg-white px-1 rounded">class</code>/<code class="bg-white px-1 rounded">section</code> blank, the values you choose below are used.</li>
             <li>A <code class="bg-white px-1 rounded">class</code> value in the CSV must match a school class exactly (e.g. <em>Class III</em>).</li>
         </ul>

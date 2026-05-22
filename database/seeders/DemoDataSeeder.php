@@ -6,7 +6,6 @@ use App\Models\BannerSlide;
 use App\Models\GalleryItem;
 use App\Models\HallOfFame;
 use App\Models\Member;
-use App\Models\ProgramItem;
 use App\Models\Video;
 use App\Models\GalleryFolder;
 use App\Models\User;
@@ -179,22 +178,7 @@ class DemoDataSeeder extends Seeder
             $folder = GalleryFolder::where('name', $folderName)->first();
             if (!$folder) continue;
 
-            if ($folder->type === 'programs') {
-                foreach ($photos as $i => $url) {
-                    ProgramItem::firstOrCreate(
-                        ['title' => $folderName . ' — Photo ' . ($i + 1)],
-                        [
-                            'title'         => $folderName . ' — Photo ' . ($i + 1),
-                            'path'          => $url,
-                            'caption'       => 'Moment from ' . $folderName,
-                            'category'      => 'general',
-                            'sort_order'    => $i + 1,
-                            'active'        => true,
-                            'activity_date' => now()->subDays(rand(10, 200)),
-                        ]
-                    );
-                }
-            } else {
+            {
                 foreach ($photos as $i => $url) {
                     GalleryItem::firstOrCreate(
                         ['title' => $folderName . ' — Photo ' . ($i + 1)],

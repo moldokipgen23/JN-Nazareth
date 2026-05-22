@@ -96,6 +96,21 @@
                     <dd class="text-gray-800">{{ $member->admission_date?->format('d M Y') ?? '—' }}</dd>
                 </div>
                 <div>
+                    <dt class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Admission No.</dt>
+                    <dd class="text-gray-800">{{ $member->admission_number ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Aadhar No.</dt>
+                    <dd class="text-gray-800">
+                        @if($member->aadhar_number)
+                            <span data-aadhar-masked>{{ $member->maskedAadhar() }}</span>
+                            <span data-aadhar-full hidden>{{ $member->aadhar_number }}</span>
+                            <button type="button" class="ml-2 text-xs text-teal-600 hover:underline"
+                                    onclick="(function(b){var d=b.parentNode;var m=d.querySelector('[data-aadhar-masked]'),f=d.querySelector('[data-aadhar-full]');var s=f.hidden;f.hidden=!s;m.hidden=s;b.textContent=s?'Hide':'Show';})(this)">Show</button>
+                        @else — @endif
+                    </dd>
+                </div>
+                <div>
                     <dt class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Academic Year</dt>
                     <dd class="text-gray-800">{{ $member->academic_year ?? '—' }}</dd>
                 </div>

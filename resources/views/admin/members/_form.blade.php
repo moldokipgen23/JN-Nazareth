@@ -23,6 +23,21 @@
     </div>
 </div>
 
+{{-- Admission No. & Aadhar No. --}}
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+        <label for="admission_number" class="block text-sm font-medium text-gray-700 mb-1">Admission No.</label>
+        <input type="text" id="admission_number" name="admission_number" value="{{ old('admission_number', $member->admission_number ?? '') }}" class="{{ $inputClass }}">
+        @error('admission_number')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+    </div>
+    <div>
+        <label for="aadhar_number" class="block text-sm font-medium text-gray-700 mb-1">Aadhar No.</label>
+        <input type="text" id="aadhar_number" name="aadhar_number" value="{{ old('aadhar_number', $member->aadhar_number ?? '') }}" inputmode="numeric" placeholder="1234 5678 9012" class="{{ $inputClass }}">
+        <p class="mt-1 text-xs text-gray-400">Confidential — visible only in the admin panel.</p>
+        @error('aadhar_number')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+    </div>
+</div>
+
 {{-- Name --}}
 <div>
     <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name <span class="text-red-500">*</span></label>

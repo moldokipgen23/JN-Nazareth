@@ -11,6 +11,8 @@ class Member extends Model
     protected $fillable = [
         'name',
         'roll_number',
+        'admission_number',
+        'aadhar_number',
         'class',
         'section',
         'academic_year',
@@ -38,6 +40,19 @@ class Member extends Model
     public function files(): HasMany
     {
         return $this->hasMany(MemberFile::class);
+    }
+
+    /**
+     * Aadhar number with all but the last 4 digits masked — for safer display.
+     */
+    public function maskedAadhar(): string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $this->aadhar_number);
+        if ($digits === '' || strlen($digits) < 4) {
+            return $this->aadhar_number ?? '';
+        }
+
+        return 'XXXX XXXX ' . substr($digits, -4);
     }
 
     public function scopeActive(Builder $query): Builder

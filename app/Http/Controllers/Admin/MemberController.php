@@ -31,7 +31,7 @@ class MemberController extends Controller
         }
 
         $members = $query->orderByRaw("CASE WHEN roll_number IS NULL THEN 1 ELSE 0 END")
-                         ->orderByRaw('CAST(roll_number AS INTEGER)')
+                         ->orderByRaw('CAST(roll_number AS UNSIGNED)')
                          ->orderBy('name')
                          ->paginate(50)
                          ->withQueryString();
@@ -152,12 +152,12 @@ class MemberController extends Controller
     public function importTemplate()
     {
         $rows = [
-            ['name', 'roll_number', 'father_name', 'mother_name', 'parent_phone', 'phone', 'email', 'date_of_birth', 'address', 'class', 'section'],
-            ['Aman Singh',      '1', 'Rajesh Singh',   'Sunita Singh',   '9876543210', '',           'aman.singh@example.com',  '2015-04-12', 'Hill Road, Churachandpur',   'Class III', 'A'],
-            ['Mary Lalrin',     '2', 'John Lalrin',    'Esther Lalrin',  '9812345678', '9800011122', 'mary.l@example.com',      '2015-08-30', 'New Bazar, Churachandpur',   'Class III', 'A'],
-            ['David Haokip',    '3', 'Thang Haokip',   'Niang Haokip',   '9856001234', '',           '',                        '2016-01-05', 'Tuibong, Churachandpur',     'Class III', 'B'],
-            ['Priya Devi',      '4', 'Suresh Devi',    'Rita Devi',      '9870098700', '',           'priya.devi@example.com',  '2014-11-22', 'Zenhang, Churachandpur',     'Class IV',  'A'],
-            ['Joseph Kipgen',   '5', 'Paul Kipgen',    'Mercy Kipgen',   '9801122334', '',           '',                        '2014-06-18', 'Rengkai, Churachandpur',     'Class IV',  'A'],
+            ['name', 'roll_number', 'admission_number', 'father_name', 'mother_name', 'parent_phone', 'phone', 'email', 'date_of_birth', 'aadhar_number', 'address', 'class', 'section'],
+            ['Aman Singh',      '1', '06', 'Rajesh Singh',   'Sunita Singh',   '9876543210', '',           'aman.singh@example.com',  '2015-04-12', '1234 5678 9012', 'Hill Road, Churachandpur',   'Class III', 'A'],
+            ['Mary Lalrin',     '2', '07', 'John Lalrin',    'Esther Lalrin',  '9812345678', '9800011122', 'mary.l@example.com',      '2015-08-30', '2345 6789 0123', 'New Bazar, Churachandpur',   'Class III', 'A'],
+            ['David Haokip',    '3', '08', 'Thang Haokip',   'Niang Haokip',   '9856001234', '',           '',                        '2016-01-05', '3456 7890 1234', 'Tuibong, Churachandpur',     'Class III', 'B'],
+            ['Priya Devi',      '4', '09', 'Suresh Devi',    'Rita Devi',      '9870098700', '',           'priya.devi@example.com',  '2014-11-22', '4567 8901 2345', 'Zenhang, Churachandpur',     'Class IV',  'A'],
+            ['Joseph Kipgen',   '5', '10', 'Paul Kipgen',    'Mercy Kipgen',   '9801122334', '',           '',                        '2014-06-18', '5678 9012 3456', 'Rengkai, Churachandpur',     'Class IV',  'A'],
         ];
 
         $csv = '';
@@ -250,8 +250,10 @@ class MemberController extends Controller
             }
 
             Member::create([
-                'name'          => $name,
-                'roll_number'   => $get($row, 'roll_number') ?: null,
+                'name'             => $name,
+                'roll_number'      => $get($row, 'roll_number') ?: null,
+                'admission_number' => $get($row, 'admission_number') ?: null,
+                'aadhar_number'    => $get($row, 'aadhar_number') ?: null,
                 'class'         => $class ?: null,
                 'section'       => ($get($row, 'section') ?: $defaultSection) ?: null,
                 'academic_year' => ($get($row, 'academic_year') ?: $defaultYear) ?: null,
@@ -283,8 +285,10 @@ class MemberController extends Controller
     private function rules(?int $ignoreId = null): array
     {
         return [
-            'name'           => ['required', 'string', 'max:255'],
-            'roll_number'    => ['nullable', 'string', 'max:20'],
+            'name'             => ['required', 'string', 'max:255'],
+            'roll_number'      => ['nullable', 'string', 'max:20'],
+            'admission_number' => ['nullable', 'string', 'max:30'],
+            'aadhar_number'    => ['nullable', 'string', 'max:20'],
             'class'          => ['nullable', Rule::in(Member::classes())],
             'section'        => ['nullable', 'string', 'max:10'],
             'academic_year'  => ['nullable', 'string', 'max:20'],

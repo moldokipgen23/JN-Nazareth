@@ -44,7 +44,7 @@ class ClassroomController extends Controller
 
         $students = Member::where('class', $class)
             ->orderByRaw('CASE WHEN roll_number IS NULL THEN 1 ELSE 0 END')
-            ->orderByRaw('CAST(roll_number AS INTEGER)')
+            ->orderByRaw('CAST(roll_number AS UNSIGNED)')
             ->orderBy('name')
             ->get();
 
