@@ -1,7 +1,3 @@
-```
-# Build artifacts
-public/build/
-
 # Dependencies
 node_modules/
 vendor/
@@ -13,4 +9,3 @@ vendor/
 .env
 .env.local
 .env.*
-```
