@@ -142,11 +142,21 @@ Route::prefix('admin')
             Route::get('marks', [AdminMarksController::class, 'index'])->name('marks.index');
             Route::put('marks/{mark}', [AdminMarksController::class, 'update'])->name('marks.update');
             Route::get('marks/export', [AdminMarksController::class, 'exportCsv'])->name('marks.export');
+            Route::get('marks/export-results', [AdminMarksController::class, 'exportCsvResults'])->name('marks.export-results');
+            Route::get('marks/export-result-cards', [AdminMarksController::class, 'exportAllResultCards'])->name('marks.export-result-cards');
+            Route::get('marks/bulk-download', [AdminMarksController::class, 'bulkDownload'])->name('marks.bulk-download');
+            Route::get('marks/gradesheet', [AdminMarksController::class, 'gradesheet'])->name('marks.gradesheet');
+            Route::post('marks/{mark}/reset-submission', [AdminMarksController::class, 'resetSubmission'])->name('marks.reset-submission');
             Route::get('marks/analytics', [MarksAnalyticsController::class, 'index'])->name('marks.analytics');
 
             Route::get('questions', [AdminQuestionsController::class, 'index'])->name('questions.index');
             Route::get('questions/export', [AdminQuestionsController::class, 'export'])->name('questions.export');
+            Route::post('questions/{question}/approve', [AdminQuestionsController::class, 'approve'])->name('questions.approve');
+            Route::post('questions/{question}/revision', [AdminQuestionsController::class, 'requestRevision'])->name('questions.revision');
             Route::post('questions/{question}/review', [AdminQuestionsController::class, 'markReviewed'])->name('questions.review');
+            Route::post('questions/bulk/approve', [AdminQuestionsController::class, 'approveGroup'])->name('questions.bulk-approve');
+            Route::post('questions/bulk/revision', [AdminQuestionsController::class, 'requestRevisionGroup'])->name('questions.bulk-revision');
+            Route::get('questions/question-paper', [AdminQuestionsController::class, 'exportQuestionPaper'])->name('questions.question-paper');
             Route::delete('questions/{question}', [AdminQuestionsController::class, 'destroy'])->name('questions.destroy');
 
             // Notes & Assignments — admin review
@@ -416,6 +426,7 @@ Route::prefix('teacher')
         // Questions
         Route::get('/questions', [TeacherQuestionsController::class, 'index'])->name('questions.index');
         Route::post('/questions', [TeacherQuestionsController::class, 'store'])->name('questions.store');
+        Route::post('/questions/{question}', [TeacherQuestionsController::class, 'update'])->name('questions.update');
         Route::delete('/questions/{question}', [TeacherQuestionsController::class, 'destroy'])->name('questions.destroy');
 
         // Notes & Assignments

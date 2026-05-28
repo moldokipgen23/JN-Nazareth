@@ -19,6 +19,10 @@
        style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid {{ $view === 'rankings' ? '#0f766e' : 'transparent' }};color:{{ $view === 'rankings' ? '#0f766e' : '#94a3b8' }};margin-bottom:-2px;transition:all .15s;">
         Rankings
     </a>
+    <a href="{{ route('admin.marks.index', ['view' => 'results', 'exam' => $examId, 'class' => $class, 'section' => $section]) }}"
+       style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid {{ $view === 'results' ? '#0f766e' : 'transparent' }};color:{{ $view === 'results' ? '#0f766e' : '#94a3b8' }};margin-bottom:-2px;transition:all .15s;">
+        Results
+    </a>
 </div>
 
 <form method="GET" style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;box-shadow:0 1px 3px rgba(15,23,42,.06);">
@@ -60,6 +64,20 @@
     @if($view === 'review' && $examId && $class && $subject)
         <a href="{{ route('admin.marks.export', ['exam' => $examId, 'class' => $class, 'section' => $section, 'subject' => $subject]) }}" style="background:#fff;color:#0f766e;border:1px solid #0f766e;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">Export CSV</a>
     @endif
+    @if($view === 'results' && $examId && $class)
+        <a href="{{ route('admin.marks.export-results', ['exam' => $examId, 'class' => $class, 'section' => $section]) }}" style="background:#0f766e;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
+            Export CSV (Ranking)
+        </a>
+        <a href="{{ route('admin.marks.export-result-cards', ['exam' => $examId, 'class' => $class, 'section' => $section]) }}" style="background:#7c3aed;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
+            Download PDFs (ZIP)
+        </a>
+        <a href="{{ route('admin.marks.gradesheet', ['exam' => $examId, 'class' => $class, 'section' => $section, 'format' => 'pdf']) }}" style="background:#1e3a5f;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
+            Gradesheet PDF
+        </a>
+        <a href="{{ route('admin.marks.gradesheet', ['exam' => $examId, 'class' => $class, 'section' => $section, 'format' => 'csv']) }}" style="background:#fff;color:#1e3a5f;border:1px solid #1e3a5f;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
+            Gradesheet CSV
+        </a>
+    @endif
 </form>
 
 <script>
@@ -73,7 +91,7 @@ function syncSection(form) {
 @if($view === 'review')
     @if($examId && $class && $section && $subject)
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
-            @foreach(['total'=>['#f1f5f9','#475569'],'pass'=>['#dcfce7','#15803d'],'fail'=>['#fee2e2','#b91c1c'],'ungraded'=>['#fef3c7','#92400e']] as $key=>$col)
+            @foreach(['total'=>['#f1f5f9','#475569'],'pass'=>['#dcfce7','#15803d'],'fail'=>['#fee2e2','#b91c1c'],'ungraded'=>['#fef3c7','#92400e'],'submitted'=>['#dbeafe','#1d4ed8']] as $key=>$col)
                 <div style="background:{{ $col[0] }};color:{{ $col[1] }};border-radius:10px;padding:12px 14px;">
                     <div style="font-size:22px;font-weight:700;line-height:1;">{{ $stats[$key] }}</div>
                     <div style="font-size:11px;font-weight:600;margin-top:4px;text-transform:uppercase;">{{ ucfirst($key) }}</div>
@@ -96,6 +114,7 @@ function syncSection(form) {
                         <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">%</th>
                         <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Grade</th>
                         <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Status</th>
+                        <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Submitted</th>
                         <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Entered By</th>
                         <th style="text-align:right;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Override</th>
                     </tr>
@@ -120,32 +139,66 @@ function syncSection(form) {
                             @endphp
                             <span style="background:{{ $_bg }};color:{{ $_fg }};padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;">{{ $s }}</span>
                         </td>
+                        <td style="padding:10px 14px;">
+                            @if($r->submitted_at)
+                                <span style="color:#15803d;font-size:11px;font-weight:600;">✅ {{ $r->submitted_at->format('d M') }}</span>
+                            @else
+                                <span style="color:#94a3b8;font-size:11px;">—</span>
+                            @endif
+                        </td>
                         <td style="padding:10px 14px;color:#64748b;font-size:12px;">{{ $r->enteredBy?->name ?? '—' }}</td>
                         <td style="padding:10px 14px;text-align:right;">
-                            <form method="POST" action="{{ route('admin.marks.update', $r) }}" style="display:flex;gap:6px;justify-content:flex-end;align-items:center;">
-                                @csrf @method('PUT')
-                                <input type="number" step="0.01" min="0" max="{{ $r->full_marks }}" name="total_marks" value="{{ $r->total_marks ?? $r->obtained_marks }}" style="width:70px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;text-align:center;">
-                                <input type="text" name="grade" value="{{ $r->grade }}" maxlength="5" placeholder="grade" style="width:50px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;text-align:center;">
-                                <button type="submit" style="background:#0f766e;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Save</button>
-                            </form>
+                            <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center;flex-wrap:wrap;">
+                                <form method="POST" action="{{ route('admin.marks.update', $r) }}" style="display:flex;gap:4px;align-items:center;">
+                                    @csrf @method('PUT')
+                                    <input type="number" step="0.01" min="0" max="{{ $r->full_marks }}" name="total_marks" value="{{ $r->total_marks ?? $r->obtained_marks }}" style="width:60px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;text-align:center;">
+                                    <input type="text" name="grade" value="{{ $r->grade }}" maxlength="5" placeholder="grade" style="width:40px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;text-align:center;">
+                                    <button type="submit" style="background:#0f766e;color:#fff;border:none;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;">Save</button>
+                                </form>
+                                @if($r->submitted_at)
+                                <form method="POST" action="{{ route('admin.marks.reset-submission', $r) }}" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" style="background:#fef3c7;color:#92400e;border:none;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;" onclick="return confirm('Reset submission for this student?')">Reset</button>
+                                </form>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @endforeach
                 </tbody>
             </table>
         </div>
+
+        {{-- Submission summary --}}
+        @if($submissionStatus->isNotEmpty())
+        <div style="background:#fff;border-radius:12px;padding:14px 16px;margin-top:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+            <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Submission Status per Subject</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;">
+                @foreach($submissionStatus as $ss)
+                <div style="background:{{ $ss->total === $ss->submitted_count ? '#f0fdf4' : '#fef3c7' }};border-radius:8px;padding:8px 12px;">
+                    <div style="font-size:12px;font-weight:600;color:#0f172a;">{{ $ss->subject }}</div>
+                    <div style="font-size:11px;color:#64748b;">{{ $ss->submitted_count }}/{{ $ss->total }} submitted</div>
+                    @if($ss->total === $ss->submitted_count)
+                        <span style="font-size:10px;color:#15803d;font-weight:600;">✅ Complete</span>
+                    @else
+                        <span style="font-size:10px;color:#92400e;font-weight:600;">⏳ Pending</span>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
         @endif
     @else
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">Pick exam + class + subject above.</div>
     @endif
-@else
+@elseif($view === 'rankings')
     {{-- Rankings View --}}
     @if(!$examId || !$class)
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">Pick exam + class above to view rankings.</div>
     @elseif($rankings->isEmpty())
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">No marks found for this combination.</div>
     @else
-        {{-- Subject stats --}}
         @if(!empty($subjectStats))
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px;">
             @foreach($subjectStats as $subj => $stats)
@@ -197,6 +250,97 @@ function syncSection(form) {
                 </tbody>
             </table>
         </div>
+    @endif
+@elseif($view === 'results')
+    {{-- Results View --}}
+    @if(!$examId || !$class)
+        <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">Pick exam + class above to view results.</div>
+    @elseif($rankings->isEmpty())
+        <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">No marks found for this combination.</div>
+    @else
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+            <div style="background:#f0fdf4;color:#15803d;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                <div><span style="font-size:20px;font-weight:700;">{{ $rankings->count() }}</span> <span style="font-size:12px;">Students</span></div>
+            </div>
+            <div style="background:#fef3c7;color:#92400e;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l4 4 9-9"/></svg>
+                <div><span style="font-size:12px;">All subjects must be submitted before finalizing results.</span></div>
+            </div>
+        </div>
+
+        <div style="background:#fff;border-radius:12px;overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead style="background:#f8fafc;">
+                    <tr>
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Rank</th>
+                        <th style="text-align:left;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Roll</th>
+                        <th style="text-align:left;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Student</th>
+                        @foreach($analyticsSubjects as $subj)
+                            <th style="text-align:center;padding:10px 6px;font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">{{ $subj }}</th>
+                        @endforeach
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Avg %</th>
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">CGPA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($rankings as $r)
+                    <tr style="border-top:1px solid #f1f5f9;{{ $r['rank'] <= 3 ? 'background:#f0fdf4;' : '' }}">
+                        <td style="text-align:center;padding:10px 10px;">
+                            @if($r['rank'] === 1)
+                                <span style="background:#fbbf24;color:#92400e;border-radius:99px;padding:2px 10px;font-weight:800;font-size:12px;">#{{ $r['rank'] }}</span>
+                            @elseif($r['rank'] === 2)
+                                <span style="background:#e2e8f0;color:#475569;border-radius:99px;padding:2px 10px;font-weight:800;font-size:12px;">#{{ $r['rank'] }}</span>
+                            @elseif($r['rank'] === 3)
+                                <span style="background:#fed7aa;color:#9a3412;border-radius:99px;padding:2px 10px;font-weight:800;font-size:12px;">#{{ $r['rank'] }}</span>
+                            @else
+                                <span style="font-weight:800;color:#64748b;">#{{ $r['rank'] }}</span>
+                            @endif
+                        </td>
+                        <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']->roll_number ?: '—' }}</td>
+                        <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']->student?->name ?? '—' }}</td>
+                        @foreach($analyticsSubjects as $subj)
+                            @php $sd = $r['subjectData'][$subj] ?? null; @endphp
+                            <td style="text-align:center;padding:10px 6px;font-size:12px;">
+                                @if($sd)
+                                    <span style="font-weight:600;">{{ $sd['pct'] !== null ? $sd['pct'].'%' : '—' }}</span>
+                                    <span style="font-size:10px;color:#94a3b8;">{{ $sd['grade'] ?? '' }}</span>
+                                @else
+                                    <span style="color:#cbd5e1;">—</span>
+                                @endif
+                            </td>
+                        @endforeach
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;color:#0f766e;">{{ $r['cgpa'] !== null ? number_format($r['cgpa'], 2) : '—' }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Bulk download all classes --}}
+        @if($examId)
+        <div style="background:#fff;border-radius:12px;padding:18px 20px;margin-top:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+            <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:6px;">Download All Classes</div>
+            <div style="font-size:12px;color:#64748b;margin-bottom:12px;">Generate result sheets for every class in this exam. Each class gets its own separate file inside a ZIP.</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <form method="GET" action="{{ route('admin.marks.bulk-download') }}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <input type="hidden" name="exam" value="{{ $examId }}">
+                    <select name="format" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
+                        <option value="pdf">PDF</option>
+                        <option value="csv">CSV</option>
+                    </select>
+                    <select name="subject_wise" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
+                        <option value="1">Subject-wise (detailed)</option>
+                        <option value="0">Ranking only (% + CGPA)</option>
+                    </select>
+                    <button type="submit" style="background:linear-gradient(135deg,#1e3a5f,#4f46e5);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+                        Download ZIP
+                    </button>
+                </form>
+            </div>
+        </div>
+        @endif
     @endif
 @endif
 @endsection

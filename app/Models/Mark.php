@@ -23,6 +23,7 @@ class Mark extends Model
         'obtained_marks',
         'grade',
         'remarks',
+        'submitted_at',
         'entered_by',
     ];
 
@@ -33,6 +34,7 @@ class Mark extends Model
         'assignment_marks' => 'decimal:2',
         'total_marks'      => 'decimal:2',
         'obtained_marks'   => 'decimal:2',
+        'submitted_at'     => 'datetime',
     ];
 
     public function exam(): BelongsTo

@@ -26,6 +26,10 @@
                 WhatsApp Parent
             </a>
             @endif
+            <a href="{{ route('admin.students.icard', $student) }}"
+               class="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition">
+                ID Card
+            </a>
             <a href="{{ route('admin.students.edit', $student) }}"
                class="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition">
                 Edit

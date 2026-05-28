@@ -119,16 +119,15 @@
                 $websiteActive  = request()->routeIs('admin.customizer.*','admin.blogs.*','admin.events.*','admin.hall-of-fame.*','admin.gallery-folders.*','admin.videos.*','admin.downloads.*','admin.important-links.*','admin.pages.*','admin.inquiries.*');
             @endphp
 
-            {{-- ═══════════ ERP SECTION ═══════════ --}}
-            {{-- ── DASHBOARD ─────────────────────────── --}}
+            {{-- ═════ DASHBOARD ═════ --}}
             <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" style="margin-bottom:4px;">
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                 Dashboard
             </a>
 
-            {{-- ── ERP: ACADEMIC ─────────────────────── --}}
+            {{-- ═════ ACADEMIC ═════ --}}
             @unless($teacherOnly)
-            <details class="nav-group" {{ $academicActive ? 'open' : '' }}>
+            <details class="nav-group" {{ $academicActive ? 'open' : 'open' }}>
                 <summary class="nav-group-summary">
                     <span class="nav-section-label" style="margin:0;flex:1;">Academic</span>
                     <svg class="nav-chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
@@ -140,24 +139,20 @@
                         Academic Years
                     </a>
                     @endif
-
                     <a href="{{ route('admin.students.index') }}" class="sidebar-link {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m6-4.13a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-2-3.46"/></svg>
                         Students
                     </a>
-
                     <a href="{{ route('admin.classes.index') }}" class="sidebar-link {{ request()->routeIs('admin.classes.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.42A12 12 0 0112 21a12 12 0 01-6.16-10.42L12 14z"/></svg>
                         Classes &amp; Sections
                     </a>
-
                     @if($isAdmin)
                     <a href="{{ route('admin.subjects.index') }}" class="sidebar-link {{ request()->routeIs('admin.subjects.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                         Subjects
                     </a>
                     @endif
-
                     <a href="{{ route('admin.folders.index') }}" class="sidebar-link {{ request()->routeIs('admin.folders.*') || request()->routeIs('admin.documents.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
                         Documents
@@ -166,35 +161,9 @@
             </details>
             @endunless
 
-            {{-- ── ERP: STAFF ─────────────────────────── --}}
+            {{-- ═════ GRADEBOOK ═════ --}}
             @if($isAdmin)
-            <details class="nav-group" {{ $staffActive ? 'open' : '' }}>
-                <summary class="nav-group-summary">
-                    <span class="nav-section-label" style="margin:0;flex:1;">Staff</span>
-                    <svg class="nav-chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
-                </summary>
-                <div style="padding-top:2px;">
-                    <a href="{{ route('admin.teachers.index') }}" class="sidebar-link {{ request()->routeIs('admin.teachers.*') ? 'active' : '' }}">
-                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
-                        Teachers
-                    </a>
-                    <a href="{{ route('admin.teacher-assignments.index') }}" class="sidebar-link {{ request()->routeIs('admin.teacher-assignments.*') ? 'active' : '' }}">
-                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                        Assignments
-                    </a>
-                </div>
-            </details>
-            @elseif($isTeacher)
-            <div class="nav-section-label" style="margin-top:6px;">My Classes</div>
-            <a href="{{ route('admin.classes.index') }}" class="sidebar-link {{ request()->routeIs('admin.classes.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.42A12 12 0 0112 21a12 12 0 01-6.16-10.42L12 14z"/></svg>
-                My Classes
-            </a>
-            @endif
-
-            {{-- ── ERP: GRADEBOOK ─────────────────────── --}}
-            @if($isAdmin)
-            <details class="nav-group" {{ $gradebookActive ? 'open' : '' }}>
+            <details class="nav-group" {{ $gradebookActive ? 'open' : 'open' }}>
                 <summary class="nav-group-summary">
                     <span class="nav-section-label" style="margin:0;flex:1;">Gradebook</span>
                     <svg class="nav-chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
@@ -224,7 +193,33 @@
             </details>
             @endif
 
-            {{-- ── ERP: SETTINGS ──────────────────────── --}}
+            {{-- ═════ STAFF ═════ --}}
+            @if($isAdmin)
+            <details class="nav-group" {{ $staffActive ? 'open' : 'open' }}>
+                <summary class="nav-group-summary">
+                    <span class="nav-section-label" style="margin:0;flex:1;">Staff</span>
+                    <svg class="nav-chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+                </summary>
+                <div style="padding-top:2px;">
+                    <a href="{{ route('admin.teachers.index') }}" class="sidebar-link {{ request()->routeIs('admin.teachers.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+                        Teachers
+                    </a>
+                    <a href="{{ route('admin.teacher-assignments.index') }}" class="sidebar-link {{ request()->routeIs('admin.teacher-assignments.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                        Assignments
+                    </a>
+                </div>
+            </details>
+            @elseif($isTeacher)
+            <div class="nav-section-label" style="margin-top:6px;">My Classes</div>
+            <a href="{{ route('admin.classes.index') }}" class="sidebar-link {{ request()->routeIs('admin.classes.*') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.42A12 12 0 0112 21a12 12 0 01-6.16-10.42L12 14z"/></svg>
+                My Classes
+            </a>
+            @endif
+
+            {{-- ═════ SETTINGS ═════ --}}
             @if($isAdmin)
             <details class="nav-group" {{ $settingsActive ? 'open' : '' }}>
                 <summary class="nav-group-summary">
@@ -248,62 +243,65 @@
             </details>
             @endif
 
-            {{-- ── ERP/WEBSITE DIVIDER ────────────────── --}}
+            {{-- ═════ WEBSITE ═════ --}}
             @unless($teacherOnly)
             <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:8px 0;">
-
-            {{-- ═══════════ WEBSITE SECTION ═══════════ --}}
-            <div class="nav-section-label" style="margin-bottom:4px;">Website</div>
-
-            @if($isAdmin)
-            <a href="{{ route('admin.customizer.index') }}" class="sidebar-link {{ request()->routeIs('admin.customizer.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                Site Customizer
-            </a>
-            @endif
-
-            <a href="{{ route('admin.blogs.index') }}" class="sidebar-link {{ request()->routeIs('admin.blogs.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V7a2 2 0 012-2h10l4 4v11a2 2 0 01-2 2z"/></svg>
-                News &amp; Notices
-            </a>
-            <a href="{{ route('admin.events.index') }}" class="sidebar-link {{ request()->routeIs('admin.events.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                Events
-            </a>
-            @if($isAdmin)
-            <a href="{{ route('admin.hall-of-fame.index') }}" class="sidebar-link {{ request()->routeIs('admin.hall-of-fame.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
-                Hall of Fame
-            </a>
-            @endif
-            <a href="{{ route('admin.gallery-folders.index', ['type' => 'programs']) }}" class="sidebar-link {{ request()->routeIs('admin.gallery-folders.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h3l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
-                Gallery / Albums
-            </a>
-            <a href="{{ route('admin.videos.index') }}" class="sidebar-link {{ request()->routeIs('admin.videos.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.868V15.13a1 1 0 01-1.447.897L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                Videos
-            </a>
-            <a href="{{ route('admin.downloads.index') }}" class="sidebar-link {{ request()->routeIs('admin.downloads.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                Downloads
-            </a>
-            <a href="{{ route('admin.important-links.index') }}" class="sidebar-link {{ request()->routeIs('admin.important-links.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5m6.656-2.828a4 4 0 00-5.656 0l-3 3a4 4 0 000 5.656"/></svg>
-                Important Links
-            </a>
-            <a href="{{ route('admin.pages.index') }}" class="sidebar-link {{ request()->routeIs('admin.pages.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                Website Pages
-            </a>
-            @php $newInquiries = \App\Models\Inquiry::where('status', 'new')->count(); @endphp
-            <a href="{{ route('admin.inquiries.index') }}" class="sidebar-link {{ request()->routeIs('admin.inquiries.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                Inquiries
-                @if($newInquiries > 0)
-                    <span style="margin-left:auto;background:#dc2626;color:#fff;border-radius:99px;font-size:10px;padding:1px 7px;font-weight:700;">{{ $newInquiries }}</span>
-                @endif
-            </a>
+            <details class="nav-group" {{ $websiteActive ? 'open' : '' }}>
+                <summary class="nav-group-summary">
+                    <span class="nav-section-label" style="margin:0;flex:1;">Website</span>
+                    <svg class="nav-chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+                </summary>
+                <div style="padding-top:2px;">
+                    @if($isAdmin)
+                    <a href="{{ route('admin.customizer.index') }}" class="sidebar-link {{ request()->routeIs('admin.customizer.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                        Site Customizer
+                    </a>
+                    @endif
+                    <a href="{{ route('admin.blogs.index') }}" class="sidebar-link {{ request()->routeIs('admin.blogs.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V7a2 2 0 012-2h10l4 4v11a2 2 0 01-2 2z"/></svg>
+                        News &amp; Notices
+                    </a>
+                    <a href="{{ route('admin.events.index') }}" class="sidebar-link {{ request()->routeIs('admin.events.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Events
+                    </a>
+                    @if($isAdmin)
+                    <a href="{{ route('admin.hall-of-fame.index') }}" class="sidebar-link {{ request()->routeIs('admin.hall-of-fame.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+                        Hall of Fame
+                    </a>
+                    @endif
+                    <a href="{{ route('admin.gallery-folders.index', ['type' => 'programs']) }}" class="sidebar-link {{ request()->routeIs('admin.gallery-folders.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h3l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+                        Gallery / Albums
+                    </a>
+                    <a href="{{ route('admin.videos.index') }}" class="sidebar-link {{ request()->routeIs('admin.videos.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.868V15.13a1 1 0 01-1.447.897L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                        Videos
+                    </a>
+                    <a href="{{ route('admin.downloads.index') }}" class="sidebar-link {{ request()->routeIs('admin.downloads.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        Downloads
+                    </a>
+                    <a href="{{ route('admin.important-links.index') }}" class="sidebar-link {{ request()->routeIs('admin.important-links.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5m6.656-2.828a4 4 0 00-5.656 0l-3 3a4 4 0 000 5.656"/></svg>
+                        Important Links
+                    </a>
+                    <a href="{{ route('admin.pages.index') }}" class="sidebar-link {{ request()->routeIs('admin.pages.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Website Pages
+                    </a>
+                    @php $newInquiries = \App\Models\Inquiry::where('status', 'new')->count(); @endphp
+                    <a href="{{ route('admin.inquiries.index') }}" class="sidebar-link {{ request()->routeIs('admin.inquiries.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        Inquiries
+                        @if($newInquiries > 0)
+                            <span style="margin-left:auto;background:#dc2626;color:#fff;border-radius:99px;font-size:10px;padding:1px 7px;font-weight:700;">{{ $newInquiries }}</span>
+                        @endif
+                    </a>
+                </div>
+            </details>
             @endunless
 
         </nav>

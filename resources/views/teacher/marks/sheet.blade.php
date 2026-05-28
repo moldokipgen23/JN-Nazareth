@@ -42,11 +42,54 @@
 </div>
 @endif
 
+@php
+    $isSubmitted = $existing->first()?->submitted_at !== null;
+    $allSubmitted = $existing->isNotEmpty() && $existing->every(fn($m) => $m->submitted_at !== null);
+@endphp
+
 @if($enrollments->isEmpty())
     <div style="background:#fff;border-radius:14px;padding:48px 24px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06);">
         <div style="font-size:36px;opacity:.3;margin-bottom:10px;">👥</div>
         <div style="font-weight:600;color:#475569;">No active students in this section.</div>
     </div>
+@elseif($allSubmitted && !auth()->user()->isAdmin())
+    {{-- Read-only view for submitted marks --}}
+    <div style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;border-radius:10px;padding:11px 14px;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        Marks have been submitted and locked. Contact admin to make changes.
+    </div>
+
+    <div style="background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+        <div><span style="font-size:11px;font-weight:600;color:#64748b;">Full Marks:</span> <strong>{{ $defaultFull }}</strong></div>
+        <div><span style="font-size:11px;font-weight:600;color:#64748b;">Pass Marks:</span> <strong>{{ $defaultPass }}</strong></div>
+        <div style="margin-left:auto;"><span style="font-size:11px;color:#64748b;">Submitted {{ $existing->first()?->submitted_at?->diffForHumans() }}</span></div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">
+        <div style="width:32px;flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">Student</div>
+        <div style="width:60px;text-align:center;">Theory</div>
+        <div style="width:60px;text-align:center;">Assignment</div>
+        <div style="width:60px;text-align:center;">Total</div>
+        <div style="width:60px;text-align:center;">Grade</div>
+        <div style="width:50px;text-align:center;">Status</div>
+    </div>
+
+    @foreach($enrollments as $i => $e)
+        @php $m = $existing[$e->id] ?? null; @endphp
+        <div class="mk-row" style="opacity:.85;">
+            <div class="mk-roll">{{ $e->roll_number ?: ($i + 1) }}</div>
+            <div class="mk-name">{{ $e->student?->name ?? 'Unknown' }}</div>
+            <div style="width:60px;text-align:center;font-size:13px;font-weight:600;">{{ $m?->theory_marks ?? '—' }}</div>
+            <div style="width:60px;text-align:center;font-size:13px;font-weight:600;">{{ $m?->assignment_marks ?? '—' }}</div>
+            <div style="width:60px;text-align:center;font-size:13px;font-weight:700;">{{ $m?->total_marks ?? '—' }}</div>
+            <div style="width:60px;text-align:center;font-size:13px;font-weight:800;color:#0f766e;">{{ $m?->grade ?? '—' }}</div>
+            <div style="width:50px;text-align:center;">
+                @php $s = $m?->status() ?? 'ungraded'; @endphp
+                <span class="mk-status {{ $s }}">{{ $s === 'ungraded' ? '—' : strtoupper($s) }}</span>
+            </div>
+        </div>
+    @endforeach
 @else
 <form method="POST" action="{{ route('teacher.marks.store', ['exam' => $exam->id, 'class' => $class, 'section' => $section, 'subject' => $subject]) }}">
     @csrf
@@ -108,11 +151,18 @@
     @endforeach
 
     <div class="save-bar">
-        <button type="submit" style="width:100%;padding:14px;background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(13,148,136,.3);">
-            Save Marks ({{ $enrollments->count() }} students)
-        </button>
+        <div style="display:flex;gap:10px;">
+            <button type="submit" name="action" value="draft" style="flex:1;padding:14px;background:#fff;color:#0f766e;border:2px solid #0f766e;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">
+                Save as Draft
+            </button>
+            <button type="submit" name="action" value="submit" style="flex:1;padding:14px;background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(13,148,136,.3);"
+                    onclick="return confirm('Submit marks for all students? This will lock further editing.')">
+                Submit &amp; Lock
+            </button>
+        </div>
     </div>
 </form>
+@endif
 
 <div id="studentModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center;" onclick="if(event.target===this)closeStd()">
     <div style="background:#fff;border-radius:16px;max-width:400px;width:90%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative;">

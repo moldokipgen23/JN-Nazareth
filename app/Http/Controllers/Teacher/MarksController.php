@@ -95,6 +95,14 @@ class MarksController extends Controller
         $this->authorizeSubject($class, $section, $subject);
         $this->ensureExamInYear($exam, $year);
 
+        // Block editing if already submitted (unless admin reset)
+        $anySubmitted = Mark::where('exam_id', $exam->id)
+            ->where('subject', $subject)->where('class', $class)->where('section', $section)
+            ->whereNotNull('submitted_at')->exists();
+        if ($anySubmitted && !auth()->user()->isAdmin()) {
+            return back()->with('error', 'Marks have already been submitted for this subject. Contact admin to re-open.');
+        }
+
         $data = $request->validate([
             'full_marks'             => 'required|numeric|min:1|max:9999',
             'pass_marks'             => 'required|numeric|min:0|lte:full_marks',
@@ -104,11 +112,14 @@ class MarksController extends Controller
             'marks.*.total'          => 'nullable|numeric|min:0',
             'marks.*.grade'          => 'nullable|string|max:5',
             'marks.*.remarks'        => 'nullable|string|max:500',
+            'action'                 => 'nullable|in:draft,submit',
         ]);
 
         $enrollmentIds = StudentEnrollment::forActiveYear()->active()
             ->where('class', $class)->where('section', $section)
             ->pluck('id')->all();
+
+        $isSubmit = $request->input('action') === 'submit';
 
         $saved = 0;
         foreach ($data['marks'] as $enrollmentId => $row) {
@@ -148,17 +159,22 @@ class MarksController extends Controller
                     'obtained_marks'   => ($total === '' ? null : $total),
                     'grade'            => $grade,
                     'remarks'          => $row['remarks'] ?? null,
+                    'submitted_at'     => $isSubmit ? now() : null,
                     'entered_by'       => auth()->id(),
                 ]
             );
             $saved++;
         }
 
+        $msg = $isSubmit
+            ? "Submitted marks for {$saved} student".($saved === 1 ? '' : 's').'.'
+            : "Saved draft for {$saved} student".($saved === 1 ? '' : 's').'.';
+
         return redirect()
             ->route('teacher.marks.sheet', [
                 'exam' => $exam->id, 'class' => $class, 'section' => $section, 'subject' => $subject,
             ])
-            ->with('success', "Saved marks for {$saved} student".($saved === 1 ? '' : 's').'.');
+            ->with('success', $msg);
     }
 
     // ────────────────────────────────────────────────────────────────────

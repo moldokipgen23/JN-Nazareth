@@ -43,6 +43,11 @@ class Exam extends Model
         return $this->hasMany(Mark::class);
     }
 
+    public function questions(): HasMany
+    {
+        return $this->hasMany(ExamQuestion::class);
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
