@@ -26,52 +26,52 @@
         }
     @endphp
     <style>
-        @page { margin:0; }
-        body { margin:0; padding:0; font-family:'DejaVu Sans',sans-serif; background:#e5e7eb; }
-        .card { width:340px; margin:8px auto; background:#fff; border:1px solid #d1d5db; }
+        @page { margin:6mm; }
+        body { margin:0; padding:0; font-family:'DejaVu Sans',sans-serif; font-size:7pt; }
+        .card { width:90mm; margin:0 auto; background:#fff; border:0.5pt solid #d1d5db; }
 
         /* === HEADER (navy blue) === */
-        .hdr { background:#1e3a8a; padding:14px 16px 18px; text-align:center; color:#fff; }
-        .hdr h1 { font-size:16px; font-weight:800; margin:0; letter-spacing:.5px; line-height:1.15; }
-        .hdr .addr { font-size:9px; margin:4px 0 2px; font-weight:500; line-height:1.3; }
-        .hdr .recog { font-size:8.5px; margin:0; font-weight:600; font-style:italic; }
+        .hdr { background:#1e3a8a; padding:3mm 3mm 3.5mm; text-align:center; color:#fff; }
+        .hdr h1 { font-size:10pt; font-weight:800; margin:0; letter-spacing:.3pt; line-height:1.1; }
+        .hdr .addr { font-size:6pt; margin:1mm 0 0.5mm; line-height:1.25; }
+        .hdr .recog { font-size:5.5pt; margin:0; font-style:italic; font-weight:600; }
 
         /* === EMBLEM ROW === */
-        .emblem-row { background:#fff; padding:8px 14px 6px; position:relative; }
+        .emblem-row { background:#fff; padding:2mm 3mm 1mm; }
         .emblem-row table { width:100%; border-collapse:collapse; }
         .emblem-row td { vertical-align:middle; }
-        .emblem-row .emblem-img { height:70px; display:block; }
-        .emblem-row .valid { font-size:10px; color:#b91c1c; font-style:italic; font-weight:700; text-align:right; }
+        .emblem-row .emblem-img { height:15mm; }
+        .emblem-row .valid { font-size:6.5pt; color:#b91c1c; font-style:italic; font-weight:700; text-align:right; }
 
         /* === IDENTITY CARD RIBBON === */
-        .ribbon { background:#7c1d1d; padding:7px 0; text-align:center; }
-        .ribbon h2 { font-size:15px; font-weight:800; color:#fff; margin:0; letter-spacing:2px; text-shadow:1px 1px 1px rgba(0,0,0,.3); }
+        .ribbon { background:#7c1d1d; padding:1.5mm 0; text-align:center; }
+        .ribbon h2 { font-size:9pt; font-weight:800; color:#fff; margin:0; letter-spacing:1pt; }
 
         /* === PHOTO === */
-        .photo-wrap { text-align:center; padding:14px 0 10px; background:#fff; }
-        .photo { width:110px; height:110px; border-radius:55px; border:3px solid #1e3a8a; object-fit:cover; }
-        .photo-placeholder { width:110px; height:110px; border-radius:55px; border:3px solid #1e3a8a; background:#dbeafe; text-align:center; line-height:104px; font-size:42px; font-weight:800; color:#1e3a8a; display:inline-block; }
+        .photo-wrap { text-align:center; padding:3mm 0 2mm; background:#fff; }
+        .photo { width:22mm; height:22mm; border-radius:11mm; border:0.7mm solid #1e3a8a; }
+        .photo-placeholder { width:22mm; height:22mm; border-radius:11mm; border:0.7mm solid #1e3a8a; background:#dbeafe; text-align:center; line-height:21mm; font-size:13pt; font-weight:800; color:#1e3a8a; display:inline-block; }
 
         /* === NAME RIBBON === */
-        .name-ribbon { background:#7c1d1d; padding:7px 0; text-align:center; }
-        .name-ribbon h3 { font-size:14px; font-weight:800; color:#fff; margin:0; letter-spacing:.8px; }
+        .name-ribbon { background:#7c1d1d; padding:1.5mm 0; text-align:center; }
+        .name-ribbon h3 { font-size:8.5pt; font-weight:800; color:#fff; margin:0; letter-spacing:.5pt; }
 
         /* === DETAILS === */
-        .details { padding:10px 16px 6px; background:#fff; }
+        .details { padding:2mm 4mm 1mm; background:#fff; }
         .details table { width:100%; border-collapse:collapse; }
-        .details td { padding:2px 0; font-size:10.5px; color:#0f172a; vertical-align:top; line-height:1.4; }
-        .details td.lbl { width:38%; font-style:italic; font-weight:500; color:#1e293b; }
-        .details td.colon { width:6%; }
+        .details td { padding:0.6mm 0; font-size:6.5pt; color:#0f172a; vertical-align:top; line-height:1.3; }
+        .details td.lbl { width:38%; font-style:italic; }
+        .details td.colon { width:5%; }
         .details td.val { font-weight:700; }
 
         /* === SIGNATURE === */
-        .sig-row { padding:0 16px 8px; text-align:right; }
-        .sig-row img { height:24px; display:inline-block; margin-bottom:-4px; }
-        .sig-row .sig-lbl { font-size:9.5px; font-weight:700; font-style:italic; color:#0f172a; display:block; }
+        .sig-row { padding:0 4mm 1mm; text-align:right; }
+        .sig-row img { height:5mm; display:inline-block; margin-bottom:-0.5mm; }
+        .sig-row .sig-lbl { font-size:6pt; font-weight:700; font-style:italic; color:#0f172a; display:block; }
 
         /* === FOOTER (navy) === */
-        .ftr { background:#1e3a8a; padding:6px 14px; text-align:left; }
-        .ftr p { margin:0; font-size:9px; font-weight:700; color:#fff; }
+        .ftr { background:#1e3a8a; padding:1.5mm 3mm; }
+        .ftr p { margin:0; font-size:5.5pt; font-weight:700; color:#fff; }
     </style>
 </head>
 <body>
@@ -88,7 +88,7 @@
     <div class="emblem-row">
         <table>
             <tr>
-                <td style="width:80px;">
+                <td style="width:18mm;">
                     @if($emblemPath)
                         <img src="{{ $emblemPath }}" class="emblem-img">
                     @elseif($logoPath)
