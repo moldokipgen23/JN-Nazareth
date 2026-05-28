@@ -11,10 +11,9 @@ use App\Models\Download;
 use App\Models\Event;
 use App\Models\GalleryFolder;
 use App\Models\Inquiry;
-use App\Models\Question;
+use App\Models\ExamQuestion;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
-use App\Models\TeacherNote;
 
 class DashboardController extends Controller
 {
@@ -74,8 +73,8 @@ class DashboardController extends Controller
         $todayPct      = $todayExpected > 0 ? round(($todayMarked / $todayExpected) * 100) : 0;
 
         // Pending reviews
-        $pendingQuestions = $year ? Question::forActiveYear()->pending()->count() : 0;
-        $pendingNotes     = $year ? TeacherNote::forActiveYear()->pending()->count() : 0;
+        $pendingQuestions = $year ? ExamQuestion::where('academic_year_id', $year->id)->where('status', 'pending')->count() : 0;
+        $pendingNotes     = 0;
 
         // Marks distribution (basic)
         $totalMarked  = 0;
