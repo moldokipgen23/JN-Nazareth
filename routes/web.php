@@ -392,7 +392,7 @@ Route::prefix('admin')
 
 Route::prefix('teacher')
     ->name('teacher.')
-    ->middleware(['auth', 'role:teacher,admin'])
+    ->middleware(['teacher.session', 'auth', 'role:teacher,admin'])
     ->group(function () {
         Route::get('/',         [TeacherPortalController::class, 'dashboard'])->name('dashboard');
         Route::get('/classes',  [TeacherPortalController::class, 'classes'])->name('classes');
