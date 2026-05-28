@@ -26,6 +26,22 @@ class StudentController extends Controller
         $selectedYearId = $workingYear?->id;
         $enrollmentStatus = $request->input('enrollment_status', 'active');
 
+        // Unassigned students view — no_class=1
+        if ($request->boolean('no_class')) {
+            $query = Student::whereNull('class');
+            if ($search = $request->input('search')) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('father_name', 'like', "%{$search}%");
+                });
+            }
+            $students = $query->orderBy('name')->paginate(50)->withQueryString();
+            $noClass = true;
+            return view('admin.students.index', compact(
+                'students', 'noClass', 'classes', 'currentClass', 'selectedSection', 'selectedYearId', 'enrollmentStatus'
+            ));
+        }
+
         if (!$currentClass) {
             // Class grid view — show count per class
             $classCounts = StudentEnrollment::where('academic_year_id', $selectedYearId)

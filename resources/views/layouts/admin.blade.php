@@ -351,7 +351,7 @@
                 @if($allYears->count() > 1)
                 <form method="POST" action="{{ route('admin.working-year.switch') }}" style="margin:0;">
                     @csrf
-                    <select name="year_id" onchange="this.form.submit()" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;">
+                    <select name="year_id" onchange="this.form.submit()" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;min-width:150px;">
                         @foreach($allYears as $yr)
                         <option value="{{ $yr->id }}" {{ ($workingYear->id ?? null) === $yr->id ? 'selected' : '' }}>
                             {{ $yr->name }} {{ $yr->is_active ? '(Active)' : '' }}

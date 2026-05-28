@@ -137,8 +137,16 @@
 </div>
 @endif
 
+{{-- UNASSIGNED STUDENTS BANNER --}}
+@if(isset($noClass) && $noClass)
+<div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span style="font-size:13px;font-weight:600;color:#92400e;">⚠ Showing students with no class assigned. Edit each student to assign a class.</span>
+    <a href="{{ route('admin.students.index') }}" style="font-size:12px;color:#0f766e;font-weight:600;text-decoration:none;">← Back to all students</a>
+</div>
+@endif
+
 {{-- STUDENT TABLE --}}
-@if($currentClass && $selectedSection && isset($students))
+@if((($currentClass && $selectedSection) || isset($noClass)) && isset($students))
 {{-- Header actions --}}
 <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
     <a href="{{ route('admin.students.import.form') }}"
