@@ -267,6 +267,20 @@
     </form>
     @endif
 
+    {{-- ========== EVENTS ========== --}}
+    @if($key === 'events')
+    <form method="POST" action="{{ route('admin.customizer.save') }}">
+      @csrf
+      <p class="subnote">The next 3 upcoming events from the <a href="{{ route('admin.events.index') }}" style="color:#0f766e;font-weight:600;">Events</a> module are shown on the homepage. To change which events appear, add or edit them there.</p>
+      <div class="g2">
+        {!! $inp('sec_label_events','Section Label',"What's Happening") !!}
+        {!! $inp('sec_title_events','Section Title','Upcoming Events') !!}
+      </div>
+      <div class="g1">{!! $ta('sec_sub_events','Section Subtitle (optional)','Join us at our upcoming school programmes, parent-teacher meetings and celebrations.') !!}</div>
+      <button class="save-btn">Save Events</button>
+    </form>
+    @endif
+
     {{-- ========== NEWS ========== --}}
     @if($key === 'news')
     <form method="POST" action="{{ route('admin.customizer.save') }}">
