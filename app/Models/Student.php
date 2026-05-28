@@ -23,6 +23,7 @@ class Student extends Model
         'academic_year',
         'father_name',
         'mother_name',
+        'parent_phone',
         'guardian_name',
         'guardian_email',
         'guardian_relation',
@@ -62,6 +63,18 @@ class Student extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    public function maskedAadhar(): string
+    {
+        if (!$this->aadhar_number) {
+            return '';
+        }
+        $digits = preg_replace('/\s+/', '', $this->aadhar_number);
+        if (strlen($digits) < 4) {
+            return $digits;
+        }
+        return 'XXXX XXXX ' . substr($digits, -4);
     }
 
     public static function classes(): array
