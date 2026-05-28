@@ -107,7 +107,7 @@
 
 {{-- Quick links for pending items --}}
 @php
-    $pendingCount = \App\Models\Question::forActiveYear()->pending()->count() + \App\Models\TeacherNote::forActiveYear()->pending()->count();
+    $pendingCount = \App\Models\ExamQuestion::forActiveYear()->pending()->count() + \App\Models\NoteAssignment::forActiveYear()->pending()->count();
 @endphp
 @if($pendingCount>0)
 <div style="margin-top:18px;">
