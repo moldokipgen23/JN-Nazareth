@@ -36,4 +36,10 @@ class NoteAssignment extends Model
             ? $query->where('academic_year_id', $year->id)
             : $query->whereRaw('1 = 0');
     }
+
+    // NoteAssignment has no status field — pending() always returns empty set
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->whereRaw('1 = 0');
+    }
 }
