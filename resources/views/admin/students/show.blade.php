@@ -5,6 +5,7 @@
 @php
     $waDigits = preg_replace('/\D+/', '', $student->parent_phone ?? $student->phone ?? '');
     if (strlen($waDigits) === 10) { $waDigits = '91' . $waDigits; }
+    $activeTab = request('tab', 'personal');
 @endphp
 <div class="space-y-6">
 
@@ -16,7 +17,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
             </a>
-            <h2 class="text-xl font-bold text-gray-900">Student Profile</h2>
+            <h2 class="text-xl font-bold text-gray-900">{{ $student->name }}</h2>
         </div>
         <div class="flex gap-2 flex-wrap">
             @if($waDigits)
@@ -25,45 +26,6 @@
                 WhatsApp Parent
             </a>
             @endif
-            <a href="{{ route('admin.students.icard', $student) }}"
-               class="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition">
-                ID Card
-            </a>
-            @if($student->currentEnrollment)
-                @php
-                    $exams = \App\Models\Exam::where('academic_year_id', $student->currentEnrollment->academic_year_id)
-                        ->where('status', 'published')
-                        ->orderBy('held_on')->get();
-                @endphp
-                <div class="relative" x-data="{ open: false }">
-                <button @click="open = !open"
-                        class="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition">
-                    Result Card
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </button>
-                <div x-show="open" @click.outside="open = false"
-                     class="absolute right-0 mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                    @if($exams->isNotEmpty())
-                    @foreach($exams as $exam)
-                    <a href="{{ route('admin.students.result-card', ['student' => $student, 'exam' => $exam]) }}"
-                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 first:rounded-t-lg">
-                        {{ $exam->name }}
-                    </a>
-                    @endforeach
-                    @endif
-                    <a href="{{ route('admin.students.report-card.full-year', $student) }}"
-                       class="block px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 {{ $exams->isNotEmpty() ? '' : 'first:rounded-t-lg' }} last:rounded-b-lg border-t {{ $exams->isNotEmpty() ? 'border-gray-100' : '' }}">
-                        Full Year Report
-                    </a>
-                </div>
-            </div>
-            @endif
-            <a href="{{ route('admin.students.passport', $student) }}"
-               class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
-                Passport
-            </a>
             <a href="{{ route('admin.students.edit', $student) }}"
                class="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition">
                 Edit
@@ -78,7 +40,32 @@
         </div>
     </div>
 
-    {{-- Profile Card --}}
+    {{-- Tabs --}}
+    <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:0;">
+        <a href="{{ route('admin.students.show', ['student' => $student, 'tab' => 'personal']) }}"
+           style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid {{ $activeTab === 'personal' ? '#0f766e' : 'transparent' }};color:{{ $activeTab === 'personal' ? '#0f766e' : '#94a3b8' }};margin-bottom:-2px;transition:all .15s;">
+            Personal
+        </a>
+        <a href="{{ route('admin.students.show', ['student' => $student, 'tab' => 'enrollment']) }}"
+           style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid {{ $activeTab === 'enrollment' ? '#0f766e' : 'transparent' }};color:{{ $activeTab === 'enrollment' ? '#0f766e' : '#94a3b8' }};margin-bottom:-2px;transition:all .15s;">
+            Enrollment
+        </a>
+        <a href="{{ route('admin.students.show', ['student' => $student, 'tab' => 'marks']) }}"
+           style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid {{ $activeTab === 'marks' ? '#0f766e' : 'transparent' }};color:{{ $activeTab === 'marks' ? '#0f766e' : '#94a3b8' }};margin-bottom:-2px;transition:all .15s;">
+            Marks
+        </a>
+        <a href="{{ route('admin.students.show', ['student' => $student, 'tab' => 'attendance']) }}"
+           style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid {{ $activeTab === 'attendance' ? '#0f766e' : 'transparent' }};color:{{ $activeTab === 'attendance' ? '#0f766e' : '#94a3b8' }};margin-bottom:-2px;transition:all .15s;">
+            Attendance
+        </a>
+        <a href="{{ route('admin.students.show', ['student' => $student, 'tab' => 'documents']) }}"
+           style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid {{ $activeTab === 'documents' ? '#0f766e' : 'transparent' }};color:{{ $activeTab === 'documents' ? '#0f766e' : '#94a3b8' }};margin-bottom:-2px;transition:all .15s;">
+            Documents
+        </a>
+    </div>
+
+    @if($activeTab === 'personal')
+    {{-- Personal Info --}}
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div class="bg-gradient-to-r from-teal-600 to-teal-700 h-24"></div>
         <div class="px-6 pb-6">
@@ -170,7 +157,9 @@
             </div>
         </div>
     </div>
+    @endif
 
+    @if($activeTab === 'enrollment')
     {{-- Enrollment History + Change Status --}}
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
@@ -181,7 +170,6 @@
             </button>
         </div>
 
-        {{-- Change status inline form --}}
         <div id="status-form" class="hidden px-6 py-4 bg-amber-50 border-b border-amber-100">
             <form method="POST" action="{{ route('admin.students.enrollment-status', $student) }}"
                   class="flex flex-wrap gap-3 items-end">
@@ -220,6 +208,7 @@
                         <th class="px-6 py-3">Year</th>
                         <th class="px-6 py-3">Class</th>
                         <th class="px-6 py-3">Section</th>
+                        <th class="px-6 py-3">Roll</th>
                         <th class="px-6 py-3">Status</th>
                         <th class="px-6 py-3 hidden sm:table-cell">Enrolled</th>
                         <th class="px-6 py-3 hidden sm:table-cell">Left</th>
@@ -232,6 +221,7 @@
                         <td class="px-6 py-3 font-semibold text-gray-800">{{ $enr->academicYear?->name ?? '—' }}</td>
                         <td class="px-6 py-3 text-gray-700">{{ $enr->class }}</td>
                         <td class="px-6 py-3 text-gray-500">{{ $enr->section ?? '—' }}</td>
+                        <td class="px-6 py-3 text-gray-500">{{ $enr->roll_number ?? '—' }}</td>
                         <td class="px-6 py-3">
                             @php
                                 $colours = ['active'=>'bg-green-100 text-green-700','dropped'=>'bg-red-100 text-red-600','transferred'=>'bg-blue-100 text-blue-700','graduated'=>'bg-purple-100 text-purple-700'];
@@ -250,11 +240,122 @@
         <div class="text-center py-8 text-gray-400 text-sm">No enrollment records found.</div>
         @endif
     </div>
+    @endif
 
+    @if($activeTab === 'marks')
+    {{-- Marks Summary --}}
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-900">Marks</h3>
+            <div class="flex gap-2">
+                @if($student->currentEnrollment)
+                    @php $exams = \App\Models\Exam::where('academic_year_id', $student->currentEnrollment->academic_year_id)->where('status','published')->orderBy('held_on')->get(); @endphp
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition">
+                            Result Card <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" @click.outside="open = false" class="absolute right-0 mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                            @foreach($exams as $exam)
+                            <a href="{{ route('admin.students.result-card', ['student' => $student, 'exam' => $exam]) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">{{ $exam->name }}</a>
+                            @endforeach
+                            <a href="{{ route('admin.students.report-card.full-year', $student) }}" class="block px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 rounded-b-lg border-t border-gray-100">Full Year Report</a>
+                        </div>
+                    </div>
+                @endif
+                <a href="{{ route('admin.students.passport', $student) }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">Passport</a>
+            </div>
+        </div>
+        @php
+            $yearEnrollments = $student->enrollments->sortByDesc('academic_year_id');
+        @endphp
+        @forelse($yearEnrollments as $enr)
+            @php
+                $ay = $enr->academicYear;
+                $marks = \App\Models\Mark::where('student_enrollment_id', $enr->id)->where('academic_year_id', $ay->id)->with('exam')->get()->groupBy('exam_id');
+            @endphp
+            @if($marks->isNotEmpty())
+            <div class="px-6 py-3 border-b border-gray-100">
+                <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">{{ $ay?->name ?? 'Unknown Year' }}</div>
+                @foreach($marks as $examId => $examMarks)
+                    @php $exam = $examMarks->first()->exam; @endphp
+                    <div style="margin-bottom:10px;">
+                        <div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">{{ $exam?->name ?? 'Exam' }}</div>
+                        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                            <thead><tr style="background:#f8fafc;"><th style="padding:4px 8px;text-align:left;">Subject</th><th style="padding:4px 8px;text-align:center;">Obtained</th><th style="padding:4px 8px;text-align:center;">Full</th><th style="padding:4px 8px;text-align:center;">%</th><th style="padding:4px 8px;text-align:center;">Grade</th></tr></thead>
+                            <tbody>
+                                @foreach($examMarks as $m)
+                                <tr style="border-top:1px solid #f1f5f9;">
+                                    <td style="padding:4px 8px;">{{ $m->subject }}</td>
+                                    <td style="padding:4px 8px;text-align:center;">{{ $m->total_marks ?? $m->obtained_marks ?? '—' }}</td>
+                                    <td style="padding:4px 8px;text-align:center;">{{ $m->full_marks }}</td>
+                                    <td style="padding:4px 8px;text-align:center;font-weight:600;">{{ $m->percentage() !== null ? $m->percentage().'%' : '—' }}</td>
+                                    <td style="padding:4px 8px;text-align:center;">{{ $m->grade ?? '—' }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endforeach
+            </div>
+            @endif
+        @empty
+            <div class="text-center py-10 text-gray-400 text-sm">No marks found.</div>
+        @endforelse
+    </div>
+    @endif
+
+    @if($activeTab === 'attendance')
+    {{-- Attendance Summary --}}
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-900">Attendance</h3>
+        </div>
+        @php
+            $yearEnrollments = $student->enrollments->sortByDesc('academic_year_id');
+        @endphp
+        @forelse($yearEnrollments as $enr)
+            @php
+                $ay = $enr->academicYear;
+                $records = \App\Models\AttendanceRecord::where('student_enrollment_id', $enr->id)->where('academic_year_id', $ay->id)->get();
+                $summary = ['present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0];
+                foreach ($records as $r) { $summary[$r->status] = ($summary[$r->status] ?? 0) + 1; }
+                $totalDays = array_sum($summary);
+                $presentDays = $summary['present'] + $summary['late'] + $summary['excused'];
+                $attPct = $totalDays > 0 ? round($presentDays / $totalDays * 100, 1) : null;
+            @endphp
+            <div class="px-6 py-3 border-b border-gray-100">
+                <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">{{ $ay?->name ?? 'Unknown Year' }}</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;">
+                    <div style="background:#dcfce7;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:18px;font-weight:700;color:#15803d;">{{ $summary['present'] }}</div><div style="font-size:10px;color:#15803d;font-weight:600;">Present</div></div>
+                    <div style="background:#fee2e2;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:18px;font-weight:700;color:#b91c1c;">{{ $summary['absent'] }}</div><div style="font-size:10px;color:#b91c1c;font-weight:600;">Absent</div></div>
+                    <div style="background:#fef3c7;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:18px;font-weight:700;color:#a16207;">{{ $summary['late'] }}</div><div style="font-size:10px;color:#a16207;font-weight:600;">Late</div></div>
+                    <div style="background:#e0e7ff;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:18px;font-weight:700;color:#4338ca;">{{ $summary['excused'] }}</div><div style="font-size:10px;color:#4338ca;font-weight:600;">Excused</div></div>
+                    <div style="background:#f1f5f9;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:18px;font-weight:700;color:#0f172a;">{{ $attPct !== null ? $attPct.'%' : '—' }}</div><div style="font-size:10px;color:#64748b;font-weight:600;">Attendance</div></div>
+                </div>
+                @if($records->count() > 0 && $records->count() <= 31)
+                <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;">
+                    @foreach($records->sortByDesc('date') as $r)
+                        @php
+                            $dotBg = match($r->status) { 'present'=>'#15803d', 'absent'=>'#dc2626', 'late'=>'#d97706', 'excused'=>'#6366f1' };
+                            $dotTitle = $r->date.' - '.ucfirst($r->status);
+                        @endphp
+                        <span title="{{ $dotTitle }}" style="width:24px;height:24px;border-radius:6px;background:{{ $dotBg }};display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;">{{ substr($r->date, 8, 2) }}</span>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+        @empty
+            <div class="text-center py-10 text-gray-400 text-sm">No attendance records found.</div>
+        @endforelse
+    </div>
+    @endif
+
+    @if($activeTab === 'documents')
     {{-- Documents --}}
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <h3 class="font-semibold text-gray-900">Documents</h3>
+            <a href="{{ route('admin.students.icard', $student) }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition">ID Card</a>
         </div>
 
         <div class="px-6 py-4 bg-gray-50 border-b border-gray-100">
@@ -298,7 +399,7 @@
                                     <div class="flex items-center justify-end gap-2">
                                         <a href="{{ route('admin.student-files.download', $file) }}"
                                            class="px-3 py-1.5 text-xs font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition">Download</a>
-                                        <form method="POST" action="{{ route('admin.student-files.destroy', $file) }}"
+                                        <form method="POST" action="{{ route('admin.student-files.destroy', $file)}}"
                                               onsubmit="return confirm('Delete this file?')">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition">Delete</button>
@@ -316,5 +417,6 @@
             </div>
         @endif
     </div>
+    @endif
 </div>
 @endsection

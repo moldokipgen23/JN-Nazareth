@@ -47,6 +47,11 @@
     </div>
     @endif
     <button type="submit" style="background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Filter</button>
+    @if($view === 'daily' && $class)
+        <a href="{{ route('admin.attendance.export', ['class' => $class, 'section' => $section, 'date' => $date]) }}" style="background:#fff;color:#0f766e;border:1px solid #0f766e;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">Export CSV</a>
+    @elseif($view !== 'daily')
+        <a href="{{ route('admin.attendance.export', ['class' => $class, 'section' => $section, 'date' => $date]) }}" style="background:#fff;color:#0f766e;border:1px solid #0f766e;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">Export CSV</a>
+    @endif
 </form>
 
 @if(!$class)
@@ -114,6 +119,33 @@
             </table>
         </div>
     @endif
+
+    {{-- Bulk Override --}}
+    <details style="margin-top:16px;background:#fff8f0;border:1px solid #fde68a;border-radius:12px;padding:12px 16px;">
+        <summary style="font-size:13px;font-weight:700;color:#92400e;cursor:pointer;">Bulk Attendance Override</summary>
+        <form method="POST" action="{{ route('admin.attendance.bulk') }}" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+            @csrf
+            <input type="hidden" name="class" value="{{ $class }}">
+            <input type="hidden" name="section" value="{{ $section }}">
+            <div>
+                <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Status</label>
+                <select name="status" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
+                    @foreach(\App\Models\AttendanceRecord::STATUSES as $st)
+                        <option value="{{ $st }}">{{ ucfirst($st) }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Start Date</label>
+                <input type="date" name="start_date" required style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
+            </div>
+            <div>
+                <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">End Date</label>
+                <input type="date" name="end_date" required style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
+            </div>
+            <button type="submit" style="background:#d97706;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Apply Bulk</button>
+        </form>
+    </details>
 
 @else
     {{-- Analytics View --}}

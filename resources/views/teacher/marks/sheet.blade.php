@@ -88,7 +88,7 @@
         @endphp
         <div class="mk-row" data-row="{{ $e->id }}">
             <div class="mk-roll">{{ $e->roll_number ?: ($i + 1) }}</div>
-            <div class="mk-name">{{ $e->student?->name ?? 'Unknown' }}</div>
+            <div class="mk-name" style="cursor:pointer;" onclick="showStd({{ $e->student?->id ?? 'null' }}, '{{ addslashes($e->student?->name ?? 'Unknown') }}', '{{ addslashes($e->student?->father_name ?? '') }}', '{{ addslashes($e->student?->mother_name ?? '') }}', '{{ $e->student?->parent_phone ?? '' }}', '{{ addslashes($e->student?->address ?? '') }}')">{{ $e->student?->name ?? 'Unknown' }}</div>
             <div class="mk-input-group" style="display:flex;gap:6px;align-items:center;">
                 <input type="number" name="marks[{{ $e->id }}][theory]" value="{{ $theory }}"
                        step="0.01" min="0" placeholder="T"
@@ -114,8 +114,35 @@
     </div>
 </form>
 
+<div id="studentModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center;" onclick="if(event.target===this)closeStd()">
+    <div style="background:#fff;border-radius:16px;max-width:400px;width:90%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative;">
+        <button onclick="closeStd()" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;">✕</button>
+        <div id="studentModalContent"></div>
+    </div>
+</div>
+
 <script>
 var gradeRanges = @json(\App\Models\GradeScale::active()->orderBy('min_percent')->orderBy('name')->get()->map(fn($g) => ['min' => (float)$g->min_percent, 'max' => (float)$g->max_percent, 'name' => $g->name, 'point' => (float)$g->grade_point])->toArray());
+
+function showStd(id, name, father, mother, phone, address) {
+    if (!id) return;
+    document.getElementById('studentModalContent').innerHTML = `
+        <div style="text-align:center;margin-bottom:16px;">
+            <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#0f766e,#14b8a6);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:22px;font-weight:800;color:#fff;">${name[0]}</div>
+            <div style="font-size:16px;font-weight:700;color:#0f172a;">${name}</div>
+        </div>
+        <div style="display:grid;gap:10px;">
+            ${father ? `<div style="display:flex;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-radius:8px;"><span style="color:#64748b;font-size:12px;">Father</span><span style="font-weight:600;font-size:13px;color:#0f172a;">${father}</span></div>` : ''}
+            ${mother ? `<div style="display:flex;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-radius:8px;"><span style="color:#64748b;font-size:12px;">Mother</span><span style="font-weight:600;font-size:13px;color:#0f172a;">${mother}</span></div>` : ''}
+            ${phone ? `<div style="display:flex;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-radius:8px;"><span style="color:#64748b;font-size:12px;">Parent Phone</span><span style="font-weight:600;font-size:13px;color:#0f172a;">${phone}</span></div>` : ''}
+            ${address ? `<div style="display:flex;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-radius:8px;"><span style="color:#64748b;font-size:12px;">Address</span><span style="font-weight:600;font-size:13px;color:#0f172a;">${address}</span></div>` : ''}
+        </div>
+    `;
+    document.getElementById('studentModal').style.display = 'flex';
+}
+function closeStd() {
+    document.getElementById('studentModal').style.display = 'none';
+}
 
 function recalc(input) {
     var row = input.closest('.mk-row');

@@ -9,6 +9,7 @@ use App\Models\Mark;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Response;
 
 class MarksController extends Controller
 {
@@ -132,6 +133,54 @@ class MarksController extends Controller
             'rankings' => $rankings,
             'analyticsSubjects' => $analyticsSubjects,
             'subjectStats' => $subjectStats,
+        ]);
+    }
+
+    public function exportCsv(Request $request)
+    {
+        $year = AcademicYear::current();
+        $examId  = $request->query('exam');
+        $class   = $request->query('class');
+        $section = $request->query('section');
+        $subject = $request->query('subject');
+
+        if (!$year || !$examId || !$class || !$subject) {
+            return back()->with('error', 'Select exam, class, and subject to export.');
+        }
+
+        $records = Mark::where('academic_year_id', $year->id)
+            ->where('exam_id', $examId)
+            ->where('class', $class)
+            ->when($section, fn ($q) => $q->where('section', $section))
+            ->where('subject', $subject)
+            ->with(['enrollment.student'])
+            ->get()
+            ->sortBy(fn ($r) => [(int) ($r->enrollment->roll_number ?: 999999), $r->enrollment?->student?->name ?? '']);
+
+        $examName = Exam::find($examId)?->name ?? 'exam';
+
+        $csv = "Roll No,Student Name,Class,Section,Subject,Theory,Assignment,Total,Full Marks,Pass Marks,Grade,Status\n";
+        foreach ($records as $r) {
+            $status = $r->status();
+            $csv .= implode(',', [
+                $r->enrollment->roll_number ?? '',
+                '"'.str_replace('"', '""', $r->enrollment->student?->name ?? '').'"',
+                $r->class,
+                $r->section,
+                $r->subject,
+                $r->theory_marks ?? '',
+                $r->assignment_marks ?? '',
+                $r->total_marks ?? '',
+                $r->full_marks,
+                $r->pass_marks,
+                $r->grade ?? '',
+                $status,
+            ])."\n";
+        }
+
+        return Response::make($csv, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="marks-'.$examName.'-'.$class.'-'.$subject.'.csv"',
         ]);
     }
 

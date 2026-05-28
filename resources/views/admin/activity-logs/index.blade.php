@@ -52,12 +52,22 @@
                     @endif
                 </select>
             </div>
+            <div>
+                <label for="date_from" class="block text-xs font-medium text-gray-600 mb-1">Date From</label>
+                <input type="date" id="date_from" name="date_from" value="{{ request('date_from') }}"
+                       class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+            </div>
+            <div>
+                <label for="date_to" class="block text-xs font-medium text-gray-600 mb-1">Date To</label>
+                <input type="date" id="date_to" name="date_to" value="{{ request('date_to') }}"
+                       class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+            </div>
             <div class="flex gap-2">
                 <button type="submit"
                         class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
                     Filter
                 </button>
-                @if(request('action') || request('user_id'))
+                @if(request('action') || request('user_id') || request('date_from') || request('date_to'))
                     <a href="{{ route('admin.activity-logs.index') }}"
                        class="px-4 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
                         Clear

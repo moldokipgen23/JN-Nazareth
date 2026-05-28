@@ -8,7 +8,7 @@
     @php
         $adminFavicon = \App\Helpers\Settings::get('favicon')
             ? \App\Helpers\Settings::storageUrl(\App\Helpers\Settings::get('favicon'))
-            : asset('images/logo.png');
+            : asset('images/icon-192.svg');
     @endphp
     <link rel="icon" href="{{ $adminFavicon }}">
     <link rel="apple-touch-icon" href="{{ $adminFavicon }}">
@@ -332,13 +332,18 @@
 
         {{-- Top bar --}}
         <header style="background:#fff; border-bottom:1px solid #e2e8f0; height:60px; display:flex; align-items:center; justify-content:space-between; padding:0 16px; flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,.04);">
-            <div style="display:flex;align-items:center;gap:12px;">
+            <div style="display:flex;align-items:center;gap:12px;flex:1;">
                 <button onclick="toggleSidebar()" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;display:flex;align-items:center;color:#64748b;">
                     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
                 <div>
                     <div style="font-size:15px;font-weight:700;color:#0f172a;">@yield('page-title', 'Dashboard')</div>
                     <div style="font-size:10px;color:#94a3b8;" class="hidden sm:block">{{ \App\Helpers\Settings::get('site_name', 'Ehlom CMS') }} Management</div>
+                </div>
+                <div style="flex:1;max-width:320px;margin-left:20px;" class="resp-hide-sm">
+                    <form method="GET" action="{{ route('admin.students.index') }}" style="display:flex;">
+                        <input type="text" name="search" placeholder="Search students..." value="{{ request('search') }}" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 12px;font-size:13px;background:#f8fafc;outline:none;" onfocus="this.style.borderColor='#0f766e'" onblur="this.style.borderColor='#e2e8f0'">
+                    </form>
                 </div>
             </div>
             <div style="display:flex;align-items:center;gap:10px;">

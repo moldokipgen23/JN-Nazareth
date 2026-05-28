@@ -24,14 +24,13 @@
                 </select>
             </div>
             <div>
-                <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Class &amp; Section *</label>
+                <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Class *</label>
                 <select name="class" id="slotClass" required onchange="syncSubjects()" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
                     <option value="">— select —</option>
-                    @foreach($slots->unique(fn($s)=>$s->class.'|'.$s->section) as $s)
-                        <option value="{{ $s->class }}" data-section="{{ $s->section }}" {{ request('class') === $s->class && request('section') === $s->section ? 'selected' : '' }}>{{ $s->class }} — Sec {{ $s->section }}</option>
+                    @foreach($slots as $s)
+                        <option value="{{ $s->class }}" {{ request('class') === $s->class ? 'selected' : '' }}>{{ $s->class }}</option>
                     @endforeach
                 </select>
-                <input type="hidden" name="section" id="slotSection" value="{{ request('section', '') }}">
             </div>
             <div>
                 <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Subject *</label>
@@ -72,7 +71,7 @@
     <div style="display:flex;align-items:start;justify-content:space-between;gap:10px;">
         <div style="flex:1;min-width:0;">
             <div style="font-size:13px;font-weight:600;color:#0f172a;">{{ $q->exam?->name }} — {{ $q->subject }}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:2px;">{{ $q->class }} Sec {{ $q->section }} &middot; {{ $q->created_at->format('d M Y') }}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px;">{{ $q->class }} &middot; {{ $q->created_at->format('d M Y') }}</div>
             @if($q->question_text)<div style="font-size:12px;color:#334155;margin-top:6px;white-space:pre-line;">{{ Str::limit($q->question_text, 120) }}</div>@endif
             @if($q->file_path)
                 <a href="{{ Storage::url($q->file_path) }}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:12px;font-weight:600;color:#0f766e;">
@@ -100,13 +99,10 @@
 const slots = @json($slots);
 const prefillSubject = '{{ request('subject', '') }}';
 function syncSubjects() {
-    const sel = document.getElementById('slotClass');
-    const opt = sel.options[sel.selectedIndex];
-    document.getElementById('slotSection').value = opt?.dataset.section || '';
-    const cls = opt?.value || '', sec = opt?.dataset.section || '';
+    const cls = document.getElementById('slotClass').value;
     const subSel = document.getElementById('slotSubject');
     subSel.innerHTML = '<option value="">— select —</option>';
-    slots.filter(s => s.class === cls && s.section === sec)
+    slots.filter(s => s.class === cls)
          .forEach(s => {
              const o = document.createElement('option');
              o.value = s.subject;

@@ -36,11 +36,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Role-aware landing page: teachers go straight to their classes.
+        // Role-aware landing page: teachers go straight to their dashboard.
         $user = $request->user();
         if ($user && $user->hasRole('teacher')
             && ! $user->hasAnyRole(['admin', 'staff'])) {
-            return redirect()->intended(route('admin.classes.index'));
+            return redirect()->intended(route('teacher.dashboard'));
         }
 
         return redirect()->intended(route('dashboard', absolute: false));
@@ -57,6 +57,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect()->to(login_path('teacher'));
     }
 }

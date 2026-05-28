@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ActivityLogController extends Controller
@@ -16,6 +17,18 @@ class ActivityLogController extends Controller
             $query->where('action', $action);
         }
 
+        if ($userId = $request->input('user_id')) {
+            $query->where('user_id', $userId);
+        }
+
+        if ($dateFrom = $request->input('date_from')) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+
+        if ($dateTo = $request->input('date_to')) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
         $logs = $query->paginate(30)->withQueryString();
 
         $actions = ActivityLog::select('action')
@@ -23,6 +36,8 @@ class ActivityLogController extends Controller
                                ->orderBy('action')
                                ->pluck('action');
 
-        return view('admin.activity-logs.index', compact('logs', 'actions'));
+        $users = User::orderBy('name')->get(['id', 'name']);
+
+        return view('admin.activity-logs.index', compact('logs', 'actions', 'users'));
     }
 }

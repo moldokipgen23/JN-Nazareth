@@ -22,6 +22,7 @@
             </div>
         </div>
     </div>
+    @if($isAdmin)
     <div style="display:flex;gap:8px;">
         <a href="{{ route('admin.students.index', ['class' => $class]) }}"
            style="background:#f0fdfa;color:#0f766e;border:1px solid #99f6e4;padding:8px 16px;border-radius:9px;font-size:12px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:6px;">
@@ -29,6 +30,7 @@
             View Students
         </a>
     </div>
+    @endif
 </div>
 
 @if(session('success'))
@@ -38,22 +40,37 @@
 <div style="background:#fee2e2;color:#b91c1c;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:13px;font-weight:600;">{{ session('error') }}</div>
 @endif
 
+@if(!$isAdmin)
+<div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:12px;padding:14px 16px;margin-bottom:16px;">
+    <div style="font-size:13px;font-weight:600;color:#0f766e;">Student list is available in the teacher portal</div>
+    <div style="font-size:12px;color:#059669;margin-top:2px;">Go to <strong>Marks</strong> or <strong>Attendance</strong> in your teacher dashboard to view and manage students.</div>
+</div>
+@endif
+
 {{-- Sections grid --}}
 @if($sectionNames->isNotEmpty())
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px;">
     @foreach($sectionNames as $section)
     @php $count = $sectionCounts[$section->name] ?? 0; @endphp
+    @if($isAdmin)
     <a href="{{ route('admin.students.index', ['class' => $class, 'section' => $section->name]) }}"
        style="text-decoration:none;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;display:block;box-shadow:0 1px 8px rgba(0,0,0,.05);transition:all .15s;"
        onmouseover="this.style.borderColor='#14b8a6';this.style.boxShadow='0 4px 16px rgba(20,184,166,.15)'"
        onmouseout="this.style.borderColor='#e2e8f0';this.style.boxShadow='0 1px 8px rgba(0,0,0,.05)'">
+    @else
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;box-shadow:0 1px 8px rgba(0,0,0,.05);">
+    @endif
         <div style="width:48px;height:48px;background:linear-gradient(135deg,#0f766e,#14b8a6);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
             <span style="font-size:20px;font-weight:800;color:#fff;">{{ $section->name }}</span>
         </div>
         <div style="font-size:13px;font-weight:700;color:#0f172a;">Section {{ $section->name }}</div>
         <div style="font-size:22px;font-weight:800;color:#0f766e;margin:4px 0 2px;">{{ $count }}</div>
-        <div style="font-size:11px;color:#94a3b8;">student{{ $count == 1 ? '' : 's' }} →</div>
+        <div style="font-size:11px;color:#94a3b8;">student{{ $count == 1 ? '' : 's' }}{{ $isAdmin ? ' →' : '' }}</div>
+    @if($isAdmin)
     </a>
+    @else
+    </div>
+    @endif
     @endforeach
 </div>
 @else

@@ -109,6 +109,44 @@
     </div>
 </div>
 
+{{-- Widgets: Attendance, Pending, Marks --}}
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px;">
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background:#f0fdf4;">
+            <svg fill="none" stroke="#16a34a" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+            <div style="font-size:26px; font-weight:800; color:#0f172a; line-height:1.1;">{{ $todayMarked }} / {{ $todayExpected }}</div>
+            <div style="font-size:12px; color:#64748b; font-weight:500; margin-top:2px;">Today's Attendance</div>
+            <div style="font-size:11px; color:#16a34a; font-weight:600; margin-top:3px;">{{ $todayPct }}% completed</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background:#fef3c7;">
+            <svg fill="none" stroke="#d97706" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <div>
+            <div style="font-size:26px; font-weight:800; color:#0f172a; line-height:1.1;">{{ $pendingQuestions + $pendingNotes }}</div>
+            <div style="font-size:12px; color:#64748b; font-weight:500; margin-top:2px;">Pending Reviews</div>
+            <div style="font-size:11px; color:#d97706; font-weight:600; margin-top:3px;">{{ $pendingQuestions }} questions · {{ $pendingNotes }} notes</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background:#dbeafe;">
+            <svg fill="none" stroke="#3b82f6" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        </div>
+        <div>
+            <div style="font-size:26px; font-weight:800; color:#0f172a; line-height:1.1;">{{ $totalMarked }}</div>
+            <div style="font-size:12px; color:#64748b; font-weight:500; margin-top:2px;">Marks Entered</div>
+            <div style="font-size:11px; color:#3b82f6; font-weight:600; margin-top:3px;">{{ $marksPassPct }}% passing rate</div>
+        </div>
+    </div>
+
+</div>
+
 {{-- Students by class + Upcoming events --}}
 <div class="dash-event-side" style="display:grid; grid-template-columns:1fr 360px; gap:20px; margin-bottom:24px;">
 

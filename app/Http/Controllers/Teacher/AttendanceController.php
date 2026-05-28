@@ -62,15 +62,13 @@ class AttendanceController extends Controller
         ]);
     }
 
-    /** Show the roster for a class/section + date with current marks. */
+    /** Show the roster for a class/section — only today's date allowed. */
     public function mark(Request $request, string $class, string $section)
     {
         $year = $this->requireActiveYear();
         $this->authorizeClassAccess($class, $section);
 
-        $date = $request->query('date')
-            ? Carbon::parse($request->query('date'))->toDateString()
-            : Carbon::today()->toDateString();
+        $date = Carbon::today()->toDateString();
 
         $enrollments = StudentEnrollment::forActiveYear()->active()
             ->where('class', $class)->where('section', $section)
@@ -96,20 +94,30 @@ class AttendanceController extends Controller
         ]);
     }
 
-    /** Save bulk attendance for one class/section/date. */
+    /** Save bulk attendance for one class/section — today only, one-time submit. */
     public function store(Request $request, string $class, string $section)
     {
         $year = $this->requireActiveYear();
         $this->authorizeClassAccess($class, $section);
 
+        $today = Carbon::today()->toDateString();
+
         $data = $request->validate([
-            'date'              => 'required|date',
+            'date'              => 'required|date|in:'.$today,
             'marks'             => 'required|array',
             'marks.*.status'    => 'required|in:'.implode(',', AttendanceRecord::STATUSES),
             'marks.*.remarks'   => 'nullable|string|max:500',
         ]);
 
-        $date = Carbon::parse($data['date'])->toDateString();
+        // Block re-submission — attendance already recorded for today
+        $already = AttendanceRecord::forActiveYear()
+            ->where('class', $class)->where('section', $section)
+            ->whereDate('date', $today)
+            ->exists();
+
+        if ($already) {
+            return back()->withErrors(['date' => 'Attendance has already been submitted for today and cannot be changed.']);
+        }
 
         $enrollmentIds = StudentEnrollment::forActiveYear()->active()
             ->where('class', $class)->where('section', $section)
@@ -120,24 +128,23 @@ class AttendanceController extends Controller
         foreach ($data['marks'] as $enrollmentId => $row) {
             $enrollmentId = (int) $enrollmentId;
             if (! in_array($enrollmentId, $enrollmentIds, true)) {
-                continue; // ignore foreign rows
+                continue;
             }
-            AttendanceRecord::updateOrCreate(
-                ['student_enrollment_id' => $enrollmentId, 'date' => $date],
-                [
-                    'academic_year_id' => $year->id,
-                    'class'            => $class,
-                    'section'          => $section,
-                    'status'           => $row['status'],
-                    'marked_by'        => auth()->id(),
-                    'remarks'          => $row['remarks'] ?? null,
-                ]
-            );
+            AttendanceRecord::create([
+                'academic_year_id'     => $year->id,
+                'student_enrollment_id' => $enrollmentId,
+                'class'                => $class,
+                'section'              => $section,
+                'date'                 => $today,
+                'status'               => $row['status'],
+                'marked_by'            => auth()->id(),
+                'remarks'              => $row['remarks'] ?? null,
+            ]);
             $saved++;
         }
 
         return redirect()
-            ->route('teacher.attendance.mark', ['class' => $class, 'section' => $section, 'date' => $date])
+            ->route('teacher.attendance.mark', ['class' => $class, 'section' => $section])
             ->with('success', "Attendance saved for {$saved} student".($saved === 1 ? '' : 's').'.');
     }
 

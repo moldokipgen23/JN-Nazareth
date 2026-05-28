@@ -127,6 +127,10 @@ Route::prefix('admin')
                  ->name('attendance.update');
             Route::get('attendance/analytics', [AdminAttendanceController::class, 'analytics'])
                  ->name('attendance.analytics');
+            Route::get('attendance/export', [AdminAttendanceController::class, 'exportCsv'])
+                 ->name('attendance.export');
+            Route::post('attendance/bulk', [AdminAttendanceController::class, 'bulkStore'])
+                 ->name('attendance.bulk');
 
             // Exams & Marks
             Route::get('exams', [ExamController::class, 'index'])->name('exams.index');
@@ -137,6 +141,7 @@ Route::prefix('admin')
 
             Route::get('marks', [AdminMarksController::class, 'index'])->name('marks.index');
             Route::put('marks/{mark}', [AdminMarksController::class, 'update'])->name('marks.update');
+            Route::get('marks/export', [AdminMarksController::class, 'exportCsv'])->name('marks.export');
             Route::get('marks/analytics', [MarksAnalyticsController::class, 'index'])->name('marks.analytics');
 
             Route::get('questions', [AdminQuestionsController::class, 'index'])->name('questions.index');

@@ -65,7 +65,7 @@
         @foreach($questions as $q)
         <tr style="border-top:1px solid #f1f5f9;">
             <td style="padding:10px 14px;font-weight:600;color:#0f172a;">{{ $q->exam?->name }}</td>
-            <td style="padding:10px 14px;color:#475569;">{{ $q->class }} Sec {{ $q->section }}<br><span style="font-size:11px;">{{ $q->subject }}</span></td>
+            <td style="padding:10px 14px;color:#475569;">{{ $q->class }}@if($q->section) Sec {{ $q->section }}@endif<br><span style="font-size:11px;">{{ $q->subject }}</span></td>
             <td style="padding:10px 14px;color:#475569;">{{ $q->submitter?->name }}</td>
             <td style="padding:10px 14px;max-width:240px;">
                 @if($q->question_text)<div style="font-size:12px;color:#334155;">{{ Str::limit($q->question_text, 80) }}</div>@endif

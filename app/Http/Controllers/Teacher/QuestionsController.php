@@ -42,7 +42,10 @@ class QuestionsController extends Controller
 
         $slots = $year
             ? SubjectTeacherAssignment::where('teacher_id', ($user->teacher?->id ?? $user->id))
-                ->where('academic_year_id', $year->id)->get(['class','section','subject'])
+                ->where('academic_year_id', $year->id)
+                ->get(['class', 'section', 'subject'])
+                ->unique(fn ($s) => $s->class.'|'.$s->subject)
+                ->values()
             : collect();
 
         return view('teacher.questions.index', compact('questions', 'exams', 'slots', 'year'));
@@ -56,7 +59,6 @@ class QuestionsController extends Controller
         $data = $request->validate([
             'exam_id'       => 'required|exists:exams,id',
             'class'         => 'required|string',
-            'section'       => 'required|string',
             'subject'       => 'required|string',
             'question_text' => 'nullable|string|max:5000',
             'file'          => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:20480',
@@ -74,9 +76,14 @@ class QuestionsController extends Controller
             abort(403, 'Question submission deadline has passed.');
         }
 
-        // Authorize slot
+        // Authorize slot (section-agnostic — one class = one question)
         $user = auth()->user();
-        if (!$user->isAdmin() && !$user->teachesSubject($data['class'], $data['section'], $data['subject'])) {
+        if (!$user->isAdmin() && !SubjectTeacherAssignment::where('teacher_id', $user->teacher?->id)
+            ->where('academic_year_id', $year->id)
+            ->where('class', $data['class'])
+            ->where('subject', $data['subject'])
+            ->exists()
+        ) {
             abort(403);
         }
 
@@ -96,7 +103,6 @@ class QuestionsController extends Controller
             'exam_id'          => $data['exam_id'],
             'submitted_by'     => $user->id,
             'class'            => $data['class'],
-            'section'          => $data['section'],
             'subject'          => $data['subject'],
             'question_text'    => $data['question_text'] ?? null,
             'file_path'        => $filePath,

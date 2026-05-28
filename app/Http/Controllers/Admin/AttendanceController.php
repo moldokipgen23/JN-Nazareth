@@ -9,6 +9,7 @@ use App\Models\Student;
 use App\Models\StudentEnrollment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Response;
 
 class AttendanceController extends Controller
 {
@@ -141,5 +142,96 @@ class AttendanceController extends Controller
     public function analytics(Request $request)
     {
         return redirect()->route('admin.attendance.index', array_merge($request->query(), ['view' => 'analytics']));
+    }
+
+    public function exportCsv(Request $request)
+    {
+        $year = AcademicYear::current();
+        $class   = $request->query('class');
+        $section = $request->query('section');
+        $date    = $request->query('date', Carbon::today()->toDateString());
+
+        if (!$year || !$class) {
+            return back()->with('error', 'Select a class to export.');
+        }
+
+        $records = AttendanceRecord::forActiveYear()
+            ->where('class', $class)
+            ->when($section, fn ($q) => $q->where('section', $section))
+            ->whereDate('date', $date)
+            ->with(['enrollment.student', 'marker'])
+            ->get()
+            ->sortBy(fn ($r) => [(int) ($r->enrollment->roll_number ?: 999999), $r->enrollment?->student?->name ?? '']);
+
+        $csv = "Roll No,Student Name,Class,Section,Date,Status,Marked By\n";
+        foreach ($records as $r) {
+            $csv .= implode(',', [
+                $r->enrollment->roll_number ?? '',
+                '"'.str_replace('"', '""', $r->enrollment->student?->name ?? '').'"',
+                $r->class,
+                $r->section,
+                $r->date,
+                $r->status,
+                '"'.str_replace('"', '""', $r->marker?->name ?? '').'"',
+            ])."\n";
+        }
+
+        return Response::make($csv, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="attendance-'.$class.'-'.$date.'.csv"',
+        ]);
+    }
+
+    public function bulkStore(Request $request)
+    {
+        $year = AcademicYear::current();
+        abort_unless($year, 409);
+
+        $data = $request->validate([
+            'class'    => 'required|string',
+            'section'  => 'required|string',
+            'status'   => 'required|in:'.implode(',', AttendanceRecord::STATUSES),
+            'start_date' => 'required|date',
+            'end_date'   => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $enrollments = StudentEnrollment::forActiveYear()->active()
+            ->where('class', $data['class'])
+            ->where('section', $data['section'])
+            ->pluck('id');
+
+        if ($enrollments->isEmpty()) {
+            return back()->with('error', 'No active students found.');
+        }
+
+        $start = Carbon::parse($data['start_date']);
+        $end   = Carbon::parse($data['end_date']);
+        $count = 0;
+
+        $dates = [];
+        $cursor = $start->copy();
+        while ($cursor->lte($end)) {
+            $dates[] = $cursor->toDateString();
+            $cursor->addDay();
+        }
+
+        foreach ($enrollments as $enrollmentId) {
+            foreach ($dates as $date) {
+                AttendanceRecord::firstOrCreate(
+                    ['student_enrollment_id' => $enrollmentId, 'date' => $date],
+                    [
+                        'academic_year_id' => $year->id,
+                        'class'            => $data['class'],
+                        'section'          => $data['section'],
+                        'status'           => $data['status'],
+                        'marked_by'        => auth()->id(),
+                    ]
+                );
+                $count++;
+            }
+        }
+
+        $dayCount = count($dates);
+        return back()->with('success', "Attendance marked for {$enrollments->count()} students across {$dayCount} days ({$count} records).");
     }
 }
