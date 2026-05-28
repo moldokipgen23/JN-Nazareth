@@ -34,7 +34,7 @@
         .emblem-row { background:#fff; padding:2mm 3mm 1mm; }
         .emblem-row table { width:100%; border-collapse:collapse; }
         .emblem-row td { vertical-align:middle; }
-        .emblem-row .emblem-img { height:10mm; }
+        .emblem-row .emblem-img { height:15mm; }
         .emblem-row .valid { font-size:6.5pt; color:#b91c1c; font-style:italic; font-weight:700; text-align:right; }
 
         .ribbon { background:#7c1d1d; padding:1.5mm 0; text-align:center; }
@@ -92,7 +92,7 @@
                     <div class="emblem-row">
                         <table>
                             <tr>
-                                <td style="width:14mm;">
+                                <td style="width:18mm;">
                                     @if($emblemPath)
                                         <img src="{{ $emblemPath }}" class="emblem-img">
                                     @elseif($logoPath)

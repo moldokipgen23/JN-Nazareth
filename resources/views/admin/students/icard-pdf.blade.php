@@ -40,7 +40,7 @@
         .emblem-row { background:#fff; padding:8px 14px 6px; position:relative; }
         .emblem-row table { width:100%; border-collapse:collapse; }
         .emblem-row td { vertical-align:middle; }
-        .emblem-row .emblem-img { height:48px; display:block; }
+        .emblem-row .emblem-img { height:70px; display:block; }
         .emblem-row .valid { font-size:10px; color:#b91c1c; font-style:italic; font-weight:700; text-align:right; }
 
         /* === IDENTITY CARD RIBBON === */
@@ -88,7 +88,7 @@
     <div class="emblem-row">
         <table>
             <tr>
-                <td style="width:60px;">
+                <td style="width:80px;">
                     @if($emblemPath)
                         <img src="{{ $emblemPath }}" class="emblem-img">
                     @elseif($logoPath)
