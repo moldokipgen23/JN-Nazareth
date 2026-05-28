@@ -6,6 +6,11 @@
     $ctClasses = $ctClasses ?? [];
     $ctSection = $ctSection ?? 'A';
     $sections = $sections ?? collect();
+    $subjectsList = \App\Models\Subject::active()->orderBy('sort_order')->orderBy('name')->get();
+    $existingSubjectAssignments = $isEdit && $teacher ? $teacher->subjectAssignments() : [];
+    // For section dropdown: collect all section names available
+    $sectionNames = $sections->pluck('name')->unique()->sort()->values();
+    if ($sectionNames->isEmpty()) { $sectionNames = collect(['A']); }
 @endphp
 
 <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:11px 15px; margin-bottom:16px; font-size:12px; color:#1e40af;">
@@ -85,6 +90,72 @@
             @endforeach
         </select>
     </div>
+
+    {{-- ─────────── SUBJECT TEACHER ASSIGNMENTS ─────────── --}}
+    <div style="font-size:14px; font-weight:700; color:#0f172a; margin:20px 0 4px; padding-bottom:9px; border-bottom:1px solid #f1f5f9;">Subjects Taught</div>
+    <p style="font-size:11.5px; color:#94a3b8; margin:0 0 12px;">Which subjects does this teacher teach, and in which classes/sections? They'll be able to enter marks for these.</p>
+
+    <div id="subject-rows" style="display:flex; flex-direction:column; gap:8px;">
+        @php
+            $oldRows = old('subject_assignments', null);
+            if (is_array($oldRows)) {
+                $rows = $oldRows;
+            } else {
+                $rows = $existingSubjectAssignments;
+            }
+        @endphp
+        @forelse($rows as $i => $row)
+        <div class="subject-row" style="display:grid; grid-template-columns:1.2fr 0.8fr 1.5fr 40px; gap:8px; align-items:center;">
+            <select name="subject_assignments[{{ $i }}][class]" required style="{{ $inp }}">
+                <option value="">— Class —</option>
+                @foreach($classes as $c)
+                    <option value="{{ $c }}" {{ ($row['class'] ?? '') === $c ? 'selected' : '' }}>{{ $c }}</option>
+                @endforeach
+            </select>
+            <select name="subject_assignments[{{ $i }}][section]" required style="{{ $inp }}">
+                @foreach($sectionNames as $s)
+                    <option value="{{ $s }}" {{ ($row['section'] ?? 'A') === $s ? 'selected' : '' }}>{{ $s }}</option>
+                @endforeach
+            </select>
+            <select name="subject_assignments[{{ $i }}][subject]" required style="{{ $inp }}">
+                <option value="">— Subject —</option>
+                @foreach($subjectsList as $subj)
+                    <option value="{{ $subj->name }}" {{ ($row['subject'] ?? '') === $subj->name ? 'selected' : '' }}>{{ $subj->name }}</option>
+                @endforeach
+            </select>
+            <button type="button" onclick="this.closest('.subject-row').remove()" style="background:#fee2e2; color:#dc2626; border:none; border-radius:8px; height:38px; cursor:pointer; font-size:18px; font-weight:700;" title="Remove">×</button>
+        </div>
+        @empty
+        @endforelse
+    </div>
+
+    <button type="button" onclick="addSubjectRow()" style="background:#f0fdfa; color:#0f766e; border:1.5px dashed #99f6e4; border-radius:8px; padding:8px 16px; font-size:12px; font-weight:700; cursor:pointer; margin-top:10px;">+ Add Subject</button>
+
+    {{-- Template for new rows --}}
+    <template id="subject-row-template">
+        <div class="subject-row" style="display:grid; grid-template-columns:1.2fr 0.8fr 1.5fr 40px; gap:8px; align-items:center;">
+            <select name="subject_assignments[__INDEX__][class]" required style="{{ $inp }}">
+                <option value="">— Class —</option>
+                @foreach($classes as $c)<option value="{{ $c }}">{{ $c }}</option>@endforeach
+            </select>
+            <select name="subject_assignments[__INDEX__][section]" required style="{{ $inp }}">
+                @foreach($sectionNames as $s)<option value="{{ $s }}">{{ $s }}</option>@endforeach
+            </select>
+            <select name="subject_assignments[__INDEX__][subject]" required style="{{ $inp }}">
+                <option value="">— Subject —</option>
+                @foreach($subjectsList as $subj)<option value="{{ $subj->name }}">{{ $subj->name }}</option>@endforeach
+            </select>
+            <button type="button" onclick="this.closest('.subject-row').remove()" style="background:#fee2e2; color:#dc2626; border:none; border-radius:8px; height:38px; cursor:pointer; font-size:18px; font-weight:700;" title="Remove">×</button>
+        </div>
+    </template>
+
+    <script>
+        let subjectRowIndex = {{ count($rows) }};
+        function addSubjectRow() {
+            const tpl = document.getElementById('subject-row-template').innerHTML.replace(/__INDEX__/g, subjectRowIndex++);
+            document.getElementById('subject-rows').insertAdjacentHTML('beforeend', tpl);
+        }
+    </script>
 
     <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:22px;">
         <a href="{{ route('admin.teachers.index') }}" style="background:#f1f5f9; color:#475569; font-size:13px; font-weight:600; padding:10px 20px; border-radius:9px; text-decoration:none;">Cancel</a>

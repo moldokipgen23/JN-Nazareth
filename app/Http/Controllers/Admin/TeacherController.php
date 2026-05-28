@@ -6,6 +6,7 @@ use App\Helpers\ActivityLogger;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
 use App\Models\ClassTeacherAssignment;
+use App\Models\SubjectTeacherAssignment;
 use App\Models\Teacher;
 use App\Models\TeacherYearStatus;
 use App\Models\User;
@@ -85,6 +86,7 @@ class TeacherController extends Controller
         ]);
 
         $this->syncClassTeacher($request, $teacher);
+        $this->syncSubjectAssignments($request, $teacher);
 
         ActivityLogger::log('teacher_created', $teacher, "Added teacher: {$teacher->name}");
 
@@ -134,6 +136,7 @@ class TeacherController extends Controller
         $teacher->save();
 
         $this->syncClassTeacher($request, $teacher);
+        $this->syncSubjectAssignments($request, $teacher);
 
         ActivityLogger::log('teacher_updated', $teacher, "Updated teacher: {$teacher->name}");
 
@@ -258,6 +261,51 @@ class TeacherController extends Controller
         }
     }
 
+    private function syncSubjectAssignments(Request $request, Teacher $teacher): void
+    {
+        $year = AcademicYear::current();
+        if (! $year) {
+            return;
+        }
+
+        $rows = $request->input('subject_assignments', []);
+        $validClasses  = \App\Models\Student::classes();
+        $validSubjects = \App\Models\Subject::active()->pluck('name')->all();
+
+        // Build the new set as [class, section, subject] keys
+        $keep = [];
+        foreach ($rows as $row) {
+            $class   = trim($row['class'] ?? '');
+            $section = strtoupper(trim($row['section'] ?? ''));
+            $subject = trim($row['subject'] ?? '');
+            if (! $class || ! $section || ! $subject) continue;
+            if (! in_array($class, $validClasses, true)) continue;
+            if (! in_array($subject, $validSubjects, true)) continue;
+
+            SubjectTeacherAssignment::updateOrCreate(
+                [
+                    'academic_year_id' => $year->id,
+                    'teacher_id'       => $teacher->id,
+                    'class'            => $class,
+                    'section'          => $section,
+                    'subject'          => $subject,
+                ],
+                []
+            );
+            $keep[] = "{$class}|{$section}|{$subject}";
+        }
+
+        // Delete any existing assignments not in the new set
+        $teacher->subjectTeacherAssignments()
+            ->where('academic_year_id', $year->id)
+            ->get()
+            ->each(function ($a) use ($keep) {
+                if (! in_array("{$a->class}|{$a->section}|{$a->subject}", $keep, true)) {
+                    $a->delete();
+                }
+            });
+    }
+
     private function validateTeacher(Request $request): array
     {
         return $request->validate([
@@ -271,6 +319,10 @@ class TeacherController extends Controller
             'ct_classes'  => ['nullable', 'array'],
             'ct_classes.*' => ['string', 'max:100'],
             'ct_section'  => ['nullable', 'string', 'max:20'],
+            'subject_assignments'             => ['nullable', 'array'],
+            'subject_assignments.*.class'     => ['nullable', 'string', 'max:100'],
+            'subject_assignments.*.section'   => ['nullable', 'string', 'max:20'],
+            'subject_assignments.*.subject'   => ['nullable', 'string', 'max:100'],
         ]);
     }
 }
