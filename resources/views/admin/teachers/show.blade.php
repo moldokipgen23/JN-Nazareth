@@ -47,9 +47,10 @@
         @endif
     </div>
     <div>
-        @if($teacher->classes)
+        @php $teachingClasses = $teacher->teachingClasses(); @endphp
+        @if(!empty($teachingClasses))
             <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Classes:</div>
-            @foreach($teacher->classes as $c)
+            @foreach($teachingClasses as $c)
                 <span style="background:#ecfeff;color:#0e7490;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;display:inline-block;margin:1px;">{{ $c }}</span>
             @endforeach
         @endif

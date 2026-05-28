@@ -49,7 +49,7 @@
                 {{ $teacher->designation ?: 'Teacher' }}@if($teacher->subjects) · {{ $teacher->subjects }}@endif
             </div>
         </div>
-        @php $classes = $teacher->classes ?? []; @endphp
+        @php $classes = $teacher->teachingClasses(); @endphp
         @if(!empty($classes))
             <div style="display:flex;flex-wrap:wrap;gap:3px;">
                 @foreach(array_slice($classes, 0, 3) as $c)
