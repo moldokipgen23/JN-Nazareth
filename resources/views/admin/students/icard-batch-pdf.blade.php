@@ -60,26 +60,20 @@
 
         .ftr { background:#1e3a8a; padding:1.5mm 3mm; }
         .ftr p { margin:0; font-size:5.5pt; font-weight:700; color:#fff; }
-
-        @php
-            $countOnPage = 0;
-            $page = 0;
-            $cards = $students;
-        @endphp
     </style>
 </head>
 <body>
 
-@php $chunks = $students->chunk(2); $rowCount = 0; @endphp
+@php $chunks = $enrollments->chunk(2); @endphp
 
 <div class="grid">
 @foreach($chunks as $pair)
     <div class="row">
-        @foreach($pair as $student)
+        @foreach($pair as $enrollment)
             @php
-                $enrollment = $student->enrollments->where('academic_year_id', optional(\App\Models\AcademicYear::current())->id)->first()
-                    ?? $student->enrollments->sortByDesc('academic_year_id')->first();
-                $validYear = $enrollment?->academicYear?->name ?? ($student->academic_year ?? date('Y').'-'.((int)date('y')+1));
+                $student = $enrollment->student;
+                if (!$student) continue;
+                $validYear = $enrollment->academicYear?->name ?? ($student->academic_year ?? date('Y').'-'.((int)date('y')+1));
                 $validLabel = $validUntilGlobal;
                 if (!$validLabel && preg_match('/(\d{4})\D+(\d{2,4})/', $validYear, $m)) {
                     $endYear = strlen($m[2]) === 2 ? '20'.$m[2] : $m[2];
