@@ -101,8 +101,8 @@ class ResultCardController extends Controller
         abort_if(! $enrollment, 404, 'Student not enrolled in this academic year.');
 
         $exams = Exam::where('academic_year_id', $year->id)
-            ->where('status', 'published')
-            ->orderBy('held_on')
+            ->where('is_active', true)
+            ->orderBy('starts_on')
             ->get();
 
         abort_if($exams->isEmpty(), 404, 'No published exams for this academic year.');

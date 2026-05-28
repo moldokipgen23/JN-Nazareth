@@ -9,3 +9,14 @@ vendor/
 .env
 .env.local
 .env.*
+
+# Laravel runtime — never commit
+.phpunit.result.cache
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+storage/logs/
+public/storage
+
+# OS
+.DS_Store

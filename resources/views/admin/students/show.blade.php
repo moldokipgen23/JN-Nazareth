@@ -249,7 +249,7 @@
             <h3 class="font-semibold text-gray-900">Marks</h3>
             <div class="flex gap-2">
                 @if($student->currentEnrollment)
-                    @php $exams = \App\Models\Exam::where('academic_year_id', $student->currentEnrollment->academic_year_id)->where('status','published')->orderBy('held_on')->get(); @endphp
+                    @php $exams = \App\Models\Exam::where('academic_year_id', $student->currentEnrollment->academic_year_id)->where('is_active', true)->orderBy('starts_on')->get(); @endphp
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition">
                             Result Card <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
