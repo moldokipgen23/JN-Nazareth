@@ -12,11 +12,13 @@ return new class extends Migration
 
         // Rename member_files.member_id → student_id
         Schema::table('member_files', function ($table) {
+            $table->dropForeign(['member_id']);
             $table->renameColumn('member_id', 'student_id');
         });
 
         // Rename student_enrollments.member_id → student_id
         Schema::table('student_enrollments', function ($table) {
+            $table->dropForeign(['member_id']);
             $table->dropUnique('student_enrollments_member_id_academic_year_id_unique');
             $table->renameColumn('member_id', 'student_id');
         });
