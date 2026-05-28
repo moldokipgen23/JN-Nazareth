@@ -1,0 +1,51 @@
+@extends('layouts.teacher')
+@section('page-title', 'Marks Entry')
+
+@section('content')
+
+<div style="margin-bottom:16px;">
+    <h1 style="font-size:18px;font-weight:700;color:#0f172a;margin:0;">Marks Entry</h1>
+    <div style="font-size:12px;color:#64748b;margin-top:2px;">
+        {{ $year ? $year->name : 'No active year' }} &middot; pick a subject + exam to enter marks
+    </div>
+</div>
+
+@if(!$year)
+    <div style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;border-radius:10px;padding:14px 16px;font-size:13px;">
+        No academic year is set as active.
+    </div>
+@elseif($exams->isEmpty())
+    <div style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;border-radius:10px;padding:14px 16px;font-size:13px;">
+        No active exams. Ask admin to create one under <em>Exams &amp; Terms</em>.
+    </div>
+@elseif($slots->isEmpty())
+    <div style="background:#fff;border-radius:14px;padding:48px 24px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+        <div style="font-size:36px;opacity:.3;margin-bottom:10px;">📝</div>
+        <div style="font-weight:600;color:#475569;">No subject assignments</div>
+        <div style="font-size:13px;color:#94a3b8;margin-top:6px;">Ask admin to assign you a subject under <em>Teacher Assignments</em>.</div>
+    </div>
+@else
+    @foreach($slots as $slot)
+        <div style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">
+                    {{ strtoupper(substr($slot->subject, 0, 2)) }}
+                </div>
+                <div>
+                    <div style="font-size:14px;font-weight:700;color:#0f172a;">{{ $slot->subject }}</div>
+                    <div style="font-size:12px;color:#64748b;">{{ $slot->class }} — Section {{ $slot->section }}</div>
+                </div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                @foreach($exams as $exam)
+                    <a href="{{ route('teacher.marks.sheet', ['exam' => $exam->id, 'class' => $slot->class, 'section' => $slot->section, 'subject' => $slot->subject]) }}"
+                       style="font-size:12px;font-weight:600;color:#0f766e;background:#f0fdf4;border:1px solid #bbf7d0;padding:6px 12px;border-radius:8px;text-decoration:none;">
+                        {{ $exam->name }}{{ $exam->code ? ' ('.$exam->code.')' : '' }}
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endforeach
+@endif
+
+@endsection

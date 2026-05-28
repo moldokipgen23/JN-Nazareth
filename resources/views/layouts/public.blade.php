@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     @php
-        $siteName     = \App\Helpers\Settings::get('site_name', 'Ehlom Blog CMS');
+        $siteName     = \App\Helpers\Settings::get('site_name', 'JN Nazareth School');
         $seoTitle     = \App\Helpers\Settings::get('seo_meta_title', $siteName);
         $seoDesc      = \App\Helpers\Settings::get('seo_meta_description', \App\Helpers\Settings::get('site_tagline', 'A welcoming community where everyone belongs.'));
         $seoKeywords  = \App\Helpers\Settings::get('seo_meta_keywords', 'community, blog, news, events, gallery');
@@ -169,7 +169,7 @@
                 <!-- Logo / Church Name -->
                 @php
                     $logo = \App\Helpers\Settings::get('logo');
-                    $siteName = \App\Helpers\Settings::get('site_name', 'Ehlom Blog CMS');
+                    $siteName = \App\Helpers\Settings::get('site_name', 'JN Nazareth School');
                     $navPages = \App\Models\Page::inNav()->orderBy('title')->get();
                 @endphp
                 <a href="{{ route('home') }}" class="flex items-center gap-2 shrink-0">
@@ -253,7 +253,7 @@
 
     <!-- ══ Footer ══ -->
     @php
-        $footerName         = \App\Helpers\Settings::get('site_name', 'Ehlom Blog CMS');
+        $footerName         = \App\Helpers\Settings::get('site_name', 'JN Nazareth School');
         $footerTagline      = \App\Helpers\Settings::get('site_tagline', 'A welcoming community where everyone belongs.');
         $footerText         = \App\Helpers\Settings::get('footer_text', '© ' . date('Y') . ' ' . $footerName . '. All rights reserved.');
         $footerLinksTitle   = \App\Helpers\Settings::get('footer_quick_links_title', 'Quick Links');

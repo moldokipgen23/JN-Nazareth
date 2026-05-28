@@ -9,7 +9,7 @@ use App\Models\GalleryFolder;
 use App\Models\GalleryItem;
 use App\Models\HallOfFame;
 use App\Models\ImportantLink;
-use App\Models\Member;
+use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -67,7 +67,7 @@ class SchoolDemoSeeder extends Seeder
                 for ($roll = 1; $roll <= 3; $roll++) {
                     $i++;
                     $name = $first[$i % count($first)] . ' ' . $last[$i % count($last)];
-                    Member::firstOrCreate(
+                    Student::firstOrCreate(
                         ['name' => $name, 'class' => $class, 'section' => $section, 'roll_number' => (string) $roll],
                         [
                             'academic_year' => '2025-26',

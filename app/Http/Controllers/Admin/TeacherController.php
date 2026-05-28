@@ -4,16 +4,17 @@ namespace App\Http\Controllers\Admin;
 
 use App\Helpers\ActivityLogger;
 use App\Http\Controllers\Controller;
-use App\Models\Member;
+use App\Models\AcademicYear;
+use App\Models\ClassTeacherAssignment;
 use App\Models\Teacher;
+use App\Models\TeacherYearStatus;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
-/**
- * Teacher directory — plain staff records (no login).
- * To give a teacher CMS access, create a User account (teacher role) instead.
- */
 class TeacherController extends Controller
 {
     public function index()
@@ -23,12 +24,48 @@ class TeacherController extends Controller
         return view('admin.teachers.index', compact('teachers'));
     }
 
+    public function show(Teacher $teacher)
+    {
+        $teacher->load('yearStatuses.academicYear');
+        $years = AcademicYear::orderByDesc('starts_on')->get();
+
+        return view('admin.teachers.show', compact('teacher', 'years'));
+    }
+
+    public function updateYearStatus(Request $request, Teacher $teacher)
+    {
+        $data = $request->validate([
+            'academic_year_id' => ['required', 'exists:academic_years,id'],
+            'status'           => ['required', 'in:active,resigned,on_leave,transferred'],
+            'effective_from'   => ['nullable', 'date'],
+            'effective_to'     => ['nullable', 'date'],
+            'remarks'          => ['nullable', 'string', 'max:500'],
+        ]);
+
+        TeacherYearStatus::updateOrCreate(
+            [
+                'teacher_id'       => $teacher->id,
+                'academic_year_id' => $data['academic_year_id'],
+            ],
+            [
+                'status'         => $data['status'],
+                'effective_from' => $data['effective_from'],
+                'effective_to'   => $data['effective_to'],
+                'remarks'        => $data['remarks'],
+            ]
+        );
+
+        ActivityLogger::log('teacher_status_updated', $teacher,
+            "Updated {$teacher->name} status to {$data['status']} for year {$data['academic_year_id']}");
+
+        return back()->with('success', 'Yearly status updated.');
+    }
+
     public function create()
     {
-        $classes  = Member::classes();
-        $assigned = [];
-
-        return view('admin.teachers.create', compact('classes', 'assigned'));
+        $sections = \App\Models\Section::active()->orderBy('sort_order')->orderBy('name')->get();
+        $years = \App\Models\AcademicYear::orderByDesc('id')->get();
+        return view('admin.teachers.create', compact('sections', 'years'));
     }
 
     public function store(Request $request)
@@ -41,12 +78,13 @@ class TeacherController extends Controller
             'subjects'    => $data['subjects'] ?? null,
             'phone'       => $data['phone'] ?? null,
             'email'       => $data['email'] ?? null,
-            'classes'     => $this->cleanClasses($request),
             'sort_order'  => $data['sort_order'] ?? 0,
             'is_active'   => $request->boolean('is_active', true),
             'photo'       => $request->hasFile('photo')
                 ? $request->file('photo')->store('teachers', 'public') : null,
         ]);
+
+        $this->syncClassTeacher($request, $teacher);
 
         ActivityLogger::log('teacher_created', $teacher, "Added teacher: {$teacher->name}");
 
@@ -56,10 +94,22 @@ class TeacherController extends Controller
 
     public function edit(Teacher $teacher)
     {
-        $classes  = Member::classes();
-        $assigned = $teacher->classes ?? [];
+        $year = AcademicYear::current();
+        $sections = \App\Models\Section::active()->orderBy('sort_order')->orderBy('name')->get();
+        $years = \App\Models\AcademicYear::orderByDesc('id')->get();
+        $ctClasses = $year
+            ? $teacher->classTeacherAssignments()
+                ->where('academic_year_id', $year->id)
+                ->pluck('class')
+                ->toArray()
+            : [];
+        $ctSection = $year
+            ? $teacher->classTeacherAssignments()
+                ->where('academic_year_id', $year->id)
+                ->value('section') ?? 'A'
+            : 'A';
 
-        return view('admin.teachers.edit', compact('teacher', 'classes', 'assigned'));
+        return view('admin.teachers.edit', compact('teacher', 'ctClasses', 'ctSection', 'sections', 'years'));
     }
 
     public function update(Request $request, Teacher $teacher)
@@ -71,7 +121,6 @@ class TeacherController extends Controller
         $teacher->subjects    = $data['subjects'] ?? null;
         $teacher->phone       = $data['phone'] ?? null;
         $teacher->email       = $data['email'] ?? null;
-        $teacher->classes     = $this->cleanClasses($request);
         $teacher->sort_order  = $data['sort_order'] ?? 0;
         $teacher->is_active   = $request->boolean('is_active', true);
 
@@ -83,6 +132,8 @@ class TeacherController extends Controller
         }
 
         $teacher->save();
+
+        $this->syncClassTeacher($request, $teacher);
 
         ActivityLogger::log('teacher_updated', $teacher, "Updated teacher: {$teacher->name}");
 
@@ -105,6 +156,108 @@ class TeacherController extends Controller
                          ->with('success', 'Teacher removed from the directory.');
     }
 
+    public function createLogin(Teacher $teacher)
+    {
+        if ($teacher->users()->exists()) {
+            return back()->with('error', "{$teacher->name} already has a login account.");
+        }
+
+        $email = $teacher->email;
+        if (! $email) {
+            return back()->with('error', 'Set an email for this teacher first before creating a login.');
+        }
+
+        if (User::where('email', $email)->exists()) {
+            return back()->with('error', "A user with email {$email} already exists. Link them instead.");
+        }
+
+        $password = Str::password(10);
+
+        $user = User::create([
+            'teacher_id' => $teacher->id,
+            'name'       => $teacher->name,
+            'email'      => $email,
+            'password'   => Hash::make($password),
+            'phone'      => $teacher->phone,
+            'designation'=> $teacher->designation,
+        ]);
+        $user->assignRole('teacher');
+
+        ActivityLogger::log('teacher_login_created', $user, "Created login for teacher: {$teacher->name}");
+
+        return back()->with([
+            'success' => "Login created for {$teacher->name}. Email: {$email}",
+            'generated_password' => $password,
+        ]);
+    }
+
+    public function linkUser(Teacher $teacher, Request $request)
+    {
+        $data = $request->validate([
+            'user_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
+
+        $user = User::findOrFail($data['user_id']);
+
+        if ($user->teacher_id) {
+            return back()->with('error', 'That user is already linked to another teacher.');
+        }
+
+        $user->teacher_id = $teacher->id;
+        $user->save();
+
+        ActivityLogger::log('teacher_user_linked', $user, "Linked user {$user->name} to teacher: {$teacher->name}");
+
+        return back()->with('success', "Linked {$user->name} to {$teacher->name}.");
+    }
+
+    public function unlinkUser(Teacher $teacher, User $user)
+    {
+        if ($user->teacher_id !== $teacher->id) {
+            return back()->with('error', 'That user is not linked to this teacher.');
+        }
+
+        $user->teacher_id = null;
+        $user->save();
+
+        ActivityLogger::log('teacher_user_unlinked', null, "Unlinked user {$user->name} from teacher: {$teacher->name}");
+
+        return back()->with('success', "Unlinked {$user->name} from {$teacher->name}.");
+    }
+
+    private function syncClassTeacher(Request $request, Teacher $teacher): void
+    {
+        $year = AcademicYear::current();
+        if (! $year) {
+            return;
+        }
+
+        $selected = $request->input('ct_classes', []);
+        $section  = strtoupper(trim($request->input('ct_section', 'A')));
+        $valid    = \App\Models\Student::classes();
+
+        // Remove assignments for classes no longer selected
+        $teacher->classTeacherAssignments()
+            ->where('academic_year_id', $year->id)
+            ->whereNotIn('class', $selected)
+            ->delete();
+
+        // Add/update each selected class
+        foreach ($selected as $class) {
+            if (! in_array($class, $valid, true)) {
+                continue;
+            }
+            ClassTeacherAssignment::updateOrCreate(
+                [
+                    'academic_year_id' => $year->id,
+                    'class'            => $class,
+                    'section'          => $section,
+                ],
+                ['teacher_id' => $teacher->id]
+            );
+        }
+    }
+
     private function validateTeacher(Request $request): array
     {
         return $request->validate([
@@ -115,17 +268,9 @@ class TeacherController extends Controller
             'email'       => ['nullable', 'email', 'max:255'],
             'photo'       => ['nullable', 'image', 'max:4096'],
             'sort_order'  => ['nullable', 'integer', 'min:0'],
-            'classes'     => ['array'],
-            'classes.*'   => [Rule::in(Member::classes())],
+            'ct_classes'  => ['nullable', 'array'],
+            'ct_classes.*' => ['string', 'max:100'],
+            'ct_section'  => ['nullable', 'string', 'max:20'],
         ]);
-    }
-
-    /** Only keep submitted classes that are valid school classes. */
-    private function cleanClasses(Request $request): array
-    {
-        return array_values(array_intersect(
-            $request->input('classes', []),
-            Member::classes()
-        ));
     }
 }

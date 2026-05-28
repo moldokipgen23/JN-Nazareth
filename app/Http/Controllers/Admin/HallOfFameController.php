@@ -38,7 +38,7 @@ class HallOfFameController extends Controller
         $data['sort_order'] = $data['sort_order'] ?? HallOfFame::max('sort_order') + 1;
 
         if ($request->hasFile('photo')) {
-            $request->validate(['photo' => 'image|max:3072']);
+            $request->validate(['photo' => 'image|max:102400']);
             $data['photo'] = $request->file('photo')->store('hall-of-fame', 'public');
         }
 
@@ -68,7 +68,7 @@ class HallOfFameController extends Controller
         $data['sort_order'] = $data['sort_order'] ?? $hallOfFame->sort_order;
 
         if ($request->hasFile('photo')) {
-            $request->validate(['photo' => 'image|max:3072']);
+            $request->validate(['photo' => 'image|max:102400']);
             if ($hallOfFame->photo) {
                 Storage::disk('public')->delete($hallOfFame->photo);
             }

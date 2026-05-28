@@ -29,7 +29,7 @@
 @endif
 
 {{-- Stats row --}}
-<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px;">
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; margin-bottom:20px;">
     @php
         $total     = $pages->count();
         $published = $pages->where('published', true)->count();

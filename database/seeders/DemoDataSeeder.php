@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\BannerSlide;
 use App\Models\GalleryItem;
 use App\Models\HallOfFame;
-use App\Models\Member;
+use App\Models\Student;
 use App\Models\Video;
 use App\Models\GalleryFolder;
 use App\Models\User;
@@ -206,7 +206,7 @@ class DemoDataSeeder extends Seeder
             'Avery Johnson'   => 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=400&fit=crop&q=80',
         ];
         foreach ($memberPhotos as $name => $url) {
-            Member::where('name', $name)->update(['photo' => $url]);
+            Student::where('name', $name)->update(['photo' => $url]);
         }
     }
 }

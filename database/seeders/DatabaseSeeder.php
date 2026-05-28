@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Blog;
 use App\Models\Event;
-use App\Models\Member;
+use App\Models\Student;
 use App\Models\Page;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -61,7 +61,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Avery Johnson',   'role' => 'Member',         'phone' => '+1 555 000 0007', 'email' => null],
         ];
         foreach ($members as $m) {
-            Member::firstOrCreate(['name' => $m['name']], array_merge($m, [
+            Student::firstOrCreate(['name' => $m['name']], array_merge($m, [
                 'address'    => '123 Main Street, Your City',
                 'created_at' => now()->subDays(rand(1, 180)),
             ]));

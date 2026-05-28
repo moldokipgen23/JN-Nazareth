@@ -11,15 +11,35 @@ use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\FolderController;
 use App\Http\Controllers\Admin\GalleryController;
 use App\Http\Controllers\Admin\GalleryFolderController;
-use App\Http\Controllers\Admin\MemberController;
-use App\Http\Controllers\Admin\MemberFileController;
+use App\Http\Controllers\Admin\StudentController;
+use App\Http\Controllers\Admin\ICardController;
+use App\Http\Controllers\Admin\ResultCardController;
+use App\Http\Controllers\Admin\StudentFileController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\HallOfFameController;
 use App\Http\Controllers\Admin\ClassroomController;
 use App\Http\Controllers\Admin\SiteCustomizerController;
+use App\Http\Controllers\Admin\TeacherAssignmentController;
 use App\Http\Controllers\Admin\TeacherController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VideoController;
+use App\Http\Controllers\Admin\AcademicYearController;
+use App\Http\Controllers\Admin\SubjectController;
+use App\Http\Controllers\Admin\SectionController;
+use App\Http\Controllers\Admin\GradeScaleController;
+use App\Http\Controllers\Admin\WorkingYearController;
+use App\Http\Controllers\Admin\PromotionRuleController;
+use App\Http\Controllers\Admin\AttendanceController as AdminAttendanceController;
+use App\Http\Controllers\Admin\ExamController;
+use App\Http\Controllers\Admin\QuestionsController as AdminQuestionsController;
+use App\Http\Controllers\Teacher\QuestionsController as TeacherQuestionsController;
+use App\Http\Controllers\Admin\MarksController as AdminMarksController;
+use App\Http\Controllers\Admin\MarksAnalyticsController;
+use App\Http\Controllers\Teacher\AttendanceController as TeacherAttendanceController;
+use App\Http\Controllers\Teacher\MarksController as TeacherMarksController;
+use App\Http\Controllers\Teacher\PortalController as TeacherPortalController;
+use App\Http\Controllers\Teacher\NotesController as TeacherNotesController;
+use App\Http\Controllers\Admin\NotesController as AdminNotesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\InquiryController as PublicInquiryController;
@@ -88,6 +108,7 @@ Route::prefix('admin')
         // Dashboard — available to every admin-area role
         Route::middleware('role:admin,staff,teacher')->group(function () {
             Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+            Route::post('working-year', [WorkingYearController::class, 'switch'])->name('working-year.switch');
         });
 
         // ── Classes — teachers see their own, admins see all ──────
@@ -98,25 +119,75 @@ Route::prefix('admin')
                  ->name('classes.show');
         });
 
+        // ── Attendance — admin review/override only ───────────────
+        Route::middleware('role:admin')->group(function () {
+            Route::get('attendance', [AdminAttendanceController::class, 'index'])
+                 ->name('attendance.index');
+            Route::put('attendance/{attendance}', [AdminAttendanceController::class, 'update'])
+                 ->name('attendance.update');
+            Route::get('attendance/analytics', [AdminAttendanceController::class, 'analytics'])
+                 ->name('attendance.analytics');
+
+            // Exams & Marks
+            Route::get('exams', [ExamController::class, 'index'])->name('exams.index');
+            Route::post('exams', [ExamController::class, 'store'])->name('exams.store');
+            Route::put('exams/{exam}', [ExamController::class, 'update'])->name('exams.update');
+            Route::delete('exams/{exam}', [ExamController::class, 'destroy'])->name('exams.destroy');
+            Route::post('exams/{exam}/toggle', [ExamController::class, 'toggle'])->name('exams.toggle');
+
+            Route::get('marks', [AdminMarksController::class, 'index'])->name('marks.index');
+            Route::put('marks/{mark}', [AdminMarksController::class, 'update'])->name('marks.update');
+            Route::get('marks/analytics', [MarksAnalyticsController::class, 'index'])->name('marks.analytics');
+
+            Route::get('questions', [AdminQuestionsController::class, 'index'])->name('questions.index');
+            Route::get('questions/export', [AdminQuestionsController::class, 'export'])->name('questions.export');
+            Route::post('questions/{question}/review', [AdminQuestionsController::class, 'markReviewed'])->name('questions.review');
+            Route::delete('questions/{question}', [AdminQuestionsController::class, 'destroy'])->name('questions.destroy');
+
+            // Notes & Assignments — admin review
+            Route::get('notes', [AdminNotesController::class, 'index'])->name('notes.index');
+            Route::delete('notes/{note}', [AdminNotesController::class, 'destroy'])->name('notes.destroy');
+        });
+
         // ── Staff + admin area ────────────────────────────────────
         Route::middleware('role:admin,staff')->group(function () {
 
-        // Members
-        Route::get('members/import', [MemberController::class, 'importForm'])
-             ->name('members.import.form');
-        Route::post('members/import', [MemberController::class, 'import'])
-             ->name('members.import');
-        Route::get('members/import-template', [MemberController::class, 'importTemplate'])
-             ->name('members.import.template');
-        Route::resource('members', MemberController::class);
+        // Students
+        Route::get('students/import', [StudentController::class, 'importForm'])
+             ->name('students.import.form');
+        Route::post('students/import', [StudentController::class, 'import'])
+             ->name('students.import');
+        Route::get('students/import-template', [StudentController::class, 'importTemplate'])
+             ->name('students.import.template');
+        Route::get('students/export', [StudentController::class, 'export'])
+             ->name('students.export');
+        Route::get('students/export-class', [StudentController::class, 'exportClass'])
+             ->name('students.export-class');
+        Route::get('students/export-class-csv', [StudentController::class, 'exportClassCsv'])
+             ->name('students.export-class-csv');
+        Route::get('students/download-class-docs', [StudentController::class, 'downloadClassDocs'])
+             ->name('students.download-class-docs');
+        Route::get('students/suggest-roll', [StudentController::class, 'suggestRoll'])
+             ->name('students.suggest-roll');
+        Route::resource('students', StudentController::class);
+        Route::get('students/{student}/passport', [StudentController::class, 'passport'])
+             ->name('students.passport');
+        Route::get('students/{student}/result-card/{exam}', [ResultCardController::class, 'download'])
+             ->name('students.result-card');
+        Route::get('students/{student}/report-card/full-year', [ResultCardController::class, 'fullYear'])
+             ->name('students.report-card.full-year');
+        Route::get('students/{student}/icard', [ICardController::class, 'download'])
+             ->name('students.icard');
+        Route::get('students/icards/batch', [ICardController::class, 'batchDownload'])
+             ->name('students.icard.batch');
 
-        // Member files
-        Route::post('members/{member}/files', [MemberFileController::class, 'store'])
-             ->name('member-files.store');
-        Route::delete('member-files/{memberFile}', [MemberFileController::class, 'destroy'])
-             ->name('member-files.destroy');
-        Route::get('member-files/{memberFile}/download', [MemberFileController::class, 'download'])
-             ->name('member-files.download');
+        // Student files
+        Route::post('students/{student}/files', [StudentFileController::class, 'store'])
+             ->name('student-files.store');
+        Route::delete('student-files/{studentFile}', [StudentFileController::class, 'destroy'])
+             ->name('student-files.destroy');
+        Route::get('student-files/{studentFile}/download', [StudentFileController::class, 'download'])
+             ->name('student-files.download');
 
         // Folders
         Route::resource('folders', FolderController::class);
@@ -225,6 +296,53 @@ Route::prefix('admin')
                  ->name('hall-of-fame.reorder');
         });
 
+        // Subjects — admin only
+        Route::middleware('role:admin')->group(function () {
+            Route::get('subjects', [SubjectController::class, 'index'])->name('subjects.index');
+            Route::post('subjects', [SubjectController::class, 'store'])->name('subjects.store');
+            Route::put('subjects/{subject}', [SubjectController::class, 'update'])->name('subjects.update');
+            Route::delete('subjects/{subject}', [SubjectController::class, 'destroy'])->name('subjects.destroy');
+            Route::post('subjects/{subject}/toggle', [SubjectController::class, 'toggle'])->name('subjects.toggle');
+            Route::post('subjects/reorder', [SubjectController::class, 'reorder'])->name('subjects.reorder');
+
+            // Grade Scale
+            Route::get('grade-scales', [GradeScaleController::class, 'index'])->name('grade-scales.index');
+            Route::post('grade-scales', [GradeScaleController::class, 'store'])->name('grade-scales.store');
+            Route::put('grade-scales/{gradeScale}', [GradeScaleController::class, 'update'])->name('grade-scales.update');
+            Route::delete('grade-scales/{gradeScale}', [GradeScaleController::class, 'destroy'])->name('grade-scales.destroy');
+            Route::post('grade-scales/{gradeScale}/toggle', [GradeScaleController::class, 'toggle'])->name('grade-scales.toggle');
+            Route::post('grade-scales/seed', [GradeScaleController::class, 'seed'])->name('grade-scales.seed');
+        });
+
+        // Sections — admin only
+        Route::middleware('role:admin')->group(function () {
+            Route::get('sections', [SectionController::class, 'index'])->name('sections.index');
+            Route::post('sections', [SectionController::class, 'store'])->name('sections.store');
+            Route::delete('sections/{section}', [SectionController::class, 'destroy'])->name('sections.destroy');
+        });
+
+        // Academic Years — admin only
+        Route::middleware('role:admin')->group(function () {
+            Route::get('academic-years', [AcademicYearController::class, 'index'])->name('academic-years.index');
+            Route::post('academic-years', [AcademicYearController::class, 'store'])->name('academic-years.store');
+            Route::put('academic-years/{academicYear}', [AcademicYearController::class, 'update'])->name('academic-years.update');
+            Route::delete('academic-years/{academicYear}', [AcademicYearController::class, 'destroy'])->name('academic-years.destroy');
+            Route::post('academic-years/{academicYear}/activate', [AcademicYearController::class, 'activate'])->name('academic-years.activate');
+            Route::get('academic-years/{academicYear}/promote', [AcademicYearController::class, 'promoteForm'])->name('academic-years.promote.form');
+            Route::post('academic-years/{academicYear}/promote', [AcademicYearController::class, 'promote'])->name('academic-years.promote');
+            Route::get('academic-years/{academicYear}/students', [AcademicYearController::class, 'students'])->name('academic-years.students');
+
+            // Promotion rules
+            Route::put('academic-years/{academicYear}/promotion-rules', [PromotionRuleController::class, 'update'])->name('promotion-rules.update');
+
+            // Assign roll numbers
+            Route::get('academic-years/{academicYear}/assign-rolls', [AcademicYearController::class, 'assignRollsForm'])->name('academic-years.assign-rolls');
+            Route::post('academic-years/{academicYear}/assign-rolls', [AcademicYearController::class, 'assignRolls'])->name('academic-years.assign-rolls.save');
+
+            // Enrollment status change (from student profile)
+            Route::patch('students/{student}/enrollment-status', [StudentController::class, 'updateEnrollmentStatus'])->name('students.enrollment-status');
+        });
+
         // Pages — admin only
         Route::middleware('role:admin')->group(function () {
             Route::get('pages', [PageController::class, 'index'])->name('pages.index');
@@ -238,9 +356,65 @@ Route::prefix('admin')
             Route::resource('users', UserController::class);
 
             // Teachers — admin only
-            Route::resource('teachers', TeacherController::class)
-                 ->except(['show']);
+            Route::resource('teachers', TeacherController::class);
+            Route::post('teachers/{teacher}/create-login', [TeacherController::class, 'createLogin'])
+                 ->name('teachers.create-login');
+            Route::post('teachers/{teacher}/link-user', [TeacherController::class, 'linkUser'])
+                 ->name('teachers.link-user');
+            Route::post('teachers/{teacher}/unlink-user/{user}', [TeacherController::class, 'unlinkUser'])
+                 ->name('teachers.unlink-user');
+            Route::post('teachers/{teacher}/year-status', [TeacherController::class, 'updateYearStatus'])
+                 ->name('teachers.year-status');
+
+            Route::get('teacher-assignments', [TeacherAssignmentController::class, 'index'])
+                 ->name('teacher-assignments.index');
+            Route::post('teacher-assignments/class', [TeacherAssignmentController::class, 'storeClassTeacher'])
+                 ->name('teacher-assignments.class.store');
+            Route::delete('teacher-assignments/class/{assignment}', [TeacherAssignmentController::class, 'destroyClassTeacher'])
+                 ->name('teacher-assignments.class.destroy');
+            Route::post('teacher-assignments/subject', [TeacherAssignmentController::class, 'storeSubjectTeacher'])
+                 ->name('teacher-assignments.subject.store');
+            Route::delete('teacher-assignments/subject/{assignment}', [TeacherAssignmentController::class, 'destroySubjectTeacher'])
+                 ->name('teacher-assignments.subject.destroy');
         });
 
         }); // end of role:admin,staff group
+    });
+
+// ---------------------------------------------------------------------------
+// Teacher mobile portal — lightweight, mobile-first
+// ---------------------------------------------------------------------------
+
+Route::prefix('teacher')
+    ->name('teacher.')
+    ->middleware(['auth', 'role:teacher,admin'])
+    ->group(function () {
+        Route::get('/',         [TeacherPortalController::class, 'dashboard'])->name('dashboard');
+        Route::get('/classes',  [TeacherPortalController::class, 'classes'])->name('classes');
+        Route::get('/subjects', [TeacherPortalController::class, 'subjects'])->name('subjects');
+
+        // Attendance
+        Route::get('/attendance', [TeacherAttendanceController::class, 'index'])
+             ->name('attendance.index');
+        Route::get('/attendance/{class}/{section}', [TeacherAttendanceController::class, 'mark'])
+             ->name('attendance.mark');
+        Route::post('/attendance/{class}/{section}', [TeacherAttendanceController::class, 'store'])
+             ->name('attendance.store');
+
+        // Marks
+        Route::get('/marks', [TeacherMarksController::class, 'index'])->name('marks.index');
+        Route::get('/marks/{exam}/{class}/{section}/{subject}', [TeacherMarksController::class, 'sheet'])
+             ->name('marks.sheet');
+        Route::post('/marks/{exam}/{class}/{section}/{subject}', [TeacherMarksController::class, 'store'])
+             ->name('marks.store');
+
+        // Questions
+        Route::get('/questions', [TeacherQuestionsController::class, 'index'])->name('questions.index');
+        Route::post('/questions', [TeacherQuestionsController::class, 'store'])->name('questions.store');
+        Route::delete('/questions/{question}', [TeacherQuestionsController::class, 'destroy'])->name('questions.destroy');
+
+        // Notes & Assignments
+        Route::get('/notes', [TeacherNotesController::class, 'index'])->name('notes.index');
+        Route::post('/notes', [TeacherNotesController::class, 'store'])->name('notes.store');
+        Route::delete('/notes/{note}', [TeacherNotesController::class, 'destroy'])->name('notes.destroy');
     });

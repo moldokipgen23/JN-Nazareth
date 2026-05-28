@@ -40,7 +40,7 @@
     <div style="font-size:13px; font-weight:700; color:#0f172a; margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid #f8fafc;">
         Upload to "{{ $folder->name }}"
     </div>
-    <form method="POST" action="{{ route('admin.gallery-folders.images.store', $folder) }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('admin.gallery-folders.images.store', $folder) }}" enctype="multipart/form-data" id="upload-form">
         @csrf
         @if($errors->any())
             <div style="background:#fff1f2; border:1px solid #fecdd3; color:#9f1239; padding:10px 14px; border-radius:8px; font-size:12px; margin-bottom:12px;">
@@ -74,10 +74,18 @@
                        style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px; box-sizing:border-box;"
                        onfocus="this.style.borderColor='#14b8a6'" onblur="this.style.borderColor='#e2e8f0'">
             </div>
-            <button type="submit"
+            <button type="submit" id="upload-btn"
                     style="background:linear-gradient(135deg,#0f766e,#14b8a6); color:#fff; border:none; padding:9px 20px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;">
                 Upload
             </button>
+        </div>
+
+        {{-- Upload progress --}}
+        <div id="upload-progress" style="display:none; margin-top:14px;">
+            <div style="height:8px; background:#f1f5f9; border-radius:6px; overflow:hidden;">
+                <div id="progress-bar" style="height:100%; width:0%; background:linear-gradient(135deg,#0f766e,#14b8a6); transition:width .25s;"></div>
+            </div>
+            <p id="progress-text" style="font-size:12px; color:#64748b; margin:8px 0 0;"></p>
         </div>
     </form>
 </div>
@@ -146,6 +154,137 @@ function handleDrop(e) {
     input.files = e.dataTransfer.files;
     updateLabel(input);
 }
+
+/* Sequential upload — one image per request, with retry. Survives
+   network hiccups and server size limits; a failed file is isolated. */
+(function () {
+    const form     = document.getElementById('upload-form');
+    const input    = document.getElementById('folder-upload');
+    const btn      = document.getElementById('upload-btn');
+    const wrap     = document.getElementById('upload-progress');
+    const bar      = document.getElementById('progress-bar');
+    const text     = document.getElementById('progress-text');
+    const token    = document.querySelector('meta[name="csrf-token"]')?.content
+                     || form.querySelector('input[name="_token"]').value;
+
+    /* Shrink a photo in the browser before upload: scale to max 1920px
+       and re-encode as JPEG. An 8 MB phone photo becomes ~300 KB, so the
+       upload is tiny — it can't hit a size limit or get corrupted. */
+    function compressImage(file) {
+        return new Promise(function (resolve) {
+            // Leave GIFs, SVGs and already-small files untouched.
+            if (!/^image\/(jpe?g|png|webp)$/i.test(file.type) || file.size < 400 * 1024) {
+                resolve(file);
+                return;
+            }
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = function () {
+                URL.revokeObjectURL(url);
+                const MAX = 1920;
+                let w = img.naturalWidth, h = img.naturalHeight;
+                if (w > MAX || h > MAX) {
+                    if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+                    else        { w = Math.round(w * MAX / h); h = MAX; }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                canvas.toBlob(function (blob) {
+                    if (blob && blob.size < file.size) {
+                        resolve(new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg',
+                                          { type: 'image/jpeg' }));
+                    } else {
+                        resolve(file);
+                    }
+                }, 'image/jpeg', 0.82);
+            };
+            img.onerror = function () { URL.revokeObjectURL(url); resolve(file); };
+            img.src = url;
+        });
+    }
+
+    async function uploadOne(file, caption) {
+        let payload = file;
+        try { payload = await compressImage(file); } catch (e) { payload = file; }
+
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                const fd = new FormData();
+                fd.append('images[]', payload);
+                fd.append('_token', token);
+                if (caption) fd.append('caption', caption);
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                });
+                if (res.ok) return { ok: true };
+                // Validation rejection — won't change on retry, report the reason.
+                if (res.status === 422) {
+                    let msg = 'Rejected by server';
+                    try {
+                        const j = await res.json();
+                        msg = (Object.values(j.errors || {}).flat()[0]) || j.message || msg;
+                    } catch (e) {}
+                    return { ok: false, error: msg };
+                }
+                if (res.status === 419) {
+                    return { ok: false, error: 'Session expired — reload the page and log in again' };
+                }
+                if (res.status === 413) {
+                    return { ok: false, error: 'Server rejected the file as too large (413)' };
+                }
+                // 5xx / other — remember the status, then retry.
+                if (attempt === 3) {
+                    return { ok: false, error: 'Server error ' + res.status };
+                }
+            } catch (e) { /* network blip — retry */ }
+            await new Promise(r => setTimeout(r, 600 * attempt));
+        }
+        return { ok: false, error: 'Upload failed — network timeout after 3 tries' };
+    }
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const files = Array.from(input.files);
+        if (!files.length) return;
+
+        const caption = form.querySelector('input[name="caption"]').value;
+        btn.disabled = true;
+        btn.textContent = 'Uploading…';
+        btn.style.opacity = '.6';
+        wrap.style.display = 'block';
+
+        let done = 0;
+        const failures = [];
+        for (const file of files) {
+            const r = await uploadOne(file, caption);
+            if (r.ok) {
+                done++;
+            } else {
+                failures.push(file.name + ' — ' + r.error);
+            }
+            const total = done + failures.length;
+            bar.style.width = Math.round((total / files.length) * 100) + '%';
+            text.textContent = `Uploaded ${done} of ${files.length}` +
+                (failures.length ? ` · ${failures.length} failed` : '');
+        }
+
+        if (failures.length) {
+            bar.style.background = '#f59e0b';
+            text.innerHTML = `<strong>${done} uploaded, ${failures.length} failed:</strong><br>` +
+                failures.map(f => '• ' + f).join('<br>') +
+                `<br><span style="color:#64748b;">The successful ${done} are saved. Re-select only the failed files and upload again.</span>`;
+            btn.disabled = false;
+            btn.textContent = 'Upload';
+            btn.style.opacity = '1';
+        } else {
+            text.textContent = `All ${done} images uploaded. Reloading…`;
+            setTimeout(() => window.location.reload(), 900);
+        }
+    });
+})();
 </script>
 
 @endsection

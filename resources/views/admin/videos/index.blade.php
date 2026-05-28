@@ -25,7 +25,7 @@
     </div>
 @endif
 
-<div style="display:grid; grid-template-columns:1fr 340px; gap:20px; align-items:start;">
+<div style="display:grid; grid-template-columns:1fr 340px; gap:20px; align-items:start;" class="dash-event-side">
 
     {{-- ── Video list ── --}}
     <div>

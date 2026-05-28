@@ -37,7 +37,7 @@ class SiteSettingsSeeder extends Seeder
 
             // SEO
             'seo_meta_title'       => 'My Community Website',
-            'seo_meta_description' => 'A welcoming community website powered by Ehlom Blog CMS. Share news, events, photos and stories with your members.',
+            'seo_meta_description' => 'JN Nazareth School — A welcoming school community. Stay connected with news, events, and updates.',
             'seo_meta_keywords'    => 'community, blog, events, gallery, news',
             'seo_robots'           => 'index, follow',
             'seo_canonical_url'    => '',

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Helpers\ActivityLogger;
 use App\Http\Controllers\Controller;
-use App\Models\Member;
+use App\Models\Student;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -22,7 +22,7 @@ class UserController extends Controller
     public function create()
     {
         $roles   = Role::orderBy('name')->pluck('name');
-        $classes = Member::classes();
+        $classes = Student::classes();
 
         return view('admin.users.create', compact('roles', 'classes'));
     }
@@ -63,7 +63,7 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $roles   = Role::orderBy('name')->pluck('name');
-        $classes = Member::classes();
+        $classes = Student::classes();
 
         return view('admin.users.edit', compact('user', 'roles', 'classes'));
     }
@@ -126,7 +126,7 @@ class UserController extends Controller
 
         return array_values(array_intersect(
             $request->input('classes', []),
-            Member::classes()
+            Student::classes()
         ));
     }
 }

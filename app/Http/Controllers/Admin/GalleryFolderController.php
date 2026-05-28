@@ -41,7 +41,7 @@ class GalleryFolderController extends Controller
             'type'        => 'required|in:gallery,programs',
             'description' => 'nullable|string|max:1000',
             'sort_order'  => 'nullable|integer|min:0',
-            'cover_image' => 'nullable|image|max:5120',
+            'cover_image' => 'nullable|image|max:102400',
         ]);
 
         if ($request->hasFile('cover_image')) {
@@ -87,7 +87,7 @@ class GalleryFolderController extends Controller
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'sort_order'  => 'nullable|integer|min:0',
-            'cover_image' => 'nullable|image|max:5120',
+            'cover_image' => 'nullable|image|max:102400',
         ]);
 
         if ($request->hasFile('cover_image')) {
@@ -141,7 +141,7 @@ class GalleryFolderController extends Controller
     {
         $request->validate([
             'images'   => 'required|array|min:1',
-            'images.*' => 'required|image|max:5120',
+            'images.*' => 'required|image|max:102400',
             'caption'  => 'nullable|string|max:255',
         ]);
 

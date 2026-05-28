@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Route;
  * NOTE: after changing a login slug, the route cache must be cleared
  * (the customizer save does this automatically).
  */
-const EMERGENCY_LOGIN_PATH = 'cms-recovery-7k3';
+defined('EMERGENCY_LOGIN_PATH') || define('EMERGENCY_LOGIN_PATH', 'cms-recovery-7k3');
 
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])

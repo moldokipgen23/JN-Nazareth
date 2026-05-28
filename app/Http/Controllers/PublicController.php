@@ -8,7 +8,7 @@ use App\Models\Video;
 use App\Models\Event;
 use App\Models\GalleryFolder;
 use App\Models\GalleryItem;
-use App\Models\Member;
+use App\Models\Student;
 use App\Models\Page;
 use Illuminate\Http\Request;
 
@@ -31,7 +31,7 @@ class PublicController extends Controller
                      ->get();
 
         $stats = [
-            'members' => Member::count(),
+            'members' => Student::count(),
             'events'  => Event::count(),
             'blogs'   => Blog::where('published', true)->count(),
         ];

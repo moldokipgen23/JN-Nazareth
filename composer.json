@@ -1,12 +1,13 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "ehlom/blog-cms",
+    "name": "jn-nazareth/cms",
     "type": "project",
-    "description": "Ehlom Blog CMS — A powerful, fully-customisable community CMS built on Laravel.",
-    "keywords": ["laravel", "cms", "blog", "church", "community"],
+    "description": "JN Nazareth School — A custom school management system built on Laravel.",
+    "keywords": ["laravel", "school", "erp", "cms"],
     "license": "MIT",
     "require": {
         "php": "^8.4",
+        "barryvdh/laravel-dompdf": "^3.1",
         "laravel/breeze": "^2.4",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",

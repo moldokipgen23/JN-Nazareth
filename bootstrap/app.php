@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
         $middleware->trustProxies(at: '*');
+
+        $middleware->web(prepend: [
+            \App\Http\Middleware\SetWorkingYear::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

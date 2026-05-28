@@ -9,20 +9,21 @@ use App\Models\Download;
 use App\Models\Event;
 use App\Models\GalleryFolder;
 use App\Models\Inquiry;
-use App\Models\Member;
+use App\Models\Student;
+use App\Models\StudentEnrollment;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        // Teacher-only accounts land on their own classes page.
+        // Teacher-only accounts land on the mobile teacher portal.
         if (auth()->user()->isTeacherOnly()) {
-            return redirect()->route('admin.classes.index');
+            return redirect()->route('teacher.dashboard');
         }
 
         $stats = [
-            'active_students' => Member::where('is_active', true)->count(),
-            'total_students'  => Member::count(),
+            'active_students' => StudentEnrollment::forActiveYear()->active()->count(),
+            'total_students'  => Student::count(),
             'news'            => Blog::where('published', true)->count(),
             'gallery'         => GalleryFolder::count(),
             'downloads'       => Download::count(),
@@ -33,12 +34,14 @@ class DashboardController extends Controller
 
         // Students per class
         $classCounts = [];
-        $rawCounts = Member::selectRaw('class, count(*) as total')
+        $rawCounts = StudentEnrollment::forActiveYear()
+            ->active()
             ->whereNotNull('class')
             ->groupBy('class')
+            ->selectRaw('class, count(*) as total')
             ->pluck('total', 'class')
             ->toArray();
-        foreach (Member::classes() as $class) {
+        foreach (Student::classes() as $class) {
             $classCounts[$class] = $rawCounts[$class] ?? 0;
         }
 
@@ -49,7 +52,7 @@ class DashboardController extends Controller
             ->get();
 
         // Recent 5 students
-        $recentMembers = Member::orderByDesc('created_at')->take(5)->get();
+        $recentStudents = Student::orderByDesc('created_at')->take(5)->get();
 
         // Upcoming events
         $upcomingEvents = Event::where('starts_at', '>=', now())
@@ -58,7 +61,7 @@ class DashboardController extends Controller
             ->get();
 
         return view('admin.dashboard', compact(
-            'stats', 'classCounts', 'recentActivity', 'recentMembers', 'upcomingEvents'
+            'stats', 'classCounts', 'recentActivity', 'recentStudents', 'upcomingEvents'
         ));
     }
 }

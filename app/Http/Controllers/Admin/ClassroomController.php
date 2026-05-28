@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Member;
+use App\Models\AcademicYear;
+use App\Models\Section;
+use App\Models\Student;
+use App\Models\StudentEnrollment;
 
 /**
  * The "Classes" area. Admins see every class; teachers see only the
@@ -14,15 +17,20 @@ class ClassroomController extends Controller
     public function index()
     {
         $user = auth()->user();
+        $activeYear = AcademicYear::current();
+        $isAdmin = $user->hasRole('admin');
 
-        $allClasses = Member::classes();
-        $visible = $user->hasRole('admin')
+        $allClasses = Student::classes();
+        $visible = $isAdmin
             ? $allClasses
             : array_values(array_intersect($allClasses, $user->teachingClasses()));
 
-        $counts = Member::selectRaw('class, count(*) as total')
+        $counts = StudentEnrollment::query()
+            ->forActiveYear()
+            ->active()
             ->whereNotNull('class')
             ->groupBy('class')
+            ->selectRaw('class, count(*) as total')
             ->pluck('total', 'class')
             ->toArray();
 
@@ -31,23 +39,38 @@ class ClassroomController extends Controller
             $classes[$class] = $counts[$class] ?? 0;
         }
 
-        return view('admin.classes.index', compact('classes'));
+        return view('admin.classes.index', compact('classes', 'activeYear', 'isAdmin'));
     }
 
     public function show(string $class)
     {
-        abort_unless(in_array($class, Member::classes(), true), 404);
+        abort_unless(in_array($class, Student::classes(), true), 404);
 
         $user = auth()->user();
         abort_unless($user->hasRole('admin') || $user->teachesClass($class), 403,
             'You are not assigned to this class.');
 
-        $students = Member::where('class', $class)
-            ->orderByRaw('CASE WHEN roll_number IS NULL THEN 1 ELSE 0 END')
-            ->orderByRaw('CAST(roll_number AS UNSIGNED)')
+        $activeYear = AcademicYear::current();
+        $isAdmin = $user->hasRole('admin');
+
+        // Sections for this class with student counts
+        $sectionNames = Section::active()
+            ->where('class', $class)
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 
-        return view('admin.classes.show', compact('class', 'students'));
+        $sectionCounts = StudentEnrollment::forActiveYear()
+            ->active()
+            ->where('class', $class)
+            ->whereNotNull('section')
+            ->selectRaw('section, count(*) as total')
+            ->groupBy('section')
+            ->pluck('total', 'section')
+            ->toArray();
+
+        return view('admin.classes.show', compact(
+            'class', 'sectionNames', 'sectionCounts', 'activeYear', 'isAdmin'
+        ));
     }
 }

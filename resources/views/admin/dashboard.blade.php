@@ -14,6 +14,10 @@
 .avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; }
 .action-badge { display:inline-flex; align-items:center; padding:2px 9px; border-radius:99px; font-size:11px; font-weight:600; }
 .qa-btn { display:flex; align-items:center; gap:8px; padding:11px 16px; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none; }
+@media (max-width: 640px) {
+    .dash-two-col { grid-template-columns:1fr !important; }
+    .dash-event-side { grid-template-columns:1fr !important; }
+}
 </style>
 @endpush
 
@@ -31,7 +35,7 @@
 
 {{-- Quick actions --}}
 <div style="display:flex; gap:10px; flex-wrap:wrap; margin:18px 0 24px;">
-    <a href="{{ route('admin.members.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#0f766e,#14b8a6); color:#fff;">+ Add Student</a>
+    <a href="{{ route('admin.students.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#0f766e,#14b8a6); color:#fff;">+ Add Student</a>
     <a href="{{ route('admin.blogs.create') }}" class="qa-btn" style="background:#eff6ff; color:#2563eb;">+ Add News</a>
     <a href="{{ route('admin.downloads.create') }}" class="qa-btn" style="background:#f0fdf4; color:#16a34a;">+ Upload Download</a>
     <a href="{{ route('admin.inquiries.index') }}" class="qa-btn" style="background:{{ $stats['new_inquiries'] > 0 ? '#fee2e2' : '#f1f5f9' }}; color:{{ $stats['new_inquiries'] > 0 ? '#dc2626' : '#64748b' }};">
@@ -106,16 +110,16 @@
 </div>
 
 {{-- Students by class + Upcoming events --}}
-<div style="display:grid; grid-template-columns:1fr 360px; gap:20px; margin-bottom:24px;">
+<div class="dash-event-side" style="display:grid; grid-template-columns:1fr 360px; gap:20px; margin-bottom:24px;">
 
     <div class="card">
         <div class="card-header">
             <span class="card-title">Students by Class</span>
-            <a href="{{ route('admin.members.index') }}" style="font-size:12px; color:#0d9488; text-decoration:none; font-weight:600;">View all</a>
+            <a href="{{ route('admin.students.index') }}" style="font-size:12px; color:#0d9488; text-decoration:none; font-weight:600;">View all</a>
         </div>
         <div style="padding:14px 20px; display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px;">
             @foreach($classCounts as $class => $count)
-            <a href="{{ route('admin.members.index', ['class' => $class]) }}"
+            <a href="{{ route('admin.students.index', ['class' => $class]) }}"
                style="text-decoration:none; background:#f8fafc; border:1px solid #f1f5f9; border-radius:10px; padding:10px 12px;">
                 <div style="font-size:12px; font-weight:600; color:#475569;">{{ $class }}</div>
                 <div style="font-size:18px; font-weight:800; color:#0f766e; margin-top:2px;">{{ $count }}</div>
@@ -150,26 +154,26 @@
 </div>
 
 {{-- Recent students + activity --}}
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+<div class="dash-two-col" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
 
     <div class="card">
         <div class="card-header">
             <span class="card-title">Recently Added Students</span>
-            <a href="{{ route('admin.members.index') }}" style="font-size:12px; color:#0d9488; text-decoration:none; font-weight:600;">View all</a>
+            <a href="{{ route('admin.students.index') }}" style="font-size:12px; color:#0d9488; text-decoration:none; font-weight:600;">View all</a>
         </div>
-        @forelse($recentMembers as $member)
+        @forelse($recentStudents as $student)
         @php $colors = ['#3b82f6','#8b5cf6','#14b8a6','#f59e0b','#ef4444']; $c = $colors[$loop->index % count($colors)]; @endphp
         <div class="table-row" style="grid-template-columns:auto 1fr auto;">
-            <div class="avatar" style="background:{{ $c }}; margin-right:6px;">{{ strtoupper(substr($member->name, 0, 1)) }}</div>
+            <div class="avatar" style="background:{{ $c }}; margin-right:6px;">{{ strtoupper(substr($student->name, 0, 1)) }}</div>
             <div>
-                <div style="font-weight:600; color:#0f172a;">{{ $member->name }}</div>
-                <div style="font-size:11px; color:#94a3b8;">{{ $member->class ?? 'No class' }}{{ $member->roll_number ? ' · Roll '.$member->roll_number : '' }}</div>
+                <div style="font-weight:600; color:#0f172a;">{{ $student->name }}</div>
+                <div style="font-size:11px; color:#94a3b8;">{{ $student->class ?? 'No class' }}{{ $student->roll_number ? ' · Roll '.$student->roll_number : '' }}</div>
             </div>
-            <div style="font-size:11px; color:#94a3b8;">{{ $member->created_at->diffForHumans() }}</div>
+            <div style="font-size:11px; color:#94a3b8;">{{ $student->created_at->diffForHumans() }}</div>
         </div>
         @empty
         <div style="padding:30px 20px; text-align:center; color:#94a3b8; font-size:13px;">No students yet.
-            <a href="{{ route('admin.members.create') }}" style="color:#0d9488; font-weight:600;">Add first student →</a>
+            <a href="{{ route('admin.students.create') }}" style="color:#0d9488; font-weight:600;">Add first student →</a>
         </div>
         @endforelse
     </div>

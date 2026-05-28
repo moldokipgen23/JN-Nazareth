@@ -210,8 +210,7 @@
       <a href="https://ehlom.com" target="_blank" rel="noopener" class="ft-credit">
         <img src="{{ asset('images/ehlom.png') }}" alt="Ehlom Digital Logo">
         <div class="ft-credit-label">
-          <strong>Ehlom Digital</strong>
-          <span>&nbsp;· Designed &amp; Managed</span>
+          <span>Managed &amp; Designed by <strong>Ehlom Digital</strong></span>
         </div>
       </a>
     </div>

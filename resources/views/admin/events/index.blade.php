@@ -2,7 +2,7 @@
 @section('page-title', 'Events')
 
 @section('content')
-<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
     <div>
         <h2 style="font-size:18px; font-weight:700; color:#0f172a; margin:0;">Events</h2>
         <p style="font-size:12px; color:#64748b; margin:3px 0 0;">{{ $events->total() }} total events</p>

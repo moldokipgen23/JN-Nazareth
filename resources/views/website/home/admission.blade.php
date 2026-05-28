@@ -56,7 +56,7 @@
               <label for="cls">Class Applying For *</label>
               <select id="cls" required>
                 <option value="">Select Class</option>
-                @foreach(\App\Models\Member::classes() as $c)
+                @foreach(\App\Models\Student::classes() as $c)
                   <option>{{ $c }}</option>
                 @endforeach
               </select>

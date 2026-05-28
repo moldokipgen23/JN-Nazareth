@@ -47,7 +47,7 @@ class SiteCustomizerController extends Controller
         foreach ($this->imageKeys as $key) {
             if ($request->hasFile($key)) {
                 // Favicons may be .ico — allow it alongside images.
-                $request->validate([$key => 'file|mimes:jpg,jpeg,png,webp,gif,svg,ico|max:4096']);
+                $request->validate([$key => 'file|mimes:jpg,jpeg,png,webp,gif,svg,ico|max:102400']);
                 if (Settings::get($key)) {
                     Storage::disk('public')->delete(Settings::get($key));
                 }
@@ -206,7 +206,7 @@ class SiteCustomizerController extends Controller
             $upload = $request->file("certs.{$idx}.file");
             if ($upload) {
                 $request->validate([
-                    "certs.{$idx}.file" => 'file|mimes:pdf,jpg,jpeg,png,webp|max:8192',
+                    "certs.{$idx}.file" => 'file|mimes:pdf,jpg,jpeg,png,webp|max:102400',
                 ]);
                 if ($file !== '') {
                     Storage::disk('public')->delete($file);
@@ -292,7 +292,7 @@ class SiteCustomizerController extends Controller
             // Upload / replace the photo.
             $file = $request->file("members.{$idx}.photo");
             if ($file) {
-                $request->validate(["members.{$idx}.photo" => 'image|max:4096']);
+                $request->validate(["members.{$idx}.photo" => 'image|max:102400']);
                 if ($photo !== '') {
                     Storage::disk('public')->delete($photo);
                 }
@@ -357,7 +357,7 @@ class SiteCustomizerController extends Controller
 
             $upload = $request->file("calendar.{$idx}.file");
             if ($upload) {
-                $request->validate(["calendar.{$idx}.file" => 'image|max:8192']);
+                $request->validate(["calendar.{$idx}.file" => 'image|max:102400']);
                 if ($file !== '') {
                     Storage::disk('public')->delete($file);
                 }
@@ -429,7 +429,7 @@ class SiteCustomizerController extends Controller
     public function storeSlide(Request $request)
     {
         $request->validate([
-            'image'       => 'required|image|max:4096',
+            'image'       => 'required|image|max:102400',
             'title'       => 'nullable|string|max:150',
             'subtitle'    => 'nullable|string|max:300',
             'button_text' => 'nullable|string|max:60',

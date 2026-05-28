@@ -2,7 +2,7 @@
 @section('page-title', 'Blog Posts')
 
 @section('content')
-<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
     <div>
         <h2 style="font-size:18px; font-weight:700; color:#0f172a; margin:0;">Blog Posts</h2>
         <p style="font-size:12px; color:#64748b; margin:3px 0 0;">{{ $blogs->total() }} posts total</p>
@@ -14,7 +14,7 @@
     </a>
 </div>
 
-<div style="background:#fff; border-radius:14px; box-shadow:0 1px 8px rgba(0,0,0,.06); border:1px solid #f1f5f9; overflow:hidden;">
+<div class="resp-table-wrap" style="background:#fff; border-radius:14px; box-shadow:0 1px 8px rgba(0,0,0,.06); border:1px solid #f1f5f9;">
     <div style="display:grid; grid-template-columns:2fr 1fr 120px 130px; gap:12px; padding:12px 20px; background:#f8fafc; border-bottom:1px solid #e2e8f0; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.06em;">
         <div>Title</div><div>Author</div><div>Status</div><div style="text-align:right;">Actions</div>
     </div>
