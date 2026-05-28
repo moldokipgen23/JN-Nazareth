@@ -14,8 +14,31 @@
         <p style="font-size:12px; color:#64748b; margin:4px 0 0;">
             Active year:
             <strong style="color:#0f766e;">{{ $activeYear?->name ?? 'Not set' }}</strong>
+            @if($filterTeacher)
+                &nbsp;·&nbsp; Filtered: <strong style="color:#0f766e;">{{ $filterTeacher->name }}</strong>
+            @endif
         </p>
     </div>
+</div>
+
+{{-- Filter by teacher --}}
+<div style="background:#fff; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 1px 8px rgba(0,0,0,.05); padding:14px 18px; margin-bottom:18px;">
+    <form method="GET" action="{{ route('admin.teacher-assignments.index') }}" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <label style="font-size:12px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:.4px;">Filter by Teacher:</label>
+        <select name="teacher_id" style="border:1px solid #d1d5db; border-radius:10px; padding:9px 12px; font-size:13px; min-width:240px;">
+            <option value="">— All teachers —</option>
+            @foreach($teachers as $t)
+                <option value="{{ $t->id }}" {{ (string)$filterTeacherId === (string)$t->id ? 'selected' : '' }}>{{ $t->name }}</option>
+            @endforeach
+        </select>
+        <button type="submit" style="background:#0f766e; color:#fff; border:none; border-radius:10px; padding:9px 20px; font-size:13px; font-weight:700; cursor:pointer;">Apply</button>
+        @if($filterTeacherId)
+            <a href="{{ route('admin.teacher-assignments.index') }}" style="background:#f1f5f9; color:#475569; padding:9px 16px; border-radius:10px; font-size:12px; font-weight:600; text-decoration:none;">Clear filter</a>
+            <a href="{{ route('admin.teachers.edit', $filterTeacherId) }}" style="margin-left:auto; background:#eff6ff; color:#1d4ed8; padding:9px 16px; border-radius:10px; font-size:12px; font-weight:700; text-decoration:none;">
+                Edit {{ $filterTeacher?->name ?? 'teacher' }} →
+            </a>
+        @endif
+    </form>
 </div>
 
 @if(! $activeYear)
@@ -40,7 +63,7 @@
                 <select name="teacher_id" required style="{{ $input }}">
                     <option value="">Teacher</option>
                     @foreach($teachers as $t)
-                        <option value="{{ $t->id }}">{{ $t->name }}</option>
+                        <option value="{{ $t->id }}" {{ (string)$filterTeacherId === (string)$t->id ? 'selected' : '' }}>{{ $t->name }}</option>
                     @endforeach
                 </select>
                 <select name="class" id="assign-class" required style="{{ $input }}" onchange="filterSections(this.value)">
@@ -122,7 +145,13 @@
                 </form>
             </div>
         @empty
-            <div style="padding:22px 16px; color:#94a3b8; font-size:13px;">No class teacher assignments yet.</div>
+            <div style="padding:22px 16px; color:#94a3b8; font-size:13px;">
+                @if($filterTeacher)
+                    {{ $filterTeacher->name }} is not a class teacher in this year.
+                @else
+                    No class teacher assignments yet.
+                @endif
+            </div>
         @endforelse
     </div>
 
@@ -141,7 +170,13 @@
                 </form>
             </div>
         @empty
-            <div style="padding:22px 16px; color:#94a3b8; font-size:13px;">No subject teacher assignments yet.</div>
+            <div style="padding:22px 16px; color:#94a3b8; font-size:13px;">
+                @if($filterTeacher)
+                    {{ $filterTeacher->name }} has no subject assignments in this year.
+                @else
+                    No subject teacher assignments yet.
+                @endif
+            </div>
         @endforelse
     </div>
 </div>

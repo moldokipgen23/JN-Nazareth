@@ -15,7 +15,7 @@ use Illuminate\Validation\Rule;
 
 class TeacherAssignmentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $activeYear = AcademicYear::current();
         $classes = Student::classes();
@@ -24,18 +24,24 @@ class TeacherAssignmentController extends Controller
         $sections = \App\Models\Section::active()->orderBy('sort_order')->orderBy('name')->get();
         $sectionList = $sections->groupBy('class')->map(fn($g) => $g->pluck('name'))->toJson();
 
-        $classAssignments = ClassTeacherAssignment::with('teacher')
-            ->forActiveYear()
-            ->orderBy('class')
-            ->orderBy('section')
-            ->get();
+        $filterTeacherId = $request->input('teacher_id');
+        $filterTeacher   = $filterTeacherId ? Teacher::find($filterTeacherId) : null;
 
-        $subjectAssignments = SubjectTeacherAssignment::with('teacher')
+        $classQuery = ClassTeacherAssignment::with('teacher')
             ->forActiveYear()
-            ->orderBy('class')
-            ->orderBy('section')
-            ->orderBy('subject')
-            ->get();
+            ->orderBy('class')->orderBy('section');
+
+        $subjectQuery = SubjectTeacherAssignment::with('teacher')
+            ->forActiveYear()
+            ->orderBy('class')->orderBy('section')->orderBy('subject');
+
+        if ($filterTeacherId) {
+            $classQuery->where('teacher_id', $filterTeacherId);
+            $subjectQuery->where('teacher_id', $filterTeacherId);
+        }
+
+        $classAssignments   = $classQuery->get();
+        $subjectAssignments = $subjectQuery->get();
 
         return view('admin.teacher-assignments.index', compact(
             'activeYear',
@@ -45,7 +51,9 @@ class TeacherAssignmentController extends Controller
             'sections',
             'sectionList',
             'classAssignments',
-            'subjectAssignments'
+            'subjectAssignments',
+            'filterTeacherId',
+            'filterTeacher'
         ));
     }
 
