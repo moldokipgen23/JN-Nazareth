@@ -48,8 +48,9 @@
                 <div class="card">
                     <div class="card-inner">
                         <div class="card-left">
-                            @if($student->photo)
-                                <img src="{{ storage_path('app/public/'.$student->photo) }}" class="photo" onerror="this.style.display='none'">
+                            @php $photoPath = $student->photo ? storage_path('app/public/'.$student->photo) : null; @endphp
+                            @if($photoPath && file_exists($photoPath))
+                                <img src="{{ $photoPath }}" class="photo">
                             @else
                                 <div class="photo-placeholder">{{ strtoupper(substr($student->name, 0, 1)) }}</div>
                             @endif

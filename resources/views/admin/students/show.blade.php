@@ -13,7 +13,7 @@
         <div class="flex items-center gap-3">
             <a href="{{ route('admin.students.index', $student->class ? ['class'=>$student->class] : []) }}"
                class="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
             </a>
@@ -72,9 +72,9 @@
             <div class="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12 mb-6">
                 @if($student->photo)
                     <img src="{{ \App\Helpers\Settings::storageUrl($student->photo) }}"
-                         class="w-20 h-20 rounded-full border-4 border-white object-cover shadow shrink-0">
+                         style="width:80px;height:80px;border-radius:9999px;border:4px solid #fff;object-fit:cover;box-shadow:0 1px 2px 0 rgba(0,0,0,.05);flex-shrink:0;">
                 @else
-                    <div class="w-20 h-20 rounded-full border-4 border-white bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-2xl shadow shrink-0">
+                    <div style="width:80px;height:80px;border-radius:9999px;border:4px solid #fff;background:#ccfbf1;display:flex;align-items:center;justify-content:center;color:#0f766e;font-weight:700;font-size:28px;box-shadow:0 1px 2px 0 rgba(0,0,0,.05);flex-shrink:0;">
                         {{ strtoupper(substr($student->name, 0, 1)) }}
                     </div>
                 @endif
@@ -252,7 +252,7 @@
                     @php $exams = \App\Models\Exam::where('academic_year_id', $student->currentEnrollment->academic_year_id)->where('is_active', true)->orderBy('starts_on')->get(); @endphp
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition">
-                            Result Card <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            Result Card <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="open" @click.outside="open = false" class="absolute right-0 mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                             @foreach($exams as $exam)
@@ -389,7 +389,7 @@
                         @foreach($student->files as $file)
                             <tr class="hover:bg-gray-50 transition">
                                 <td class="px-6 py-3 font-medium text-gray-800">
-                                    <span class="truncate max-w-[180px]">{{ $file->original_name ?? basename($file->path) }}</span>
+                                    <span class="truncate max-w-[180px]">{{ $file->filename ?? basename($file->path) }}</span>
                                 </td>
                                 <td class="px-6 py-3 text-gray-500">
                                     {{ isset($file->size) ? number_format($file->size / 1024, 1) . ' KB' : '—' }}

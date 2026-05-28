@@ -28,15 +28,19 @@
 <body>
     <div class="card">
         <div class="card-top">
-            <h1>JN Nazareth School</h1>
+            @php $logo = \App\Helpers\Settings::get('logo'); @endphp
+            @if($logo && file_exists(storage_path('app/public/'.$logo)))
+                <img src="{{ storage_path('app/public/'.$logo) }}" style="height:28px;display:block;margin:0 auto 4px;">
+            @endif
+            <h1>{{ \App\Helpers\Settings::get('site_name', 'JN Nazareth School') }}</h1>
             <p>Churachandpur, Manipur — Identity Card</p>
         </div>
 
         <div class="card-body">
-            @if($student->photo)
-                <img src="{{ storage_path('app/public/'.$student->photo) }}" class="photo" onerror="this.style.display='none'">
-            @endif
-            @if(!$student->photo)
+            @php $photoPath = $student->photo ? storage_path('app/public/'.$student->photo) : null; @endphp
+            @if($photoPath && file_exists($photoPath))
+                <img src="{{ $photoPath }}" class="photo">
+            @else
                 <div class="photo-placeholder">{{ strtoupper(substr($student->name, 0, 1)) }}</div>
             @endif
 
@@ -66,14 +70,27 @@
                         <td class="lbl">Mother's Name</td>
                         <td class="val">{{ $student->mother_name ?? '—' }}</td>
                     </tr>
+                    @if($student->blood_group)
                     <tr>
                         <td class="lbl">Blood Group</td>
-                        <td class="val">{{ $student->blood_group ?? '—' }}</td>
+                        <td class="val">{{ $student->blood_group }}</td>
                     </tr>
+                    @endif
                     <tr>
                         <td class="lbl">DOB</td>
                         <td class="val">{{ $student->date_of_birth?->format('d M Y') ?? '—' }}</td>
                     </tr>
+                    <tr>
+                        <td class="lbl">Parent Phone</td>
+                        <td class="val">{{ $student->parent_phone ?? $student->phone ?? '—' }}</td>
+                    </tr>
+                    @if($student->aadhar_number)
+                    @php $aDigits = preg_replace('/\s+/', '', $student->aadhar_number); @endphp
+                    <tr>
+                        <td class="lbl">Aadhar No.</td>
+                        <td class="val">XXXX XXXX {{ substr($aDigits, -4) }}</td>
+                    </tr>
+                    @endif
                     <tr>
                         <td class="lbl">Address</td>
                         <td class="val" style="font-size:8px;">{{ $student->address ?? '—' }}</td>

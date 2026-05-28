@@ -11,10 +11,10 @@ class StudentFile extends Model
 
     protected $fillable = [
         'student_id',
-        'name',
-        'file_path',
-        'type',
-        'notes',
+        'filename',
+        'path',
+        'size',
+        'uploaded_by',
     ];
 
     public function student(): BelongsTo

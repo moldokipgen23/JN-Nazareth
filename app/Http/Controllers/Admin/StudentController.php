@@ -658,10 +658,9 @@ class StudentController extends Controller
             $s = $e->student;
             $folder = str_replace(' ', '_', $e->class) . '/' . ($e->roll_number ?? $s->id) . '_' . preg_replace('/[^a-zA-Z0-9]/', '_', $s->name);
             foreach ($s->files as $file) {
-                if ($file->file_path && Storage::disk('local')->exists($file->file_path)) {
-                    $ext = pathinfo($file->file_path, PATHINFO_EXTENSION);
-                    $fname = $file->name ?: 'document';
-                    $zip->addFile(Storage::disk('local')->path($file->file_path), $folder . '/' . $fname . ($ext ? '.' . $ext : ''));
+                if ($file->path && Storage::disk('local')->exists($file->path)) {
+                    $fname = $file->filename ?: ('document_' . $file->id);
+                    $zip->addFile(Storage::disk('local')->path($file->path), $folder . '/' . $fname);
                     $added++;
                 }
             }

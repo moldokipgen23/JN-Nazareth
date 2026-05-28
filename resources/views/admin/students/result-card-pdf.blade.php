@@ -47,7 +47,7 @@
 
     <div class="header">
         @php $logo = \App\Helpers\Settings::get('logo'); @endphp
-        @if($logo)
+        @if($logo && file_exists(storage_path('app/public/'.$logo)))
             <img src="{{ storage_path('app/public/'.$logo) }}" class="logo" alt="School Logo">
         @endif
         <h1>{{ \App\Helpers\Settings::get('site_name', 'JN Nazareth School') }}</h1>
