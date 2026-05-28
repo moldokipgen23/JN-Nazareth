@@ -4,21 +4,25 @@
     <meta charset="utf-8">
     <title>Identity Card — {{ $student->name }}</title>
     @php
-        $logo    = \App\Helpers\Settings::get('school_logo');
-        $emblem  = \App\Helpers\Settings::get('about_emblem');
+        $logo      = \App\Helpers\Settings::get('school_logo');
+        $emblem    = \App\Helpers\Settings::get('about_emblem');
         $signature = \App\Helpers\Settings::get('principal_signature');
-        $schoolName    = \App\Helpers\Settings::get('site_name', 'JN Nazareth English School');
-        $schoolAddress = \App\Helpers\Settings::get('site_address', 'Khengjang Village, Churachandpur District, Manipur-795128');
-        $officeContact = \App\Helpers\Settings::get('site_phone', '');
+        $schoolName    = \App\Helpers\Settings::get('school_name', 'JN Nazareth English School');
+        $schoolAddress = \App\Helpers\Settings::get('contact_address', \App\Helpers\Settings::get('address_short', 'Khengjang Village, Churachandpur District, Manipur-795128'));
+        $officeContact = \App\Helpers\Settings::get('contact_phone', '');
+        $validUntil    = \App\Helpers\Settings::get('icard_valid_until', '');
         $logoPath      = $logo   && file_exists(storage_path('app/public/'.$logo))   ? storage_path('app/public/'.$logo)   : (file_exists(public_path('images/logo.png'))   ? public_path('images/logo.png')   : null);
         $emblemPath    = $emblem && file_exists(storage_path('app/public/'.$emblem)) ? storage_path('app/public/'.$emblem) : (file_exists(public_path('images/emblem.jpg')) ? public_path('images/emblem.jpg') : null);
         $sigPath       = $signature && file_exists(storage_path('app/public/'.$signature)) ? storage_path('app/public/'.$signature) : null;
         $photoPath     = $student->photo && file_exists(storage_path('app/public/'.$student->photo)) ? storage_path('app/public/'.$student->photo) : null;
         $validYear     = $enrollment?->academicYear?->name ?? ($student->academic_year ?? date('Y').'-'.((int)date('y')+1));
-        // Compute "Valid till March YYYY"
-        $validTillYear = null;
-        if (preg_match('/(\d{4})\D+(\d{2,4})/', $validYear, $m)) {
-            $validTillYear = strlen($m[2]) === 2 ? '20'.$m[2] : $m[2];
+        // Compute "Valid till March YYYY" if no manual override
+        $validLabel = $validUntil;
+        if (!$validLabel) {
+            if (preg_match('/(\d{4})\D+(\d{2,4})/', $validYear, $m)) {
+                $endYear = strlen($m[2]) === 2 ? '20'.$m[2] : $m[2];
+                $validLabel = 'March ' . $endYear;
+            }
         }
     @endphp
     <style>
@@ -92,8 +96,8 @@
                     @endif
                 </td>
                 <td>
-                    @if($validTillYear)
-                        <div class="valid">Valid till March {{ $validTillYear }}</div>
+                    @if($validLabel)
+                        <div class="valid">Valid till {{ $validLabel }}</div>
                     @endif
                 </td>
             </tr>

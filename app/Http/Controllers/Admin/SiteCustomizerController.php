@@ -13,7 +13,7 @@ class SiteCustomizerController extends Controller
     /** Keys that are image uploads (stored on the public disk). */
     private array $imageKeys = [
         'school_logo', 'hero_image', 'about_emblem', 'about_image', 'principal_photo',
-        'favicon', 'seo_og_image',
+        'principal_signature', 'favicon', 'seo_og_image',
     ];
 
     /** URL slugs that may not be used as a login path (would clash with real routes). */

@@ -64,6 +64,15 @@
       </div>
       <div class="g1">{!! $ta('footer_desc','Footer Description','One of the finest English medium schools in Churachandpur, Manipur — offering quality education, strong values, and disciplined learning from Preparatory to Class 10.') !!}</div>
 
+      <div class="acc-section-h">ID Card &amp; Documents</div>
+      <p class="subnote">Used on student ID cards, report cards and other printed documents.</p>
+      <div class="g2">
+        {!! $inp('principal_name','Principal Name','') !!}
+        {!! $img('principal_signature','Principal Signature (transparent PNG, ~200×60)') !!}
+      </div>
+      <div class="g1">{!! $inp('icard_valid_until','ID Card Valid Until (e.g. March 2027)','') !!}</div>
+      <p class="subnote">Leave blank to auto-compute from the academic year end.</p>
+
       <div class="acc-section-h">SEO &amp; Branding</div>
       <p class="subnote">These control how the site appears in search engines and when shared on social media.</p>
       <div class="g2">
