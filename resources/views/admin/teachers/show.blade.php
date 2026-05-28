@@ -47,12 +47,28 @@
         @endif
     </div>
     <div>
-        @php $teachingClasses = $teacher->teachingClasses(); @endphp
-        @if(!empty($teachingClasses))
-            <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Classes:</div>
-            @foreach($teachingClasses as $c)
-                <span style="background:#ecfeff;color:#0e7490;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;display:inline-block;margin:1px;">{{ $c }}</span>
+        @php
+            $mainA = $teacher->mainClassAssignments();
+            $subA  = $teacher->subjectAssignments();
+        @endphp
+        @if(empty($mainA) && empty($subA))
+            <div style="font-size:11px;color:#94a3b8;font-style:italic;">No class or subject assignments yet</div>
+        @endif
+        @if(!empty($mainA))
+            <div style="font-size:11px;font-weight:700;color:#15803d;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Class Teacher (Attendance)</div>
+            <div style="margin-bottom:8px;">
+            @foreach($mainA as $a)
+                <span style="background:#dcfce7;color:#15803d;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;display:inline-block;margin:1px;">{{ $a['class'] }}@if($a['section']) · Section {{ $a['section'] }}@endif</span>
             @endforeach
+            </div>
+        @endif
+        @if(!empty($subA))
+            <div style="font-size:11px;font-weight:700;color:#0f766e;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Subject Teacher</div>
+            <div>
+            @foreach($subA as $a)
+                <span style="background:#ecfeff;color:#0e7490;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;display:inline-block;margin:1px;">{{ $a['class'] }}@if($a['section'])-{{ $a['section'] }}@endif · {{ $a['subject'] }}</span>
+            @endforeach
+            </div>
         @endif
     </div>
 </div>

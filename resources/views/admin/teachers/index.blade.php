@@ -49,17 +49,34 @@
                 {{ $teacher->designation ?: 'Teacher' }}@if($teacher->subjects) · {{ $teacher->subjects }}@endif
             </div>
         </div>
-        @php $classes = $teacher->teachingClasses(); @endphp
-        @if(!empty($classes))
-            <div style="display:flex;flex-wrap:wrap;gap:3px;">
-                @foreach(array_slice($classes, 0, 3) as $c)
-                    <span style="background:#f0fdfa;color:#0f766e;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:600;">{{ $c }}</span>
-                @endforeach
-                @if(count($classes) > 3)
-                    <span style="font-size:10px;color:#94a3b8;">+{{ count($classes) - 3 }}</span>
-                @endif
-            </div>
-        @endif
+        @php
+            $mainAssignments    = $teacher->mainClassAssignments();
+            $subjectAssignments = $teacher->subjectAssignments();
+        @endphp
+        <div style="display:flex;flex-direction:column;gap:3px;min-width:200px;">
+            @if(empty($mainAssignments) && empty($subjectAssignments))
+                <span style="font-size:10px;color:#94a3b8;font-style:italic;">No assignments</span>
+            @endif
+            @if(!empty($mainAssignments))
+                <div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;">
+                    <span style="font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;">Class Teacher:</span>
+                    @foreach($mainAssignments as $a)
+                        <span style="background:#dcfce7;color:#15803d;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:700;">{{ $a['class'] }}@if($a['section'])-{{ $a['section'] }}@endif</span>
+                    @endforeach
+                </div>
+            @endif
+            @if(!empty($subjectAssignments))
+                <div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;">
+                    <span style="font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;">Subjects:</span>
+                    @foreach(array_slice($subjectAssignments, 0, 3) as $a)
+                        <span style="background:#f0fdfa;color:#0f766e;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:600;">{{ $a['class'] }}@if($a['section'])-{{ $a['section'] }}@endif · {{ $a['subject'] }}</span>
+                    @endforeach
+                    @if(count($subjectAssignments) > 3)
+                        <span style="font-size:10px;color:#94a3b8;">+{{ count($subjectAssignments) - 3 }} more</span>
+                    @endif
+                </div>
+            @endif
+        </div>
     </div>
     <div style="display:flex;gap:4px;flex-shrink:0;">
         <a href="{{ route('admin.teachers.show', $teacher) }}"

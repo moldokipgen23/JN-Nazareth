@@ -55,33 +55,50 @@ class Teacher extends Model
         return $this->yearStatuses()->where('academic_year_id', $year->id)->first();
     }
 
-    /** Class names this teacher is assigned to for the current year. */
+    /** Class names this teacher is assigned to for the current year (any kind). */
     public function teachingClasses(): array
     {
-        $classes = $this->classes ?? [];
         $year = AcademicYear::current();
+        if (!$year || !$this->exists) return [];
 
-        if ($year && $this->exists) {
-            $assigned = collect()
-                ->merge($this->classTeacherAssignments()
-                    ->where('academic_year_id', $year->id)
-                    ->pluck('class'))
-                ->merge($this->subjectTeacherAssignments()
-                    ->where('academic_year_id', $year->id)
-                    ->pluck('class'))
-                ->all();
-
-            $classes = array_merge($classes, $assigned);
-        }
+        $assigned = collect()
+            ->merge($this->classTeacherAssignments()->where('academic_year_id', $year->id)->pluck('class'))
+            ->merge($this->subjectTeacherAssignments()->where('academic_year_id', $year->id)->pluck('class'))
+            ->all();
 
         $order = array_flip(\App\Models\Student::classes());
+        return collect($assigned)->filter()->unique()
+            ->sortBy(fn ($c) => $order[$c] ?? 999)->values()->all();
+    }
 
-        return collect($classes)
-            ->filter()
-            ->unique()
-            ->sortBy(fn ($class) => $order[$class] ?? 999)
-            ->values()
-            ->all();
+    /** Main class teacher assignments [{class, section}] for current year. */
+    public function mainClassAssignments(): array
+    {
+        $year = AcademicYear::current();
+        if (!$year || !$this->exists) return [];
+
+        $order = array_flip(\App\Models\Student::classes());
+        return $this->classTeacherAssignments()
+            ->where('academic_year_id', $year->id)
+            ->get(['class', 'section'])
+            ->sortBy(fn ($a) => $order[$a->class] ?? 999)
+            ->map(fn ($a) => ['class' => $a->class, 'section' => $a->section])
+            ->values()->all();
+    }
+
+    /** Subject teacher assignments [{class, section, subject}] for current year. */
+    public function subjectAssignments(): array
+    {
+        $year = AcademicYear::current();
+        if (!$year || !$this->exists) return [];
+
+        $order = array_flip(\App\Models\Student::classes());
+        return $this->subjectTeacherAssignments()
+            ->where('academic_year_id', $year->id)
+            ->get(['class', 'section', 'subject'])
+            ->sortBy(fn ($a) => $order[$a->class] ?? 999)
+            ->map(fn ($a) => ['class' => $a->class, 'section' => $a->section, 'subject' => $a->subject])
+            ->values()->all();
     }
 
     public function teachesClass(string $class): bool
