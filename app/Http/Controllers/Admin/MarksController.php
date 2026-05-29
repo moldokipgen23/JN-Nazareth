@@ -210,23 +210,53 @@ class MarksController extends Controller
             }
         }
 
-        // Submission summary per subject (for review tab) — only counts students with marks
+        // Submission summary per subject — includes ALL class_subjects even with zero marks
         $submissionStatus = collect();
         if ($year && $examId && $class && $section) {
             $totalStudents = StudentEnrollment::forActiveYear()->active()
                 ->where('class', $class)->where('section', $section)->count();
+
+            // Get marks stats per subject
             $subjectsWithMarks = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $examId)->where('class', $class)->where('section', $section)
                 ->select('subject')
                 ->selectRaw('COUNT(*) as total')
                 ->selectRaw('SUM(CASE WHEN submitted_at IS NOT NULL THEN 1 ELSE 0 END) as submitted_count')
-                ->groupBy('subject')->get();
-            $submissionStatus = $subjectsWithMarks->map(fn ($s) => [
-                'subject' => $s->subject,
-                'total' => $s->total,
-                'submitted_count' => $s->submitted_count,
-                'expected' => $totalStudents,
-            ]);
+                ->groupBy('subject')->get()->keyBy('subject');
+
+            // Build from class_subjects to include subjects with zero marks
+            $classSubjectNames = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+                ->where('class', $class)
+                ->when($section, fn ($q) => $q->where(function ($q) use ($section) {
+                    $q->whereNull('section')->orWhere('section', $section);
+                }))
+                ->with('subject')
+                ->get()
+                ->pluck('subject.name');
+
+            $subjectListForStatus = $classSubjectNames->isNotEmpty()
+                ? $classSubjectNames
+                : collect();
+
+            if ($subjectListForStatus->isNotEmpty()) {
+                foreach ($subjectListForStatus as $s) {
+                    $stats = $subjectsWithMarks->get($s);
+                    $submissionStatus->push((object) [
+                        'subject' => $s,
+                        'total' => $stats ? $stats->total : 0,
+                        'submitted_count' => $stats ? $stats->submitted_count : 0,
+                        'expected' => $totalStudents,
+                    ]);
+                }
+            } else {
+                // Fallback: show whatever marks exist
+                $submissionStatus = $subjectsWithMarks->map(fn ($s) => (object) [
+                    'subject' => $s->subject,
+                    'total' => $s->total,
+                    'submitted_count' => $s->submitted_count,
+                    'expected' => $totalStudents,
+                ])->values();
+            }
         }
 
         return view('admin.marks.index', [
@@ -321,12 +351,23 @@ class MarksController extends Controller
         $marks = Mark::where('academic_year_id', $year->id)
             ->where('exam_id', $examId)->where('class', $class)
             ->when($section, fn ($q) => $q->where('section', $section))
+            ->whereNotNull('submitted_at')
             ->get()->groupBy('student_enrollment_id');
 
-        $subjects = Mark::where('academic_year_id', $year->id)
-            ->where('exam_id', $examId)->where('class', $class)
-            ->when($section, fn ($q) => $q->where('section', $section))
-            ->select('subject')->distinct()->pluck('subject')->sort()->values();
+        // Subjects from class_subjects, fallback to marks table
+        $classSubjectNames = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+            ->where('class', $class)
+            ->when($section, fn ($q) => $q->where(function ($q) use ($section) {
+                $q->whereNull('section')->orWhere('section', $section);
+            }))
+            ->with('subject')->get()->pluck('subject.name');
+
+        $subjects = $classSubjectNames->isNotEmpty()
+            ? $classSubjectNames
+            : Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)->where('class', $class)
+                ->when($section, fn ($q) => $q->where('section', $section))
+                ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
         // Build rows with ranking
         $rows = [];
@@ -414,11 +455,21 @@ class MarksController extends Controller
             return back()->with('error', 'Could not create archive.');
         }
 
-        $subjects = Mark::where('academic_year_id', $year->id)
-            ->where('exam_id', $examId)->where('class', $class)
-            ->when($section, fn ($q) => $q->where('section', $section))
-            ->whereNotNull('submitted_at')
-            ->select('subject')->distinct()->pluck('subject')->sort()->values();
+        // Subjects from class_subjects, fallback to marks table
+        $classSubjectNames = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+            ->where('class', $class)
+            ->when($section, fn ($q) => $q->where(function ($q) use ($section) {
+                $q->whereNull('section')->orWhere('section', $section);
+            }))
+            ->with('subject')->get()->pluck('subject.name');
+
+        $subjects = $classSubjectNames->isNotEmpty()
+            ? $classSubjectNames
+            : Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)->where('class', $class)
+                ->when($section, fn ($q) => $q->where('section', $section))
+                ->whereNotNull('submitted_at')
+                ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
         $marks = Mark::where('academic_year_id', $year->id)
             ->where('exam_id', $examId)->where('class', $class)
@@ -462,13 +513,14 @@ class MarksController extends Controller
             $gps = array_filter(array_column($subjectData, 'gp'));
             $cgpa = count($gps) > 0 ? round(array_sum($gps) / count($gps), 2) : null;
 
-            // Ranking
+            // Ranking — only submitted marks
             $allEnr = StudentEnrollment::forActiveYear()->active()
                 ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
                 ->pluck('id');
             $allMarks = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $examId)->where('class', $class)
                 ->when($section, fn ($q) => $q->where('section', $section))
+                ->whereNotNull('submitted_at')
                 ->get()->groupBy('student_enrollment_id');
             $ranked = [];
             foreach ($allEnr as $eid) {

@@ -183,13 +183,21 @@ function syncSection(form) {
             <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Submission Status per Subject</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;">
                 @foreach($submissionStatus as $ss)
-                <div style="background:{{ $ss->total === $ss->submitted_count ? '#f0fdf4' : '#fef3c7' }};border-radius:8px;padding:8px 12px;">
+                @php
+                    $noMarks = $ss->total === 0;
+                    $allDone = !$noMarks && $ss->total === $ss->submitted_count && $ss->submitted_count === $ss->expected;
+                    $_bg = $noMarks ? '#fef2f2' : ($allDone ? '#f0fdf4' : '#fef3c7');
+                    $_border = $noMarks ? '#fecaca' : ($allDone ? '#bbf7d0' : '#fde68a');
+                @endphp
+                <div style="background:{{ $_bg }};border-radius:8px;padding:8px 12px;border:1px solid {{ $_border }};">
                     <div style="font-size:12px;font-weight:600;color:#0f172a;">{{ $ss->subject }}</div>
-                    <div style="font-size:11px;color:#64748b;">{{ $ss->submitted_count }}/{{ $ss->total }} submitted</div>
-                    @if($ss->total === $ss->submitted_count)
+                    <div style="font-size:11px;color:#64748b;">{{ $ss->submitted_count }}/{{ $ss->expected }} submitted</div>
+                    @if($noMarks)
+                        <span style="font-size:10px;color:#b91c1c;font-weight:600;">❌ Not started</span>
+                    @elseif($allDone)
                         <span style="font-size:10px;color:#15803d;font-weight:600;">✅ Complete</span>
                     @else
-                        <span style="font-size:10px;color:#92400e;font-weight:600;">⏳ Pending</span>
+                        <span style="font-size:10px;color:#92400e;font-weight:600;">⏳ {{ $ss->expected - $ss->submitted_count }} pending</span>
                     @endif
                 </div>
                 @endforeach
@@ -232,15 +240,22 @@ function syncSection(form) {
             <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px;">Submission Status per Subject</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
                 @foreach($submissionStatus as $ss)
-                @php $complete = $ss->submitted_count === $ss->expected && $ss->total === $ss->expected; @endphp
-                <div style="background:{{ $complete ? '#f0fdf4' : '#fef3c7' }};border-radius:10px;padding:12px 14px;border:1px solid {{ $complete ? '#bbf7d0' : '#fde68a' }};">
+                @php
+                    $noMarks = $ss->total === 0;
+                    $allDone = !$noMarks && $ss->submitted_count === $ss->expected && $ss->total === $ss->expected;
+                    $_bg = $noMarks ? '#fef2f2' : ($allDone ? '#f0fdf4' : '#fef3c7');
+                    $_border = $noMarks ? '#fecaca' : ($allDone ? '#bbf7d0' : '#fde68a');
+                @endphp
+                <div style="background:{{ $_bg }};border-radius:10px;padding:12px 14px;border:1px solid {{ $_border }};">
                     <div style="font-size:13px;font-weight:700;color:#0f172a;">{{ $ss->subject }}</div>
                     <div style="font-size:11px;color:#64748b;margin-top:4px;">{{ $ss->submitted_count }}/{{ $ss->expected }} students submitted</div>
                     <div style="margin-top:6px;">
-                        @if($complete)
+                        @if($noMarks)
+                            <span style="font-size:10px;color:#b91c1c;font-weight:600;">❌ Not started</span>
+                        @elseif($allDone)
                             <span style="font-size:10px;color:#15803d;font-weight:600;">✅ Complete</span>
                         @else
-                            <span style="font-size:10px;color:#92400e;font-weight:600;">⏳ {{ $ss->total - $ss->submitted_count }} pending</span>
+                            <span style="font-size:10px;color:#92400e;font-weight:600;">⏳ {{ $ss->expected - $ss->submitted_count }} pending</span>
                         @endif
                     </div>
                 </div>
