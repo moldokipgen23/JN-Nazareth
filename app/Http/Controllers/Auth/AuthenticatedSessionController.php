@@ -38,17 +38,17 @@ class AuthenticatedSessionController extends Controller
 
         // Logging in via the teacher login URL always goes to teacher dashboard.
         if (str_starts_with($request->path(), login_path('teacher'))) {
-            return redirect()->intended(route('teacher.dashboard'));
+            return redirect()->route('teacher.dashboard');
         }
 
         // Role-aware landing page: pure teachers go straight to their dashboard.
         $user = $request->user();
         if ($user && $user->hasRole('teacher')
             && ! $user->hasAnyRole(['admin', 'staff'])) {
-            return redirect()->intended(route('teacher.dashboard'));
+            return redirect()->route('teacher.dashboard');
         }
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->route('dashboard');
     }
 
     /**
