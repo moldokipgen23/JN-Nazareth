@@ -123,7 +123,7 @@
                         ->whereNull('submitted_at')->whereNotNull('total_marks')->count()
                     : 0;
 
-                $academicActive = request()->routeIs('admin.academic-years.*','admin.students.*','admin.classes.*','admin.subjects.*','admin.folders.*','admin.documents.*');
+                $academicActive = request()->routeIs('admin.academic-years.*','admin.students.*','admin.classes.*','admin.subjects.*','admin.class-subjects.*','admin.folders.*','admin.documents.*');
                 $staffActive    = request()->routeIs('admin.teachers.*','admin.teacher-assignments.*');
                 $gradebookActive= request()->routeIs('admin.attendance.*','admin.exams.*','admin.marks.*','admin.questions.*','admin.notes.*');
                 $settingsActive = request()->routeIs('admin.grade-scales.*','admin.users.*','admin.activity-logs.*');

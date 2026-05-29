@@ -33,7 +33,7 @@ class ClassSubjectController extends Controller
 
         $data = $request->validate([
             'class'      => 'required|string',
-            'subject_ids' => 'required|array',
+            'subject_ids' => 'nullable|array',
             'subject_ids.*' => 'integer|exists:subjects,id',
             'section'    => 'nullable|string|max:20',
         ]);
@@ -45,7 +45,7 @@ class ClassSubjectController extends Controller
             ->delete();
 
         // Insert new selections
-        foreach ($data['subject_ids'] as $subjectId) {
+        foreach (($data['subject_ids'] ?? []) as $subjectId) {
             ClassSubject::create([
                 'class' => $data['class'],
                 'subject_id' => $subjectId,
