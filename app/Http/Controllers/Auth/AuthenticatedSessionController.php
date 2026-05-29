@@ -36,13 +36,21 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Logging in via the teacher login URL always goes to teacher dashboard.
+        $user = $request->user();
+
+        // Logging in via the teacher login URL — must have a linked teacher profile.
         if (str_starts_with($request->path(), login_path('teacher'))) {
-            return redirect()->route('teacher.dashboard');
+            if ($user && $user->teacher) {
+                return redirect()->route('teacher.dashboard');
+            }
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            return back()->withErrors([
+                'email' => 'No teacher account found. Contact your school administration.',
+            ]);
         }
 
         // Role-aware landing page: pure teachers go straight to their dashboard.
-        $user = $request->user();
         if ($user && $user->hasRole('teacher')
             && ! $user->hasAnyRole(['admin', 'staff'])) {
             return redirect()->route('teacher.dashboard');
