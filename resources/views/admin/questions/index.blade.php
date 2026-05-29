@@ -167,9 +167,34 @@
                     </div>
                 </td>
                 <td style="padding:12px 14px;text-align:right;">
-                    <button onclick="toggleGroup('{{ $groupId }}')" style="background:#f1f5f9;color:#0f172a;border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">
-                        View Questions ▼
-                    </button>
+                    <div style="display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap;">
+                        @php
+                            $allApproved = ($g['status_counts']['approved'] ?? 0) === $g['total'] && $g['total'] > 0;
+                            $anyPending = ($g['status_counts']['pending'] ?? 0) > 0;
+                        @endphp
+                        @if($allApproved)
+                            <a href="{{ route('admin.questions.question-paper', ['exam' => $g['exam_id'], 'class' => $g['class'], 'subject' => $g['subject']]) }}"
+                               style="background:#1e3a5f;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;cursor:pointer;">
+                                📄 Download PDF
+                            </a>
+                        @elseif($anyPending)
+                            <form method="POST" action="{{ route('admin.questions.bulk-approve') }}" style="display:inline;">
+                                @csrf
+                                @foreach($g['questions'] as $q)
+                                    @if($q->status === 'pending')
+                                        <input type="hidden" name="question_ids[]" value="{{ $q->id }}">
+                                    @endif
+                                @endforeach
+                                <button type="submit" onclick="return confirm('Approve all {{ $g['status_counts']['pending'] }} pending question(s) in this paper?')"
+                                    style="background:#15803d;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">
+                                    ✅ Approve Paper
+                                </button>
+                            </form>
+                        @endif
+                        <button onclick="toggleGroup('{{ $groupId }}')" style="background:#f1f5f9;color:#0f172a;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">
+                            View ▼
+                        </button>
+                    </div>
                 </td>
             </tr>
             {{-- Expanded detail row --}}
