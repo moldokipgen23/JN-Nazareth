@@ -65,6 +65,7 @@ class MarksController extends Controller
         $year = $this->requireActiveYear();
         $this->authorizeSubject($class, $section, $subject);
         $this->ensureExamInYear($exam, $year);
+        $this->ensureSubmissionWindow($exam);
 
         $enrollments = StudentEnrollment::forActiveYear()->active()
             ->where('class', $class)->where('section', $section)
@@ -101,6 +102,7 @@ class MarksController extends Controller
         $year = $this->requireActiveYear();
         $this->authorizeSubject($class, $section, $subject);
         $this->ensureExamInYear($exam, $year);
+        $this->ensureSubmissionWindow($exam);
 
         // Block editing if already submitted (unless admin reset)
         $anySubmitted = Mark::where('exam_id', $exam->id)
@@ -215,6 +217,17 @@ class MarksController extends Controller
     {
         if ($exam->academic_year_id !== $year->id) {
             abort(404, 'This exam is not in the active academic year.');
+        }
+    }
+
+    protected function ensureSubmissionWindow(Exam $exam): void
+    {
+        $now = now();
+        if ($exam->submission_starts_on && $now->lt($exam->submission_starts_on)) {
+            abort(403, 'Marks submission has not yet started.');
+        }
+        if ($exam->submission_ends_on && $now->gt($exam->submission_ends_on)) {
+            abort(403, 'Marks submission window has closed.');
         }
     }
 }

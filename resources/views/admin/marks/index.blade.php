@@ -478,12 +478,12 @@ function syncSection(form) {
     @endif
 @elseif($view === 'summary')
     {{-- Summary View --}}
-    @if(!$examId || !$class || !$section)
-        <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">Pick exam + class + section above.</div>
-    @else
-        @if($submissionStatus->isNotEmpty())
+    @if(!$examId)
+        <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">Pick an exam above to see summary.</div>
+    @elseif($class && $section && $submissionStatus->isNotEmpty())
+        {{-- Per-class detail --}}
         <div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
-            <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px;">Submission Status</div>
+            <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px;">{{ $class }} — Section {{ $section }}</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
                 @foreach($submissionStatus as $ss)
                 @php
@@ -508,9 +508,46 @@ function syncSection(form) {
                 @endforeach
             </div>
         </div>
+    @else
+        {{-- School-wide grid --}}
+        @php
+            $allClasses = \App\Models\Student::classes();
+            $classData = collect();
+            foreach ($allClasses as $c) {
+                $expected = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+                    ->where('class', $c)->with('subject')->get()->pluck('subject.name');
+                if ($expected->isEmpty()) continue;
+                $submitted = \App\Models\Mark::where('academic_year_id', $year->id)
+                    ->where('exam_id', $examId)->where('class', $c)
+                    ->whereNotNull('submitted_at')
+                    ->select('subject')->distinct()->pluck('subject')->toArray();
+                $expectedArr = $expected->values()->toArray();
+                $done = count(array_intersect($submitted, $expectedArr));
+                $classData->push(['class' => $c, 'expected' => count($expectedArr), 'done' => $done, 'complete' => $done >= count($expectedArr)]);
+            }
+        @endphp
+        @if($classData->isNotEmpty())
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;">
+            @foreach($classData as $cd)
+            <a href="{{ route('admin.marks.index', ['view' => 'summary', 'exam' => $examId, 'class' => $cd['class'], 'section' => $section ?: 'A']) }}"
+               style="background:#fff;border-radius:12px;padding:16px 18px;text-decoration:none;box-shadow:0 1px 3px rgba(15,23,42,.06);border:1px solid {{ $cd['complete'] ? '#bbf7d0' : '#e2e8f0' }};display:block;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <span style="font-size:15px;font-weight:700;color:#0f172a;">{{ $cd['class'] }}</span>
+                    <span style="font-size:12px;font-weight:700;color:{{ $cd['complete'] ? '#15803d' : '#92400e' }};">{{ $cd['done'] }}/{{ $cd['expected'] }}</span>
+                </div>
+                @php $pct = $cd['expected'] > 0 ? round($cd['done'] / $cd['expected'] * 100) : 0; @endphp
+                <div style="height:6px;background:#f1f5f9;border-radius:99px;overflow:hidden;margin-bottom:6px;">
+                    <div style="height:100%;width:{{ $pct }}%;background:{{ $cd['complete'] ? '#22c55e' : '#eab308' }};border-radius:99px;"></div>
+                </div>
+                <div style="font-size:11px;color:{{ $cd['complete'] ? '#15803d' : '#92400e' }};font-weight:600;">
+                    @if($cd['complete']) ✅ Complete @else ⏳ {{ $cd['expected'] - $cd['done'] }} pending @endif
+                </div>
+            </a>
+            @endforeach
+        </div>
         @else
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">
-            No marks entered yet for this class. Teachers need to enter marks first.
+            No class_subjects configured. <a href="{{ route('admin.class-subjects.index') }}" style="color:#0f766e;">Set up class subjects →</a>
         </div>
         @endif
     @endif
