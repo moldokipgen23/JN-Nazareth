@@ -58,7 +58,7 @@
         <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Subject</label>
         <select name="subject" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;min-width:140px;">
             <option value="">— pick —</option>
-            @foreach($subjectList as $s)
+            @foreach($filteredSubjectList as $s)
                 <option value="{{ $s }}" {{ $subject === $s ? 'selected' : '' }}>{{ $s }}</option>
             @endforeach
         </select>

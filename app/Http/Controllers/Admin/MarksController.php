@@ -46,6 +46,20 @@ class MarksController extends Controller
                 ->unique()->sort()->values()
             : collect();
 
+        // When class is selected, filter subject dropdown to class_subjects only
+        $filteredSubjectList = $subjectList;
+        if ($class && $year) {
+            $classSubjects = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+                ->where('class', $class)
+                ->when($section, fn ($q) => $q->where(function ($q) use ($section) {
+                    $q->whereNull('section')->orWhere('section', $section);
+                }))
+                ->with('subject')->get()->pluck('subject.name')->sort()->values();
+            if ($classSubjects->isNotEmpty()) {
+                $filteredSubjectList = $classSubjects;
+            }
+        }
+
         $records = collect();
         $stats   = ['total' => 0, 'pass' => 0, 'fail' => 0, 'ungraded' => 0, 'submitted' => 0];
 
@@ -236,6 +250,7 @@ class MarksController extends Controller
             'exams'    => $exams,
             'slots'    => $slots,
             'subjectList' => $subjectList,
+            'filteredSubjectList' => $filteredSubjectList,
             'examId'   => $examId,
             'class'    => $class,
             'section'  => $section,
