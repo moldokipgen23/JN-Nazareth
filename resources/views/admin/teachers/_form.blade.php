@@ -70,18 +70,38 @@
         Active (available for assignments, login works)
     </label>
 
-    <div style="font-size:14px; font-weight:700; color:#0f172a; margin:18px 0 4px; padding-bottom:9px; border-bottom:1px solid #f1f5f9;">Class Teacher</div>
-    <p style="font-size:11.5px; color:#94a3b8; margin:0 0 12px;">Which classes is this teacher the <strong>class teacher</strong> of? They'll mark attendance for these classes.</p>
+    <div style="font-size:14px; font-weight:700; color:#0f172a; margin:18px 0 4px; padding-bottom:9px; border-bottom:1px solid #f1f5f9;">Class Teacher <span style="font-weight:400;font-size:11px;color:#94a3b8;">— attendance only, once per day</span></div>
+    <p style="font-size:11.5px; color:#94a3b8; margin:0 0 12px;">Which class is this teacher the <strong>class teacher</strong> of? They'll mark attendance <strong>once per day</strong> for this class. A teacher should normally be assigned <strong>only 1 class</strong>.</p>
 
     <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px;">
         @foreach($classes as $c)
         <label style="display:flex; align-items:center; gap:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:9px 11px; font-size:12.5px; cursor:pointer;">
-            <input type="checkbox" name="ct_classes[]" value="{{ $c }}"
+            <input type="checkbox" name="ct_classes[]" value="{{ $c }}" class="ct-checkbox"
                    {{ in_array($c, old('ct_classes', $ctClasses ?? [])) ? 'checked' : '' }}>
             {{ $c }}
         </label>
         @endforeach
     </div>
+
+    {{-- Disclaimer & override — shown when multiple classes are selected --}}
+    <div id="ct-disclaimer" style="display:none; margin-top:12px; background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:12px 14px;">
+        <div style="font-size:13px; font-weight:700; color:#991b1b; margin-bottom:6px;">⚠️ Multiple Classes Selected</div>
+        <div style="font-size:12px; color:#7f1d1d; line-height:1.5; margin-bottom:10px;">
+            A class teacher takes <strong>attendance once per day</strong> for their assigned class.
+            Assigning <strong><span id="ct-count">0</span> classes</strong> to one teacher means they must
+            take attendance for each of these classes daily.
+            <br><br>
+            This is not recommended unless the teacher has sufficient free periods.
+        </div>
+        <label style="display:flex; align-items:flex-start; gap:8px; font-size:12px; color:#7f1d1d; cursor:pointer;">
+            <input type="checkbox" name="ct_override" value="1" {{ old('ct_override') ? 'checked' : '' }} style="margin-top:1px;">
+            <span>I understand the responsibility. Allow this teacher to be class teacher for <strong><span id="ct-count2">0</span> classes</strong>.</span>
+        </label>
+        @error('ct_override')
+            <div style="font-size:11px; color:#dc2626; margin-top:4px;">{{ $message }}</div>
+        @enderror
+    </div>
+
     <div style="margin-top:8px;">
         <label style="{{ $lbl }}">Section for these classes</label>
         <select name="ct_section" style="{{ $inp }} max-width:120px;">
@@ -90,6 +110,25 @@
             @endforeach
         </select>
     </div>
+
+    <script>
+    (function() {
+        const checkboxes = document.querySelectorAll('.ct-checkbox');
+        const disclaimer = document.getElementById('ct-disclaimer');
+        const countSpan = document.getElementById('ct-count');
+        const countSpan2 = document.getElementById('ct-count2');
+        function updateDisclaimer() {
+            const checked = document.querySelectorAll('.ct-checkbox:checked').length;
+            if (disclaimer) {
+                disclaimer.style.display = checked > 1 ? 'block' : 'none';
+                if (countSpan) countSpan.textContent = checked;
+                if (countSpan2) countSpan2.textContent = checked;
+            }
+        }
+        checkboxes.forEach(cb => cb.addEventListener('change', updateDisclaimer));
+        updateDisclaimer();
+    })();
+    </script>
 
     {{-- ─────────── SUBJECT TEACHER ASSIGNMENTS ─────────── --}}
     <div style="font-size:14px; font-weight:700; color:#0f172a; margin:20px 0 4px; padding-bottom:9px; border-bottom:1px solid #f1f5f9;">Subjects Taught</div>

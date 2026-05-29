@@ -71,6 +71,8 @@ class TeacherController extends Controller
 
     public function store(Request $request)
     {
+        $this->validateCtOverride($request);
+
         $data = $this->validateTeacher($request);
 
         $teacher = Teacher::create([
@@ -116,6 +118,8 @@ class TeacherController extends Controller
 
     public function update(Request $request, Teacher $teacher)
     {
+        $this->validateCtOverride($request);
+
         $data = $this->validateTeacher($request);
 
         $teacher->name        = $data['name'];
@@ -343,6 +347,17 @@ class TeacherController extends Controller
                     $a->delete();
                 }
             });
+    }
+
+    private function validateCtOverride(Request $request): void
+    {
+        $classes = $request->input('ct_classes', []);
+        if (count($classes) > 1 && ! $request->boolean('ct_override')) {
+            redirect()->back()
+                ->withInput()
+                ->withErrors(['ct_override' => 'You must confirm the override when assigning more than one class.'])
+                ->throwResponse();
+        }
     }
 
     private function validateTeacher(Request $request): array
