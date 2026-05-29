@@ -113,15 +113,15 @@ class MarksController extends Controller
                     ->when($section, fn ($q) => $q->where('section', $section))
                     ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
-            // Check per-subject: are ALL marks submitted for this subject?
+            // Check per-subject: marks must EXIST and ALL must be submitted
             $pendingSubjects = [];
             foreach ($allSubjects as $subj) {
-                $hasDraft = Mark::where('academic_year_id', $year->id)
+                $baseQuery = Mark::where('academic_year_id', $year->id)
                     ->where('exam_id', $examId)->where('class', $class)
                     ->when($section, fn ($q) => $q->where('section', $section))
-                    ->where('subject', $subj)
-                    ->whereNull('submitted_at')
-                    ->exists();
+                    ->where('subject', $subj);
+                $hasAny = (clone $baseQuery)->exists();
+                $hasDraft = !$hasAny || (clone $baseQuery)->whereNull('submitted_at')->exists();
                 if ($hasDraft) {
                     $pendingSubjects[] = $subj;
                 }
@@ -547,10 +547,12 @@ class MarksController extends Controller
 
         $pendingSubj = [];
         foreach ($subjList as $subj) {
-            if (Mark::where('academic_year_id', $year->id)->where('exam_id', $examId)
+            $baseQuery = Mark::where('academic_year_id', $year->id)->where('exam_id', $examId)
                 ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
-                ->where('subject', $subj)->whereNull('submitted_at')->exists()
-            ) { $pendingSubj[] = $subj; }
+                ->where('subject', $subj);
+            $hasAny = (clone $baseQuery)->exists();
+            $hasDraft = !$hasAny || (clone $baseQuery)->whereNull('submitted_at')->exists();
+            if ($hasDraft) { $pendingSubj[] = $subj; }
         }
         if ($pendingSubj) {
             return back()->with('error', 'Cannot export results: '.implode(', ', $pendingSubj).' still have unsubmitted marks.');
@@ -745,10 +747,12 @@ class MarksController extends Controller
         // Verify all subjects have submitted marks
         $pendingSubj = [];
         foreach ($subjects as $subj) {
-            $hasDraft = Mark::where('academic_year_id', $year->id)
+            $baseQuery = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $examId)->where('class', $class)
                 ->when($section, fn ($q) => $q->where('section', $section))
-                ->where('subject', $subj)->whereNull('submitted_at')->exists();
+                ->where('subject', $subj);
+            $hasAny = (clone $baseQuery)->exists();
+            $hasDraft = !$hasAny || (clone $baseQuery)->whereNull('submitted_at')->exists();
             if ($hasDraft) { $pendingSubj[] = $subj; }
         }
 

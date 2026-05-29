@@ -39,12 +39,12 @@ class ResultCardController extends Controller
 
         $pending = [];
         foreach ($subjects as $subj) {
-            $hasDraft = Mark::where('academic_year_id', $year->id)
+            $baseQuery = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $exam->id)->where('class', $class)
                 ->when($section, fn ($q) => $q->where('section', $section))
-                ->where('subject', $subj)
-                ->whereNull('submitted_at')
-                ->exists();
+                ->where('subject', $subj);
+            $hasAny = (clone $baseQuery)->exists();
+            $hasDraft = !$hasAny || (clone $baseQuery)->whereNull('submitted_at')->exists();
             if ($hasDraft) {
                 $pending[] = $subj;
             }
