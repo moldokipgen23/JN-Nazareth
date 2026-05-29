@@ -71,12 +71,13 @@ class QuestionsController extends Controller
             'approved'        => (clone $baseQuery)->where('status', 'approved')->count(),
         ];
 
-        // Build per-class progress from class_subjects
+        // Build per-class progress from class_subjects (default to first exam if none selected)
         $classProgress = collect();
-        if ($year && $examId) {
+        $progressExamId = $examId ?? $exams->first()?->id;
+        if ($year && $progressExamId) {
             $classes = Student::classes();
             $approvedSubjects = ExamQuestion::where('academic_year_id', $year->id)
-                ->where('exam_id', $examId)
+                ->where('exam_id', $progressExamId)
                 ->where('status', 'approved')
                 ->select('class', 'subject')->distinct()->get()
                 ->groupBy('class')->map(fn ($g) => $g->pluck('subject')->toArray());
@@ -98,7 +99,7 @@ class QuestionsController extends Controller
             }
         }
 
-        return view('admin.questions.index', compact('groups', 'exams', 'year', 'examId', 'class', 'subject', 'status', 'stats', 'availableClasses', 'availableSubjects', 'classProgress'));
+        return view('admin.questions.index', compact('groups', 'exams', 'year', 'examId', 'class', 'subject', 'status', 'stats', 'availableClasses', 'availableSubjects', 'classProgress', 'progressExamId'));
     }
 
     public function export(Request $request)
