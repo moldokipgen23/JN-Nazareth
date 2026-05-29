@@ -38,9 +38,7 @@
         </div>
 
         <div class="flex items-center justify-between mt-4">
-            <a href="{{ route('password.request') }}" style="font-size:12px;color:#94a3b8;text-decoration:none;hover:color:#fff;">
-                Forgot password?
-            </a>
+            <div style="font-size:11px;color:#64748b;">Forgot password? Contact your school administration.</div>
             <button type="submit" class="inline-flex items-center px-5 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all duration-150"
                     style="background:linear-gradient(135deg,#0f766e,#0d9488);box-shadow:0 4px 12px rgba(13,148,136,.35);">
                 {{ __('Sign in') }}
