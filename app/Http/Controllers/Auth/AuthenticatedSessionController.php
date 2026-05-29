@@ -50,13 +50,8 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        // Role-aware landing page: pure teachers go straight to their dashboard.
-        if ($user && $user->hasRole('teacher')
-            && ! $user->hasAnyRole(['admin', 'staff'])) {
-            return redirect()->route('teacher.dashboard');
-        }
-
-        return redirect()->route('dashboard');
+        // All admin-portal logins go directly to admin dashboard.
+        return redirect()->route('admin.dashboard');
     }
 
     /**
