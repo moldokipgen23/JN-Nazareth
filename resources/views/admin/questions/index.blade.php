@@ -38,9 +38,9 @@
 </div>
 
 {{-- Progress Summary (class_subjects based) --}}
-@if($classProgress->isNotEmpty())
 <div style="margin-bottom:16px;">
-    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Progress per Class@if($progressExamId && $exams->firstWhere('id', $progressExamId)) — {{ $exams->firstWhere('id', $progressExamId)->name }}@endif</div>
+    @if($classProgress->isNotEmpty())
+    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Questions Progress per Class@if($progressExamId && $exams->firstWhere('id', $progressExamId)) — {{ $exams->firstWhere('id', $progressExamId)->name }}@endif</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
         @foreach($classProgress as $cp)
         @php
@@ -64,10 +64,17 @@
         </div>
         @endforeach
     </div>
+    @else
+    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Questions Progress per Class</div>
+    <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;">
+        <div style="font-size:12px;color:#92400e;">Select an exam above or set up class_subjects to see per-class progress.</div>
+    </div>
+    @endif
 </div>
-@elseif($groups->isNotEmpty())
+
+@if($groups->isNotEmpty())
 <div style="margin-bottom:16px;">
-    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Submission Summary (no class_subjects configured)</div>
+    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Submission Summary</div>
     @php $byExam = $groups->groupBy('exam_name'); @endphp
     @foreach($byExam as $examName => $examGroups)
     <div style="background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(15,23,42,.06);">
