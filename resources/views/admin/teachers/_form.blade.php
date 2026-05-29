@@ -159,6 +159,22 @@
 
     <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:22px;">
         <a href="{{ route('admin.teachers.index') }}" style="background:#f1f5f9; color:#475569; font-size:13px; font-weight:600; padding:10px 20px; border-radius:9px; text-decoration:none;">Cancel</a>
-        <button type="submit" style="background:linear-gradient(135deg,#0f766e,#14b8a6); color:#fff; font-size:13px; font-weight:700; padding:10px 24px; border-radius:9px; border:none; cursor:pointer;">{{ $isEdit ? 'Update Teacher' : 'Add Teacher' }}</button>
+        <button type="submit" id="submitBtn" style="background:linear-gradient(135deg,#0f766e,#14b8a6); color:#fff; font-size:13px; font-weight:700; padding:10px 24px; border-radius:9px; border:none; cursor:pointer;">{{ $isEdit ? 'Update Teacher' : 'Add Teacher' }}</button>
     </div>
 </div>
+
+<script>
+document.querySelector('form').addEventListener('submit', function (e) {
+    const checked = document.querySelectorAll('input[name="ct_classes[]"]:checked');
+    if (checked.length > 1) {
+        const msg = checked.length + ' classes selected for this class teacher.\n\n'
+            + '⚠️ Important: A class teacher marks attendance for their class once a day.\n'
+            + 'Assigning multiple classes means this teacher will need to take attendance\n'
+            + 'for ALL selected classes daily.\n\n'
+            + 'Are you sure you want to assign ' + checked.length + ' classes to one teacher?';
+        if (!confirm(msg)) {
+            e.preventDefault();
+        }
+    }
+});
+</script>
