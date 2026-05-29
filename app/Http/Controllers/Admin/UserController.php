@@ -14,7 +14,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $role = $request->query('role');
+        $role = $request->query('role', 'admin_staff');
 
         $users = User::with('roles')
             ->when($role === 'teacher', fn ($q) => $q->whereHas('roles', fn ($r) => $r->where('name', 'teacher')))

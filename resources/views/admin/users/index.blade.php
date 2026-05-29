@@ -23,7 +23,7 @@
     {{-- Tabs --}}
     <div class="flex gap-1 bg-gray-100 rounded-lg p-1 mt-4 mb-4" style="max-width:380px;">
         <a href="{{ route('admin.users.index') }}"
-           class="flex-1 text-center text-sm font-semibold py-2 px-3 rounded-md transition {{ !$role ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">
+           class="flex-1 text-center text-sm font-semibold py-2 px-3 rounded-md transition {{ $role !== 'teacher' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">
             Admin / Staff
         </a>
         <a href="{{ route('admin.users.index', ['role' => 'teacher']) }}"
