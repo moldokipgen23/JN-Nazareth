@@ -17,7 +17,7 @@ class AppServiceProvider extends ServiceProvider
         app('config')->set('filesystems.disks.public.root', public_path('storage'));
 
         $path = request()->path();
-        $teacherLogin = \App\Helpers\login_path('teacher');
+        $teacherLogin = login_path('teacher');
         if (str_starts_with($path, 'teacher') || $path === $teacherLogin || str_starts_with($path, $teacherLogin . '/')) {
             app('config')->set('session.cookie', 'teacher_portal_session');
         }
