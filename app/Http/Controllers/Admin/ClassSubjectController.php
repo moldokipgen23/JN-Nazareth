@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
 use App\Models\ClassSubject;
+use App\Models\Mark;
 use App\Models\Student;
 use App\Models\Subject;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ class ClassSubjectController extends Controller
         $subjects = Subject::orderBy('sort_order')->orderBy('name')->get();
 
         $classSubjects = $year
-            ? ClassSubject::where('academic_year_id', $year->id)->get()->groupBy('class')
+            ? ClassSubject::where('academic_year_id', $year->id)->with('subject')->get()->groupBy('class')
             : collect();
 
         return view('admin.subjects.class-subjects', compact(
@@ -32,29 +33,96 @@ class ClassSubjectController extends Controller
         abort_unless($year, 409, 'No active academic year.');
 
         $data = $request->validate([
-            'class'      => 'required|string',
-            'subject_ids' => 'nullable|array',
+            'class'         => 'required|string',
+            'subject_ids'   => 'nullable|array',
             'subject_ids.*' => 'integer|exists:subjects,id',
-            'section'    => 'nullable|string|max:20',
+            'full_marks'    => 'nullable|array',
+            'pass_marks'    => 'nullable|array',
+            'is_optional'   => 'nullable|array',
+            'grade_only'    => 'nullable|array',
+            'section'       => 'nullable|string|max:20',
         ]);
+
+        $class = $data['class'];
+        $subjectIds = $data['subject_ids'] ?? [];
+
+        // Get existing BEFORE deleting — to check for marks
+        $existing = ClassSubject::where('academic_year_id', $year->id)
+            ->where('class', $class)
+            ->when($data['section'] ?? null, fn ($q) => $q->where('section', $data['section']))
+            ->with('subject')
+            ->get();
+
+        // Prevent removing a subject if marks already exist for it
+        foreach ($existing as $ex) {
+            if (!in_array($ex->subject_id, $subjectIds)) {
+                $hasMarks = Mark::where('academic_year_id', $year->id)
+                    ->where('class', $class)->where('subject', $ex->subject?->name)->exists();
+                if ($hasMarks) {
+                    return back()->with('error',
+                        "Cannot remove \"{$ex->subject?->name}\" from {$class} — marks already exist for this subject."
+                    );
+                }
+            }
+        }
 
         // Remove existing assignments for this class
         ClassSubject::where('academic_year_id', $year->id)
-            ->where('class', $data['class'])
+            ->where('class', $class)
             ->when($data['section'] ?? null, fn ($q) => $q->where('section', $data['section']))
             ->delete();
 
-        // Insert new selections
-        foreach (($data['subject_ids'] ?? []) as $subjectId) {
+        // Insert new selections with config
+        foreach ($subjectIds as $subjectId) {
             ClassSubject::create([
-                'class' => $data['class'],
-                'subject_id' => $subjectId,
-                'academic_year_id' => $year->id,
-                'section' => $data['section'] ?? null,
+                'class'             => $class,
+                'subject_id'        => $subjectId,
+                'academic_year_id'  => $year->id,
+                'section'           => $data['section'] ?? null,
+                'full_marks'        => $data['full_marks'][$subjectId] ?? null,
+                'pass_marks'        => $data['pass_marks'][$subjectId] ?? null,
+                'is_optional'       => isset($data['is_optional'][$subjectId]),
+                'grade_only'        => isset($data['grade_only'][$subjectId]),
             ]);
         }
 
-        return back()->with('success', 'Subjects updated for ' . $data['class']);
+        return back()->with('success', 'Subjects updated for ' . $class);
+    }
+
+    public function copy(Request $request)
+    {
+        $year = AcademicYear::current();
+        abort_unless($year, 409);
+
+        $from = $request->query('from');
+        $to   = $request->query('to');
+
+        if (!$from || !$to) {
+            return back()->with('error', 'Select source and target class.');
+        }
+
+        $sourceSubjects = ClassSubject::where('academic_year_id', $year->id)
+            ->where('class', $from)->get();
+
+        // Remove existing for target
+        ClassSubject::where('academic_year_id', $year->id)
+            ->where('class', $to)->delete();
+
+        foreach ($sourceSubjects as $cs) {
+            ClassSubject::create([
+                'class'             => $to,
+                'subject_id'        => $cs->subject_id,
+                'academic_year_id'  => $year->id,
+                'section'           => $cs->section,
+                'full_marks'        => $cs->full_marks,
+                'pass_marks'        => $cs->pass_marks,
+                'is_optional'       => $cs->is_optional,
+                'grade_only'        => $cs->grade_only,
+            ]);
+        }
+
+        return redirect()->route('admin.class-subjects.index')
+            ->with('success', "Subjects copied from {$from} to {$to}.");
     }
 
     public function updateConfig(Request $request, ClassSubject $classSubject)

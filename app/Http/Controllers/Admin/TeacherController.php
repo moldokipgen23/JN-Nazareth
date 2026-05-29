@@ -118,6 +118,14 @@ class TeacherController extends Controller
 
     public function update(Request $request, Teacher $teacher)
     {
+        // Tab 2: Subject Assignments only
+        if ($request->boolean('update_subjects_only')) {
+            $this->syncSubjectAssignments($request, $teacher);
+            ActivityLogger::log('teacher_subjects_updated', $teacher, "Updated subject assignments for {$teacher->name}");
+            return redirect()->route('admin.teachers.edit', $teacher)
+                ->with('success', 'Subject assignments updated.');
+        }
+
         $this->validateCtOverride($request);
 
         $data = $this->validateTeacher($request);

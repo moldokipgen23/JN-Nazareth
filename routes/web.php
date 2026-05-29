@@ -333,6 +333,8 @@ Route::prefix('admin')
                  ->name('class-subjects.store');
             Route::post('class-subjects/{classSubject}/config', [\App\Http\Controllers\Admin\ClassSubjectController::class, 'updateConfig'])
                  ->name('class-subjects.config');
+            Route::get('class-subjects/copy', [\App\Http\Controllers\Admin\ClassSubjectController::class, 'copy'])
+                 ->name('class-subjects.copy');
 
             // Grade Scale
             Route::get('grade-scales', [GradeScaleController::class, 'index'])->name('grade-scales.index');
@@ -403,7 +405,7 @@ Route::prefix('admin')
             Route::post('teachers/{teacher}/year-status', [TeacherController::class, 'updateYearStatus'])
                  ->name('teachers.year-status');
 
-            Route::get('teacher-assignments', [TeacherAssignmentController::class, 'index'])
+            Route::redirect('teacher-assignments', '/admin/teachers', 301)
                  ->name('teacher-assignments.index');
             Route::post('teacher-assignments/class', [TeacherAssignmentController::class, 'storeClassTeacher'])
                  ->name('teacher-assignments.class.store');
