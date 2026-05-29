@@ -42,6 +42,13 @@ class MarksController extends Controller
                 ->get();
         }
 
+        // Filter by class_subjects: only show slots where class+subject exists in class_subjects
+        $classSubjectPairs = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+            ->get()
+            ->map(fn ($cs) => $cs->class . '|' . ($cs->subject?->name ?? ''));
+
+        $slots = $slots->filter(fn ($s) => $classSubjectPairs->contains($s->class . '|' . $s->subject));
+
         $order = array_flip(Student::classes());
         $slots = $slots->sortBy(fn ($s) => [$order[$s->class] ?? 999, $s->section, $s->subject])->values();
 
@@ -131,6 +138,11 @@ class MarksController extends Controller
             $theory     = $row['theory'] ?? null;
             $assignment = $row['assignment'] ?? null;
             $total      = $row['total'] ?? null;
+
+            // Server-side: if both theory and assignment provided, total MUST equal their sum
+            if ($theory !== null && $theory !== '' && $assignment !== null && $assignment !== '') {
+                $total = ((float) $theory) + ((float) $assignment);
+            }
 
             if ($total !== null && $total !== '' && (float) $total > (float) $data['full_marks']) {
                 return back()->withErrors([

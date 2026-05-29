@@ -14,6 +14,47 @@ use Illuminate\Http\Request;
 
 class ResultCardController extends Controller
 {
+    private function requireAllSubjectsSubmitted(Exam $exam, string $class, ?string $section): void
+    {
+        $year = AcademicYear::current();
+        if (!$year) {
+            abort(409, 'No active academic year.');
+        }
+
+        $classSubjectNames = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+            ->where('class', $class)
+            ->when($section, fn ($q) => $q->where(function ($q) use ($section) {
+                $q->whereNull('section')->orWhere('section', $section);
+            }))
+            ->with('subject')
+            ->get()
+            ->pluck('subject.name');
+
+        $subjects = $classSubjectNames->isNotEmpty()
+            ? $classSubjectNames
+            : Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $exam->id)->where('class', $class)
+                ->when($section, fn ($q) => $q->where('section', $section))
+                ->select('subject')->distinct()->pluck('subject');
+
+        $pending = [];
+        foreach ($subjects as $subj) {
+            $hasDraft = Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $exam->id)->where('class', $class)
+                ->when($section, fn ($q) => $q->where('section', $section))
+                ->where('subject', $subj)
+                ->whereNull('submitted_at')
+                ->exists();
+            if ($hasDraft) {
+                $pending[] = $subj;
+            }
+        }
+
+        if (!empty($pending)) {
+            abort(409, 'Results not yet available. Pending subjects: '.implode(', ', $pending));
+        }
+    }
+
     public function download(Student $student, Exam $exam)
     {
         $year = AcademicYear::current();
@@ -24,8 +65,11 @@ class ResultCardController extends Controller
 
         abort_if(! $enrollment, 404, 'Student not enrolled in this academic year.');
 
+        $this->requireAllSubjectsSubmitted($exam, $enrollment->class, $enrollment->section);
+
         $marks = Mark::where('student_enrollment_id', $enrollment->id)
             ->where('exam_id', $exam->id)
+            ->whereNotNull('submitted_at')
             ->get();
 
         $subjects = $marks->map(function ($m) {
@@ -49,12 +93,13 @@ class ResultCardController extends Controller
         $avgPct = $pcts->isNotEmpty() ? round($pcts->avg(), 2) : null;
         $cgpa   = $gps->isNotEmpty() ? round($gps->avg(), 2) : null;
 
-        // Compute class rank
+        // Compute class rank — only include submitted marks
         $rank = null;
         if ($avgPct !== null) {
             $allPcts = Mark::whereHas('exam', fn($q) => $q->where('id', $exam->id))
                 ->whereHas('enrollment', fn($q) => $q->where('class', $enrollment->class)
                     ->where('academic_year_id', $exam->academic_year_id))
+                ->whereNotNull('submitted_at')
                 ->get()
                 ->groupBy('student_enrollment_id')
                 ->map(function ($ms) {
@@ -100,6 +145,7 @@ class ResultCardController extends Controller
 
         abort_if(! $enrollment, 404, 'Student not enrolled in this academic year.');
 
+        // Check submitted_at for all exams
         $exams = Exam::where('academic_year_id', $year->id)
             ->where('is_active', true)
             ->orderBy('starts_on')
@@ -107,9 +153,14 @@ class ResultCardController extends Controller
 
         abort_if($exams->isEmpty(), 404, 'No published exams for this academic year.');
 
+        foreach ($exams as $exam) {
+            $this->requireAllSubjectsSubmitted($exam, $enrollment->class, $enrollment->section);
+        }
+
         // Aggregate all marks for the year — group by subject
         $allMarks = Mark::where('student_enrollment_id', $enrollment->id)
             ->whereIn('exam_id', $exams->pluck('id'))
+            ->whereNotNull('submitted_at')
             ->get();
 
         $subjects = $allMarks->groupBy('subject')->map(function ($ms) {
@@ -140,7 +191,7 @@ class ResultCardController extends Controller
         $totalObtained = $subjects->sum('total');
         $totalMax = $subjects->sum('full');
 
-        // Rank
+        // Rank — only include submitted marks
         $rank = null;
         if ($avgPct !== null) {
             $allPcts = StudentEnrollment::where('class', $enrollment->class)
@@ -150,6 +201,7 @@ class ResultCardController extends Controller
                 ->map(function ($e) use ($exams) {
                     $ms = Mark::where('student_enrollment_id', $e->id)
                         ->whereIn('exam_id', $exams->pluck('id'))
+                        ->whereNotNull('submitted_at')
                         ->get()
                         ->groupBy('subject');
                     $p = $ms->map(function ($m) {

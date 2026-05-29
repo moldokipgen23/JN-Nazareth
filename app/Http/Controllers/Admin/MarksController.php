@@ -46,6 +46,24 @@ class MarksController extends Controller
                 ->unique()->sort()->values()
             : collect();
 
+        // When a class is selected, filter subjects to only those linked to that class via class_subjects
+        if ($class && $year) {
+            $classSubjects = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+                ->where('class', $class)
+                ->when($section, fn ($q) => $q->where(function ($q) use ($section) {
+                    $q->whereNull('section')->orWhere('section', $section);
+                }))
+                ->with('subject')
+                ->get()
+                ->pluck('subject.name')
+                ->sort()
+                ->values();
+
+            if ($classSubjects->isNotEmpty()) {
+                $subjectList = $classSubjects;
+            }
+        }
+
         $records = collect();
         $stats   = ['total' => 0, 'pass' => 0, 'fail' => 0, 'ungraded' => 0, 'submitted' => 0];
 
@@ -145,12 +163,39 @@ class MarksController extends Controller
                     $rows[] = $row;
                 }
 
-                $rankings = collect($rows)->sortByDesc(fn ($r) => $r['cgpa'] ?? 0)
+                // Pass/Fail split: student passes if ALL subjects have pass status
+                $passRows = [];
+                $failRows = [];
+                foreach ($rows as $r) {
+                    $allPass = true;
+                    foreach ($analyticsSubjects as $subj) {
+                        $sd = $r['subjectData'][$subj] ?? null;
+                        if ($sd === null) { $allPass = false; break; }
+                    }
+                    if ($allPass && ($r['cgpa'] ?? 0) > 0) {
+                        $passRows[] = $r;
+                    } else {
+                        // Collect failed subjects for display
+                        $failedSubjects = [];
+                        foreach ($analyticsSubjects as $subj) {
+                            $sd = $r['subjectData'][$subj] ?? null;
+                            if ($sd === null || ($sd['pct'] ?? 0) < ($r['enrollment']?->pass_marks ?? 0)) {
+                                $failedSubjects[] = $subj;
+                            }
+                        }
+                        $r['failedSubjects'] = $failedSubjects;
+                        $failRows[] = $r;
+                    }
+                }
+
+                $rankedPass = collect($passRows)->sortByDesc(fn ($r) => $r['cgpa'] ?? 0)
                     ->values()->map(fn ($r, $i) => array_merge($r, ['rank' => $i + 1]));
+
+                $rankings = $rankedPass->merge(collect($failRows)->map(fn ($r) => array_merge($r, ['rank' => null])));
 
                 foreach ($analyticsSubjects as $subj) {
                     $pcts = []; $grades = [];
-                    foreach ($rankings as $r) {
+                    foreach ($rankedPass as $r) {
                         $sd = $r['subjectData'][$subj] ?? null;
                         if ($sd && $sd['pct'] !== null) { $pcts[] = $sd['pct']; $grades[] = $sd['grade']; }
                     }
@@ -202,6 +247,8 @@ class MarksController extends Controller
             'submissionStatus' => $submissionStatus,
             'allSubmitted' => $allSubmitted ?? false,
             'pendingSubjects' => $pendingSubjects ?? [],
+            'passRankings' => $rankedPass ?? collect(),
+            'failRankings' => $failRows ?? [],
         ]);
     }
 
@@ -631,6 +678,10 @@ class MarksController extends Controller
         foreach ($classSections as $cs) {
             $classData = $this->buildClassResultData($year, $exam, $cs->class, $cs->section);
 
+            if (!empty($classData['pending'] ?? [])) {
+                continue; // skip classes with pending marks
+            }
+
             if ($format === 'csv') {
                 $csv = $this->buildClassResultCsv($exam, $cs->class, $cs->section, $classData, $showSubjectWise);
                 $filename = 'result-'.$exam->name.'-'.$cs->class.($cs->section ? '_Sec-'.$cs->section : '').'.csv';
@@ -674,17 +725,49 @@ class MarksController extends Controller
             ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
             ->with('student')->orderBy('roll_number')->get();
 
+        // Get expected subjects from class_subjects
+        $classSubjectNames = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+            ->where('class', $class)
+            ->when($section, fn ($q) => $q->where(function ($q) use ($section) {
+                $q->whereNull('section')->orWhere('section', $section);
+            }))
+            ->with('subject')
+            ->get()
+            ->pluck('subject.name');
+
+        $subjects = $classSubjectNames->isNotEmpty()
+            ? $classSubjectNames
+            : Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)->where('class', $class)
+                ->when($section, fn ($q) => $q->where('section', $section))
+                ->select('subject')->distinct()->pluck('subject')->sort()->values();
+
+        // Verify all subjects have submitted marks
+        $pendingSubj = [];
+        foreach ($subjects as $subj) {
+            $hasDraft = Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)->where('class', $class)
+                ->when($section, fn ($q) => $q->where('section', $section))
+                ->where('subject', $subj)->whereNull('submitted_at')->exists();
+            if ($hasDraft) { $pendingSubj[] = $subj; }
+        }
+
+        if (!empty($pendingSubj)) {
+            return [
+                'class' => $class,
+                'section' => $section,
+                'total' => 0,
+                'subjects' => $subjects->toArray(),
+                'rankings' => [],
+                'pending' => $pendingSubj,
+            ];
+        }
+
         $marks = Mark::where('academic_year_id', $year->id)
             ->where('exam_id', $examId)->where('class', $class)
             ->when($section, fn ($q) => $q->where('section', $section))
             ->whereNotNull('submitted_at')
             ->get()->groupBy('student_enrollment_id');
-
-        $subjects = Mark::where('academic_year_id', $year->id)
-            ->where('exam_id', $examId)->where('class', $class)
-            ->when($section, fn ($q) => $q->where('section', $section))
-            ->whereNotNull('submitted_at')
-            ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
         $rows = [];
         foreach ($enrollments as $enrollment) {
@@ -778,11 +861,21 @@ class MarksController extends Controller
             return back()->with('error', "Total marks cannot exceed full marks ({$mark->full_marks}).");
         }
 
+        // Preserve existing theory/assignment when not explicitly sent
+        $theory     = $data['theory_marks'] ?? $mark->theory_marks;
+        $assignment = $data['assignment_marks'] ?? $mark->assignment_marks;
+        $total      = $data['total_marks'] ?? null;
+
+        // If total not explicitly set but theory/assignment provided, compute it
+        if ($total === null && ($theory !== null || $assignment !== null)) {
+            $total = ((float) ($theory ?? 0)) + ((float) ($assignment ?? 0));
+        }
+
         $mark->update([
-            'theory_marks'     => $data['theory_marks'] ?? null,
-            'assignment_marks' => $data['assignment_marks'] ?? null,
-            'total_marks'      => $data['total_marks'] ?? null,
-            'obtained_marks'   => $data['total_marks'] ?? $data['obtained_marks'] ?? null,
+            'theory_marks'     => $theory,
+            'assignment_marks' => $assignment,
+            'total_marks'      => $total,
+            'obtained_marks'   => $total ?? $data['obtained_marks'] ?? null,
             'grade'            => $data['grade'] ?? $mark->computedGrade(),
             'remarks'          => $data['remarks'] ?? null,
             'submitted_at'     => null, // Reset submission on admin override
