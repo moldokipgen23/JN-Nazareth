@@ -400,9 +400,6 @@ Route::prefix('admin')
 // Teacher mobile portal — lightweight, mobile-first
 // ---------------------------------------------------------------------------
 
-// Prevent Laravel from auto-redirecting /teacher → /teacher/
-Route::get('/teacher', fn () => abort(404));
-
 Route::prefix('teacher')
     ->name('teacher.')
     ->middleware(['auth', 'role:teacher,admin'])
