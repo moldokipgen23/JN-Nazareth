@@ -37,8 +37,20 @@
     @endforeach
 </div>
 
-{{-- Progress Summary (class_subjects based) --}}
-<div style="margin-bottom:16px;">
+{{-- Tabs --}}
+<div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid #e2e8f0;">
+    <a href="{{ route('admin.questions.index', ['view' => 'review', 'exam' => $examId, 'class' => $class, 'subject' => $subject, 'status' => $status]) }}"
+       style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid {{ $view === 'review' ? '#0f766e' : 'transparent' }};color:{{ $view === 'review' ? '#0f766e' : '#94a3b8' }};margin-bottom:-2px;">
+        Review
+    </a>
+    <a href="{{ route('admin.questions.index', ['view' => 'summary', 'exam' => $examId]) }}"
+       style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid {{ $view === 'summary' ? '#0f766e' : 'transparent' }};color:{{ $view === 'summary' ? '#0f766e' : '#94a3b8' }};margin-bottom:-2px;">
+        Summary
+    </a>
+</div>
+
+@if($view === 'summary')
+    {{-- Summary tab — clickable per-class grid --}}
     @if($classProgress->isNotEmpty())
     @php $progressExamName = $progressExamId ? optional($exams->firstWhere('id', $progressExamId))->name : null; @endphp
     <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Questions Progress per Class{{ $progressExamName ? ' — '.$progressExamName : '' }}</div>
@@ -48,34 +60,35 @@
             $allDone = $cp['approved_count'] === $cp['expected_count'];
             $pct = $cp['expected_count'] > 0 ? round($cp['approved_count'] / $cp['expected_count'] * 100) : 0;
         @endphp
-        <div style="background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(15,23,42,.06);border:1px solid {{ $allDone ? '#bbf7d0' : '#fde68a' }};">
+        <a href="{{ route('admin.questions.index', ['view' => 'review', 'exam' => $progressExamId, 'class' => $cp['class']]) }}"
+           style="background:#fff;border-radius:10px;padding:12px 14px;text-decoration:none;box-shadow:0 1px 3px rgba(15,23,42,.06);border:1px solid {{ $allDone ? '#bbf7d0' : '#fde68a' }};display:block;transition:transform .1s;"
+           onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <span style="font-size:13px;font-weight:700;color:#0f172a;">{{ $cp['class'] }}</span>
-                <span style="font-size:11px;font-weight:600;color:{{ $allDone ? '#15803d' : '#92400e' }};">{{ $cp['approved_count'] }}/{{ $cp['expected_count'] }}</span>
+                <span style="font-size:14px;font-weight:700;color:#0f172a;">{{ $cp['class'] }}</span>
+                <span style="font-size:12px;font-weight:700;color:{{ $allDone ? '#15803d' : '#92400e' }};">{{ $cp['approved_count'] }}/{{ $cp['expected_count'] }}</span>
             </div>
             <div style="height:6px;background:#f1f5f9;border-radius:99px;overflow:hidden;margin-bottom:8px;">
-                <div style="height:100%;width:{{ $pct }}%;background:{{ $allDone ? '#22c55e' : '#eab308' }};border-radius:99px;transition:width .3s;"></div>
+                <div style="height:100%;width:{{ $pct }}%;background:{{ $allDone ? '#22c55e' : '#eab308' }};border-radius:99px;"></div>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:4px;">
                 @foreach($cp['expected'] as $subj)
                     @php $done = in_array($subj, $cp['approved']); @endphp
-                    <span style="font-size:9px;font-weight:600;padding:2px 8px;border-radius:99px;background:{{ $done ? '#dcfce7' : '#fef3c7' }};color:{{ $done ? '#15803d' : '#92400e' }};">{{ $subj }}</span>
+                    <span style="font-size:9px;font-weight:600;padding:2px 8px;border-radius:99px;background:{{ $done ? '#dcfce7' : '#fef3c7' }};color:{{ $done ? '#15803d' : '#92400e' }};">{{ $subj }}{{ $done ? ' ✓' : '' }}</span>
                 @endforeach
             </div>
-        </div>
+            <div style="font-size:10px;color:#0f766e;font-weight:600;margin-top:8px;">Click to review →</div>
+        </a>
         @endforeach
     </div>
     @else
-    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Questions Progress per Class</div>
-    <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;">
-        <div style="font-size:12px;color:#92400e;">Select an exam above or set up class_subjects to see per-class progress.</div>
+    <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:24px 16px;text-align:center;">
+        <div style="font-size:13px;color:#92400e;font-weight:600;">Pick an exam above OR set up <a href="{{ route('admin.class-subjects.index') }}" style="color:#0f766e;">class subjects</a> to see per-class progress.</div>
     </div>
     @endif
-</div>
-
-
-
+@else
+{{-- Review tab — filter + question groups table --}}
 <form method="GET" class="filter-form" style="background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+    <input type="hidden" name="view" value="review">
     <div>
         <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Exam</label>
         <select name="exam" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
@@ -252,6 +265,8 @@
     </table>
 </div>
 @endif
+
+@endif {{-- end view check --}}
 
 <script>
 function toggleGroup(id) {

@@ -18,6 +18,7 @@ class QuestionsController extends Controller
     public function index(Request $request)
     {
         $year    = AcademicYear::current();
+        $view    = $request->query('view', 'review');
         $examId  = $request->query('exam');
         $class   = $request->query('class');
         $subject = $request->query('subject');
@@ -102,7 +103,7 @@ class QuestionsController extends Controller
             }
         }
 
-        return view('admin.questions.index', compact('groups', 'exams', 'year', 'examId', 'class', 'subject', 'status', 'stats', 'availableClasses', 'availableSubjects', 'classProgress', 'progressExamId'));
+        return view('admin.questions.index', compact('groups', 'exams', 'year', 'view', 'examId', 'class', 'subject', 'status', 'stats', 'availableClasses', 'availableSubjects', 'classProgress', 'progressExamId'));
     }
 
     public function export(Request $request)
