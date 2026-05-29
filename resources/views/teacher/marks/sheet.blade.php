@@ -94,18 +94,18 @@
 <form method="POST" action="{{ route('teacher.marks.store', ['exam' => $exam->id, 'class' => $class, 'section' => $section, 'subject' => $subject]) }}">
     @csrf
 
-    {{-- Full/pass marks --}}
-    <div style="background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;gap:14px;flex-wrap:wrap;align-items:end;box-shadow:0 1px 3px rgba(15,23,42,.06);">
-        <div>
-            <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Full Marks (Theory)</label>
-            <input type="number" name="full_marks" id="fullMarks" value="{{ old('full_marks', $defaultFull) }}" required step="0.01" min="1" max="9999" class="mk-input" style="width:90px;">
+    {{-- Full/pass marks (set by admin — read-only here) --}}
+    <div style="background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+        <div style="background:#eef2ff;color:#4338ca;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;">
+            Full Marks: {{ $defaultFull }}
         </div>
-        <div>
-            <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Pass Marks</label>
-            <input type="number" name="pass_marks" id="passMarks" value="{{ old('pass_marks', $defaultPass) }}" required step="0.01" min="0" class="mk-input" style="width:90px;">
+        <div style="background:#eef2ff;color:#4338ca;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;">
+            Pass Marks: {{ $defaultPass }}
         </div>
+        <input type="hidden" id="fullMarks" value="{{ $defaultFull }}">
+        <input type="hidden" id="passMarks" value="{{ $defaultPass }}">
         <div style="flex:1;min-width:140px;font-size:11px;color:#64748b;">
-            Enter theory marks and/or assignment marks per student. Total and grade compute automatically.
+            Marks config is set by admin. Enter each student's theory and/or assignment marks — total and grade compute automatically.
         </div>
     </div>
 

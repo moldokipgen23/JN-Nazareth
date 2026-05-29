@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Teacher;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
 use App\Models\Exam;
+use App\Models\ExamSubjectMark;
 use App\Models\Mark;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
@@ -80,8 +81,8 @@ class MarksController extends Controller
             ->get()
             ->keyBy('student_enrollment_id');
 
-        $defaultFull = $existing->first()?->full_marks ?? 100;
-        $defaultPass = $existing->first()?->pass_marks ?? 33;
+        // Marks config is admin-controlled per (exam, class, subject) — never teacher-editable.
+        [$defaultFull, $defaultPass] = ExamSubjectMark::resolveMarks($exam->id, $class, $subject, $year->id);
 
         return view('teacher.marks.sheet', [
             'year'        => $year,
@@ -113,8 +114,6 @@ class MarksController extends Controller
         }
 
         $data = $request->validate([
-            'full_marks'             => 'required|numeric|min:1|max:9999',
-            'pass_marks'             => 'required|numeric|min:0|lte:full_marks',
             'marks'                  => 'required|array',
             'marks.*.theory'         => 'nullable|numeric|min:0',
             'marks.*.assignment'     => 'nullable|numeric|min:0',
@@ -123,6 +122,11 @@ class MarksController extends Controller
             'marks.*.remarks'        => 'nullable|string|max:500',
             'action'                 => 'nullable|in:draft,submit',
         ]);
+
+        // Marks config comes from admin-set ExamSubjectMark — teacher cannot override.
+        [$fullMarks, $passMarks] = ExamSubjectMark::resolveMarks($exam->id, $class, $subject, $year->id);
+        $data['full_marks'] = $fullMarks;
+        $data['pass_marks'] = $passMarks;
 
         $enrollmentIds = StudentEnrollment::forActiveYear()->active()
             ->where('class', $class)->where('section', $section)

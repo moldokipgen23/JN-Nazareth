@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
+use App\Models\ClassSubject;
 use App\Models\Exam;
+use App\Models\ExamSubjectMark;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -51,6 +53,46 @@ class ExamController extends Controller
     {
         $exam->update(['is_active' => ! $exam->is_active]);
         return back()->with('success', $exam->is_active ? 'Exam activated.' : 'Exam deactivated.');
+    }
+
+    /**
+     * Show the per-subject marks config grid for an exam.
+     * Rows: every (class, subject) from class_subjects for the exam's year.
+     */
+    public function marksConfig(Exam $exam)
+    {
+        $year = $exam->academicYear;
+        $rows = ClassSubject::where('academic_year_id', $exam->academic_year_id)
+            ->with('subject')->get()
+            ->groupBy('class');
+
+        $existing = ExamSubjectMark::where('exam_id', $exam->id)->get()
+            ->keyBy(fn ($r) => $r->class.'|'.$r->subject);
+
+        return view('admin.exams.marks-config', compact('exam', 'year', 'rows', 'existing'));
+    }
+
+    /**
+     * Bulk save marks config for an exam — one row per (class, subject).
+     */
+    public function saveMarksConfig(Request $request, Exam $exam)
+    {
+        $data = $request->validate([
+            'config'                  => 'required|array',
+            'config.*.class'          => 'required|string',
+            'config.*.subject'        => 'required|string',
+            'config.*.full_marks'     => 'required|numeric|min:1|max:9999',
+            'config.*.pass_marks'     => 'required|numeric|min:0|lte:config.*.full_marks',
+        ]);
+
+        foreach ($data['config'] as $row) {
+            ExamSubjectMark::updateOrCreate(
+                ['exam_id' => $exam->id, 'class' => $row['class'], 'subject' => $row['subject']],
+                ['full_marks' => $row['full_marks'], 'pass_marks' => $row['pass_marks']]
+            );
+        }
+
+        return back()->with('success', count($data['config']).' subject marks saved.');
     }
 
     protected function validated(Request $request, ?int $ignoreId = null): array

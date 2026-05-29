@@ -144,6 +144,8 @@ Route::prefix('admin')
             Route::put('exams/{exam}', [ExamController::class, 'update'])->name('exams.update');
             Route::delete('exams/{exam}', [ExamController::class, 'destroy'])->name('exams.destroy');
             Route::post('exams/{exam}/toggle', [ExamController::class, 'toggle'])->name('exams.toggle');
+            Route::get('exams/{exam}/marks-config', [ExamController::class, 'marksConfig'])->name('exams.marks-config');
+            Route::post('exams/{exam}/marks-config', [ExamController::class, 'saveMarksConfig'])->name('exams.marks-config.save');
 
             Route::get('marks', [AdminMarksController::class, 'index'])->name('marks.index');
             Route::put('marks/{mark}', [AdminMarksController::class, 'update'])->name('marks.update');
