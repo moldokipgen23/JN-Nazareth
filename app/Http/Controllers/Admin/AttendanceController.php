@@ -70,6 +70,7 @@ class AttendanceController extends Controller
             $allRecords = AttendanceRecord::forActiveYear()
                 ->where('class', $class)
                 ->when($section, fn ($q) => $q->where('section', $section))
+                ->where('approval_status', 'approved')
                 ->whereBetween('date', [$monthStart, $monthEnd])->get();
 
             $totalDays = $allRecords->pluck('date')->unique()->sort()->values()->count();
@@ -97,6 +98,7 @@ class AttendanceController extends Controller
             $trendStart = $monthStart->copy()->subMonths(5)->startOfMonth();
             $trendRecords = AttendanceRecord::forActiveYear()
                 ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
+                ->where('approval_status', 'approved')
                 ->whereBetween('date', [$trendStart, $monthEnd])->get()
                 ->groupBy(fn ($r) => $r->date->format('Y-m'));
 
