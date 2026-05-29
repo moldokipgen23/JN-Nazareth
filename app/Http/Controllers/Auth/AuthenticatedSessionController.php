@@ -50,7 +50,15 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        // All admin-portal logins go directly to admin dashboard.
+        // Admin portal — only admin or staff roles allowed.
+        if ($user && ! $user->hasAnyRole(['admin', 'staff'])) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            return back()->withErrors([
+                'email' => 'Access denied. Only administrators can use this portal.',
+            ]);
+        }
+
         return redirect()->route('admin.dashboard');
     }
 
