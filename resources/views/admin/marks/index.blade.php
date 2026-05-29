@@ -121,9 +121,10 @@ function syncSection(form) {
                 </thead>
                 <tbody>
                 @foreach($records as $r)
+                    @continue(!$r->enrollment)
                     <tr style="border-top:1px solid #f1f5f9;">
-                        <td style="padding:10px 14px;color:#475569;">{{ $r->enrollment->roll_number ?: '—' }}</td>
-                        <td style="padding:10px 14px;color:#0f172a;font-weight:600;">{{ $r->enrollment->student?->name ?? '—' }}</td>
+                        <td style="padding:10px 14px;color:#475569;">{{ $r->enrollment?->roll_number ?: '—' }}</td>
+                        <td style="padding:10px 14px;color:#0f172a;font-weight:600;">{{ $r->enrollment?->student?->name ?? '—' }}</td>
                         <td style="padding:10px 14px;color:#475569;">{{ $r->theory_marks ?? '—' }}</td>
                         <td style="padding:10px 14px;color:#475569;">{{ $r->assignment_marks ?? '—' }}</td>
                         <td style="padding:10px 14px;font-weight:600;">
@@ -246,8 +247,8 @@ function syncSection(form) {
                     @foreach($passRankings as $r)
                     <tr style="border-top:1px solid #f1f5f9;">
                         <td style="text-align:center;padding:10px 10px;font-weight:800;color:#0f766e;">#{{ $r['rank'] }}</td>
-                        <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']->roll_number ?: '—' }}</td>
-                        <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']->student?->name ?? '—' }}</td>
+                        <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']?->roll_number ?: '—' }}</td>
+                        <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']?->student?->name ?? '—' }}</td>
                         @foreach($analyticsSubjects as $subj)
                             @php $sd = $r['subjectData'][$subj] ?? null; @endphp
                             <td style="text-align:center;padding:10px 6px;font-size:12px;">
@@ -289,8 +290,8 @@ function syncSection(form) {
                 <tbody>
                     @foreach($failRankings as $r)
                     <tr style="border-top:1px solid #f1f5f9;">
-                        <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']->roll_number ?: '—' }}</td>
-                        <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']->student?->name ?? '—' }}</td>
+                        <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']?->roll_number ?: '—' }}</td>
+                        <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']?->student?->name ?? '—' }}</td>
                         @foreach($analyticsSubjects as $subj)
                             @php $sd = $r['subjectData'][$subj] ?? null; @endphp
                             <td style="text-align:center;padding:10px 6px;font-size:12px;">
@@ -377,8 +378,8 @@ function syncSection(form) {
                                 <span style="font-weight:800;color:#64748b;">#{{ $r['rank'] }}</span>
                             @endif
                         </td>
-                        <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']->roll_number ?: '—' }}</td>
-                        <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']->student?->name ?? '—' }}</td>
+                        <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']?->roll_number ?: '—' }}</td>
+                        <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']?->student?->name ?? '—' }}</td>
                         @foreach($analyticsSubjects as $subj)
                             @php $sd = $r['subjectData'][$subj] ?? null; @endphp
                             <td style="text-align:center;padding:10px 6px;font-size:12px;">
@@ -420,8 +421,8 @@ function syncSection(form) {
                 <tbody>
                     @foreach($failRankings as $r)
                     <tr style="border-top:1px solid #f1f5f9;">
-                        <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']->roll_number ?: '—' }}</td>
-                        <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']->student?->name ?? '—' }}</td>
+                        <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']?->roll_number ?: '—' }}</td>
+                        <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']?->student?->name ?? '—' }}</td>
                         @foreach($analyticsSubjects as $subj)
                             @php $sd = $r['subjectData'][$subj] ?? null; @endphp
                             <td style="text-align:center;padding:10px 6px;font-size:12px;">

@@ -74,7 +74,8 @@ class MarksController extends Controller
                 ->where('subject', $subject)
                 ->with(['enrollment.student', 'enteredBy'])
                 ->get()
-                ->sortBy(fn ($r) => [(int) ($r->enrollment->roll_number ?: 999999), $r->enrollment?->student?->name ?? ''])
+                ->filter(fn ($r) => $r->enrollment !== null)
+                ->sortBy(fn ($r) => [(int) ($r->enrollment?->roll_number ?: 999999), $r->enrollment?->student?->name ?? ''])
                 ->values();
 
             foreach ($records as $r) {
