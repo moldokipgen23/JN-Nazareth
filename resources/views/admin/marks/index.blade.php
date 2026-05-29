@@ -196,6 +196,17 @@ function syncSection(form) {
     {{-- Rankings View --}}
     @if(!$examId || !$class)
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">Pick exam + class above to view rankings.</div>
+    @elseif(!$allSubmitted)
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:36px 20px;text-align:center;">
+            <div style="font-size:28px;opacity:.5;margin-bottom:8px;">⏳</div>
+            <div style="font-weight:700;color:#92400e;font-size:15px;margin-bottom:6px;">Results not yet available</div>
+            <div style="font-size:12px;color:#a16207;margin-bottom:8px;">The following subjects still have unsubmitted marks. Rankings will appear once all teachers submit.</div>
+            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+                @foreach($pendingSubjects as $ps)
+                    <span style="background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;">{{ $ps }}</span>
+                @endforeach
+            </div>
+        </div>
     @elseif($rankings->isEmpty())
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">No marks found for this combination.</div>
     @else
@@ -255,6 +266,17 @@ function syncSection(form) {
     {{-- Results View --}}
     @if(!$examId || !$class)
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">Pick exam + class above to view results.</div>
+    @elseif(!$allSubmitted)
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:36px 20px;text-align:center;">
+            <div style="font-size:28px;opacity:.5;margin-bottom:8px;">⏳</div>
+            <div style="font-weight:700;color:#92400e;font-size:15px;margin-bottom:6px;">Results not yet available</div>
+            <div style="font-size:12px;color:#a16207;margin-bottom:8px;">The following subjects still have unsubmitted marks:</div>
+            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+                @foreach($pendingSubjects as $ps)
+                    <span style="background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;">{{ $ps }}</span>
+                @endforeach
+            </div>
+        </div>
     @elseif($rankings->isEmpty())
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">No marks found for this combination.</div>
     @else

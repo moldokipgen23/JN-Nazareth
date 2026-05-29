@@ -75,54 +75,79 @@ class MarksController extends Controller
                 ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
                 ->with('student')->orderBy('roll_number')->get();
 
-            $marks = Mark::where('academic_year_id', $year->id)
+            // Get all subjects that have ANY marks (draft or submitted) for this class
+            $allSubjects = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $examId)->where('class', $class)
                 ->when($section, fn ($q) => $q->where('section', $section))
-                ->whereNotNull('submitted_at')
-                ->get()->groupBy('student_enrollment_id');
-
-            $analyticsSubjects = Mark::where('academic_year_id', $year->id)
-                ->where('exam_id', $examId)->where('class', $class)
-                ->when($section, fn ($q) => $q->where('section', $section))
-                ->whereNotNull('submitted_at')
                 ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
-            $rows = [];
-            foreach ($enrollments as $enrollment) {
-                $studentMarks = $marks->get($enrollment->id, collect());
-                $row = ['enrollment' => $enrollment, 'subjectData' => [], 'totalPct' => 0, 'totalGp' => 0, 'markedSubjects' => 0, 'submitted' => true];
-                foreach ($analyticsSubjects as $subj) {
-                    $mark = $studentMarks->firstWhere('subject', $subj);
-                    if ($mark && $mark->total_marks !== null) {
-                        $pct = $mark->percentage();
-                        $gp  = $mark->computedGradePoint();
-                        $row['subjectData'][$subj] = ['pct' => $pct, 'grade' => $mark->computedGrade() ?? $mark->grade, 'gp' => $gp];
-                        if ($pct !== null) { $row['totalPct'] += $pct; $row['totalGp'] += ($gp ?? 0); $row['markedSubjects']++; }
-                        if (!$mark->submitted_at) $row['submitted'] = false;
-                    } else { $row['subjectData'][$subj] = null; $row['submitted'] = false; }
+            // Check per-subject: are ALL marks submitted for this subject?
+            $pendingSubjects = [];
+            foreach ($allSubjects as $subj) {
+                $hasDraft = Mark::where('academic_year_id', $year->id)
+                    ->where('exam_id', $examId)->where('class', $class)
+                    ->when($section, fn ($q) => $q->where('section', $section))
+                    ->where('subject', $subj)
+                    ->whereNull('submitted_at')
+                    ->exists();
+                if ($hasDraft) {
+                    $pendingSubjects[] = $subj;
                 }
-                $c = $row['markedSubjects'];
-                $row['avgPct'] = $c > 0 ? round($row['totalPct'] / $c, 2) : null;
-                $row['cgpa']   = $c > 0 ? round($row['totalGp'] / $c, 2) : null;
-                $rows[] = $row;
             }
 
-            $rankings = collect($rows)->sortByDesc(fn ($r) => $r['cgpa'] ?? 0)
-                ->values()->map(fn ($r, $i) => array_merge($r, ['rank' => $i + 1]));
+            $allSubmitted = empty($pendingSubjects);
 
-            foreach ($analyticsSubjects as $subj) {
-                $pcts = []; $grades = [];
-                foreach ($rankings as $r) {
-                    $sd = $r['subjectData'][$subj] ?? null;
-                    if ($sd && $sd['pct'] !== null) { $pcts[] = $sd['pct']; $grades[] = $sd['grade']; }
+            // Only build rankings/results if all subjects are fully submitted
+            $analyticsSubjects = collect();
+            $rows = [];
+            $rankings = collect();
+            $subjectStats = [];
+
+            if ($allSubmitted) {
+                $marks = Mark::where('academic_year_id', $year->id)
+                    ->where('exam_id', $examId)->where('class', $class)
+                    ->when($section, fn ($q) => $q->where('section', $section))
+                    ->whereNotNull('submitted_at')
+                    ->get()->groupBy('student_enrollment_id');
+
+                $analyticsSubjects = $allSubjects;
+
+                foreach ($enrollments as $enrollment) {
+                    $studentMarks = $marks->get($enrollment->id, collect());
+                    $row = ['enrollment' => $enrollment, 'subjectData' => [], 'totalPct' => 0, 'totalGp' => 0, 'markedSubjects' => 0, 'submitted' => true];
+                    foreach ($analyticsSubjects as $subj) {
+                        $mark = $studentMarks->firstWhere('subject', $subj);
+                        if ($mark && $mark->total_marks !== null) {
+                            $pct = $mark->percentage();
+                            $gp  = $mark->computedGradePoint();
+                            $row['subjectData'][$subj] = ['pct' => $pct, 'grade' => $mark->computedGrade() ?? $mark->grade, 'gp' => $gp];
+                            if ($pct !== null) { $row['totalPct'] += $pct; $row['totalGp'] += ($gp ?? 0); $row['markedSubjects']++; }
+                            if (!$mark->submitted_at) $row['submitted'] = false;
+                        } else { $row['subjectData'][$subj] = null; $row['submitted'] = false; }
+                    }
+                    $c = $row['markedSubjects'];
+                    $row['avgPct'] = $c > 0 ? round($row['totalPct'] / $c, 2) : null;
+                    $row['cgpa']   = $c > 0 ? round($row['totalGp'] / $c, 2) : null;
+                    $rows[] = $row;
                 }
-                $cnt = count($pcts);
-                $subjectStats[$subj] = [
-                    'avg' => $cnt > 0 ? round(array_sum($pcts) / $cnt, 2) : null,
-                    'count' => $cnt, 'gradeDist' => array_count_values($grades),
-                    'highest' => $cnt > 0 ? max($pcts) : null,
-                    'lowest'  => $cnt > 0 ? min($pcts) : null,
-                ];
+
+                $rankings = collect($rows)->sortByDesc(fn ($r) => $r['cgpa'] ?? 0)
+                    ->values()->map(fn ($r, $i) => array_merge($r, ['rank' => $i + 1]));
+
+                foreach ($analyticsSubjects as $subj) {
+                    $pcts = []; $grades = [];
+                    foreach ($rankings as $r) {
+                        $sd = $r['subjectData'][$subj] ?? null;
+                        if ($sd && $sd['pct'] !== null) { $pcts[] = $sd['pct']; $grades[] = $sd['grade']; }
+                    }
+                    $cnt = count($pcts);
+                    $subjectStats[$subj] = [
+                        'avg' => $cnt > 0 ? round(array_sum($pcts) / $cnt, 2) : null,
+                        'count' => $cnt, 'gradeDist' => array_count_values($grades),
+                        'highest' => $cnt > 0 ? max($pcts) : null,
+                        'lowest'  => $cnt > 0 ? min($pcts) : null,
+                    ];
+                }
             }
         }
 
@@ -161,6 +186,8 @@ class MarksController extends Controller
             'analyticsSubjects' => $analyticsSubjects,
             'subjectStats' => $subjectStats,
             'submissionStatus' => $submissionStatus,
+            'allSubmitted' => $allSubmitted ?? false,
+            'pendingSubjects' => $pendingSubjects ?? [],
         ]);
     }
 
@@ -442,6 +469,22 @@ class MarksController extends Controller
         $exam = Exam::find($examId);
         if (!$exam) return back()->with('error', 'Exam not found.');
 
+        // Verify all subjects submitted before export
+        $subjList = Mark::where('academic_year_id', $year->id)
+            ->where('exam_id', $examId)->where('class', $class)
+            ->when($section, fn ($q) => $q->where('section', $section))
+            ->select('subject')->distinct()->pluck('subject');
+        $pendingSubj = [];
+        foreach ($subjList as $subj) {
+            if (Mark::where('academic_year_id', $year->id)->where('exam_id', $examId)
+                ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
+                ->where('subject', $subj)->whereNull('submitted_at')->exists()
+            ) { $pendingSubj[] = $subj; }
+        }
+        if ($pendingSubj) {
+            return back()->with('error', 'Cannot export results: '.implode(', ', $pendingSubj).' still have unsubmitted marks.');
+        }
+
         $enrollments = StudentEnrollment::forActiveYear()->active()
             ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
             ->with('student')->orderBy('roll_number')->get();
@@ -458,10 +501,7 @@ class MarksController extends Controller
             ->whereNotNull('submitted_at')
             ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
-        if ($subjects->isEmpty()) {
-            return back()->with('error', 'No submitted marks yet for this combination. Teachers must submit marks before results can be generated.');
-        }
-
+        // Build rows with ranking
         $rows = [];
         foreach ($enrollments as $enrollment) {
             $studentMarks = $marks->get($enrollment->id, collect());
