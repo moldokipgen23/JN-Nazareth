@@ -86,15 +86,18 @@ class QuestionsController extends Controller
                 $expected = ClassSubject::where('academic_year_id', $year->id)
                     ->where('class', $c)
                     ->with('subject')->get()
-                    ->pluck('subject.name');
+                    ->pluck('subject.name')
+                    ->filter()
+                    ->values();
                 if ($expected->isEmpty()) continue;
                 $approved = $approvedSubjects->get($c, []);
+                $expectedArr = $expected->toArray();
                 $classProgress->push([
                     'class' => $c,
-                    'expected' => $expected->values()->toArray(),
+                    'expected' => $expectedArr,
                     'approved' => $approved,
-                    'approved_count' => count(array_intersect($approved, $expected->toArray())),
-                    'expected_count' => $expected->count(),
+                    'approved_count' => count(array_intersect($approved, $expectedArr)),
+                    'expected_count' => count($expectedArr),
                 ]);
             }
         }

@@ -40,6 +40,7 @@
             @endforeach
         </select>
     </div>
+    @if($view !== 'summary')
     <div>
         <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Class / Section</label>
         <select name="class" onchange="syncSection(this.form); this.form.submit()" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;min-width:160px;">
@@ -53,6 +54,7 @@
         </select>
         <input type="hidden" name="section" value="{{ $section }}">
     </div>
+    @endif
     @if($view === 'review')
     <div>
         <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Subject</label>
@@ -501,72 +503,74 @@ function syncSection(form) {
         @endif
     @endif
 @elseif($view === 'summary')
-    {{-- Summary View --}}
+    {{-- Summary View — ALWAYS school-wide grid --}}
     @if(!$examId)
-        <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">Pick an exam above to see summary.</div>
-    @elseif($class && $section && $submissionStatus->isNotEmpty())
-        {{-- Per-class detail --}}
-        <div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
-            <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px;">{{ $class }} — Section {{ $section }}</div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
-                @foreach($submissionStatus as $ss)
-                @php
-                    $noMarks = $ss->total === 0;
-                    $allDone = !$noMarks && $ss->submitted_count === $ss->expected && $ss->total === $ss->expected;
-                    $_bg = $noMarks ? '#fef2f2' : ($allDone ? '#f0fdf4' : '#fef3c7');
-                    $_border = $noMarks ? '#fecaca' : ($allDone ? '#bbf7d0' : '#fde68a');
-                @endphp
-                <div style="background:{{ $_bg }};border-radius:10px;padding:12px 14px;border:1px solid {{ $_border }};">
-                    <div style="font-size:13px;font-weight:700;color:#0f172a;">{{ $ss->subject }}</div>
-                    <div style="font-size:11px;color:#64748b;margin-top:4px;">{{ $ss->submitted_count }}/{{ $ss->expected }} students submitted</div>
-                    <div style="margin-top:6px;">
-                        @if($noMarks)
-                            <span style="font-size:10px;color:#b91c1c;font-weight:600;">❌ Not started</span>
-                        @elseif($allDone)
-                            <span style="font-size:10px;color:#15803d;font-weight:600;">✅ Complete</span>
-                        @else
-                            <span style="font-size:10px;color:#92400e;font-weight:600;">⏳ {{ $ss->expected - $ss->submitted_count }} pending</span>
-                        @endif
-                    </div>
-                </div>
-                @endforeach
-            </div>
-        </div>
+        <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">Pick an exam above to see submission status across all classes.</div>
     @else
-        {{-- School-wide grid --}}
         @php
             $allClasses = \App\Models\Student::classes();
             $classData = collect();
             foreach ($allClasses as $c) {
                 $expected = \App\Models\ClassSubject::where('academic_year_id', $year->id)
-                    ->where('class', $c)->with('subject')->get()->pluck('subject.name');
+                    ->where('class', $c)->with('subject')->get()
+                    ->pluck('subject.name')->filter()->values();
                 if ($expected->isEmpty()) continue;
-                $submitted = \App\Models\Mark::where('academic_year_id', $year->id)
-                    ->where('exam_id', $examId)->where('class', $c)
-                    ->whereNotNull('submitted_at')
-                    ->select('subject')->distinct()->pluck('subject')->toArray();
-                $expectedArr = $expected->values()->toArray();
-                $done = count(array_intersect($submitted, $expectedArr));
-                $classData->push(['class' => $c, 'expected' => count($expectedArr), 'done' => $done, 'complete' => $done >= count($expectedArr)]);
+
+                $sections = \App\Models\StudentEnrollment::forActiveYear()->active()
+                    ->where('class', $c)->select('section')->distinct()->pluck('section');
+                if ($sections->isEmpty()) $sections = collect(['A']);
+
+                foreach ($sections as $sec) {
+                    $enrolled = \App\Models\StudentEnrollment::forActiveYear()->active()
+                        ->where('class', $c)->where('section', $sec)->count();
+                    if ($enrolled === 0) continue;
+
+                    $perSubject = [];
+                    foreach ($expected as $subj) {
+                        $subCount = \App\Models\Mark::where('academic_year_id', $year->id)
+                            ->where('exam_id', $examId)->where('class', $c)
+                            ->where('section', $sec)->where('subject', $subj)
+                            ->whereNotNull('submitted_at')->count();
+                        $perSubject[$subj] = $subCount >= $enrolled;
+                    }
+                    $doneCount = count(array_filter($perSubject));
+                    $totalExp = $expected->count();
+                    $classData->push([
+                        'class' => $c,
+                        'section' => $sec,
+                        'expected' => $totalExp,
+                        'done' => $doneCount,
+                        'enrolled' => $enrolled,
+                        'pending' => array_keys(array_filter($perSubject, fn ($v) => !$v)),
+                        'complete' => $doneCount >= $totalExp,
+                    ]);
+                }
             }
         @endphp
         @if($classData->isNotEmpty())
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;">
             @foreach($classData as $cd)
-            <a href="{{ route('admin.marks.index', ['view' => 'summary', 'exam' => $examId, 'class' => $cd['class'], 'section' => $section ?: 'A']) }}"
-               style="background:#fff;border-radius:12px;padding:16px 18px;text-decoration:none;box-shadow:0 1px 3px rgba(15,23,42,.06);border:1px solid {{ $cd['complete'] ? '#bbf7d0' : '#e2e8f0' }};display:block;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                    <span style="font-size:15px;font-weight:700;color:#0f172a;">{{ $cd['class'] }}</span>
+            <div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(15,23,42,.06);border:1px solid {{ $cd['complete'] ? '#bbf7d0' : '#e2e8f0' }};">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                    <span style="font-size:14px;font-weight:700;color:#0f172a;">{{ $cd['class'] }} — Sec {{ $cd['section'] }}</span>
                     <span style="font-size:12px;font-weight:700;color:{{ $cd['complete'] ? '#15803d' : '#92400e' }};">{{ $cd['done'] }}/{{ $cd['expected'] }}</span>
                 </div>
+                <div style="font-size:10px;color:#64748b;margin-bottom:6px;">{{ $cd['enrolled'] }} students</div>
                 @php $pct = $cd['expected'] > 0 ? round($cd['done'] / $cd['expected'] * 100) : 0; @endphp
-                <div style="height:6px;background:#f1f5f9;border-radius:99px;overflow:hidden;margin-bottom:6px;">
+                <div style="height:6px;background:#f1f5f9;border-radius:99px;overflow:hidden;margin-bottom:8px;">
                     <div style="height:100%;width:{{ $pct }}%;background:{{ $cd['complete'] ? '#22c55e' : '#eab308' }};border-radius:99px;"></div>
                 </div>
-                <div style="font-size:11px;color:{{ $cd['complete'] ? '#15803d' : '#92400e' }};font-weight:600;">
-                    @if($cd['complete']) ✅ Complete @else ⏳ {{ $cd['expected'] - $cd['done'] }} pending @endif
-                </div>
-            </a>
+                @if($cd['complete'])
+                    <div style="font-size:11px;color:#15803d;font-weight:600;">✅ All subjects submitted</div>
+                @else
+                    <div style="font-size:11px;color:#92400e;font-weight:600;margin-bottom:4px;">⏳ Pending:</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:3px;">
+                        @foreach($cd['pending'] as $p)
+                            <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:99px;background:#fef3c7;color:#92400e;">{{ $p }}</span>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
             @endforeach
         </div>
         @else
