@@ -4,7 +4,7 @@
 
 <div style="margin-bottom:16px;">
     <h1 style="font-size:18px;font-weight:700;color:#0f172a;margin:0;">Exam Questions</h1>
-    <div style="font-size:12px;color:#64748b;margin-top:2px;">Select a subject to view and add questions. Each subject can have multiple questions.</div>
+    <div style="font-size:12px;color:#64748b;margin-top:2px;">Select a subject below to view and add questions.</div>
 </div>
 
 @php
@@ -13,61 +13,45 @@
     $selectedSubject = request('subject', old('subject'));
 @endphp
 
-{{-- Subject selector form --}}
-<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(15,23,42,.06);">
-    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:12px;">Select Subject</div>
-    <form method="GET" action="{{ route('teacher.questions.index') }}" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
-        <div>
-            <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Exam *</label>
-            <select name="exam_id" required style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;min-width:160px;">
-                <option value="">— select —</option>
-                @foreach($exams as $e)
-                    <option value="{{ $e->id }}" {{ $selectedExamId == $e->id ? 'selected' : '' }}>{{ $e->name }}</option>
-                @endforeach
-            </select>
+{{-- Subject selector — clickable cards with tick --}}
+<div style="margin-bottom:16px;">
+    @if($exams->isEmpty() && $slots->isEmpty())
+    <div style="background:#fff;border-radius:12px;padding:48px 24px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+        <div style="font-size:32px;opacity:.3;margin-bottom:8px;">📝</div>
+        <div style="font-weight:700;color:#0f172a;font-size:15px;margin-bottom:4px;">No active exams or subjects assigned yet</div>
+        <div style="font-size:12px;color:#64748b;">Contact your school administration if you believe this is an error.</div>
+    </div>
+    @else
+    @foreach($exams as $exam)
+    <div style="background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+        <div style="font-size:13px;font-weight:700;color:#1e3a5f;margin-bottom:8px;">{{ $exam->name }}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            @php $examSlots = $slots->unique(fn($s) => $s->class.'|'.$s->subject); @endphp
+            @foreach($examSlots as $slot)
+                @php
+                    $isActive = $selectedExamId == $exam->id && $selectedClass === $slot->class && $selectedSubject === $slot->subject;
+                    $url = route('teacher.questions.index', ['exam_id' => $exam->id, 'class' => $slot->class, 'subject' => $slot->subject]);
+                @endphp
+                <a href="{{ $url }}"
+                   style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:8px 12px;border-radius:8px;border:1.5px solid {{ $isActive ? '#0f766e' : '#e2e8f0' }};background:{{ $isActive ? '#f0fdfa' : '#fff' }};transition:all .15s;min-width:140px;flex:1 0 auto;"
+                   onmouseover="this.style.borderColor='#0f766e';this.style.background='#f0fdfa'"
+                   onmouseout="this.style.borderColor='{{ $isActive ? '#0f766e' : '#e2e8f0' }}';this.style.background='{{ $isActive ? '#f0fdfa' : '#fff' }}'">
+                    <div style="width:18px;height:18px;border-radius:4px;border:2px solid {{ $isActive ? '#0f766e' : '#cbd5e1' }};display:flex;align-items:center;justify-content:center;background:{{ $isActive ? '#0f766e' : 'transparent' }};flex-shrink:0;">
+                        @if($isActive)
+                            <svg width="12" height="12" fill="none" stroke="#fff" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                        @endif
+                    </div>
+                    <div>
+                        <div style="font-size:13px;font-weight:700;color:#0f172a;">{{ $slot->subject }}</div>
+                        <div style="font-size:11px;color:#64748b;">{{ $slot->class }}</div>
+                    </div>
+                </a>
+            @endforeach
         </div>
-        <div>
-            <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Class *</label>
-            <select name="class" required style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;min-width:140px;">
-                <option value="">— select —</option>
-                @foreach($slots->pluck('class')->unique() as $c)
-                    <option value="{{ $c }}" {{ $selectedClass === $c ? 'selected' : '' }}>{{ $c }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div>
-            <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Subject *</label>
-            <select name="subject" id="filterSubject" required style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;min-width:140px;">
-                <option value="">— select class first —</option>
-            </select>
-        </div>
-        <button type="submit" style="background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Load Questions</button>
-    </form>
+    </div>
+    @endforeach
+    @endif
 </div>
-
-<script>
-const slots = @json($slots);
-const prefillSubject = '{{ $selectedSubject }}';
-function syncFilterSubjects() {
-    const cls = document.querySelector('select[name="class"]').value;
-    const sub = document.getElementById('filterSubject');
-    sub.innerHTML = '<option value="">— select —</option>';
-    slots.filter(s => s.class === cls).forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.subject;
-        opt.textContent = s.subject;
-        if (s.subject === prefillSubject) opt.selected = true;
-        sub.appendChild(opt);
-    });
-}
-document.addEventListener('DOMContentLoaded', function() {
-    const cls = document.querySelector('select[name="class"]');
-    if (cls) {
-        cls.addEventListener('change', syncFilterSubjects);
-        if (cls.value) syncFilterSubjects();
-    }
-});
-</script>
 
 @if($selectedExamId && $selectedClass && $selectedSubject)
     {{-- Add question form --}}
@@ -184,8 +168,8 @@ document.addEventListener('DOMContentLoaded', function() {
 @else
     <div style="background:#fff;border-radius:12px;padding:48px 24px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06);">
         <div style="font-size:32px;opacity:.3;margin-bottom:8px;">📝</div>
-        <div style="font-weight:700;color:#0f172a;font-size:15px;margin-bottom:4px;">Select a subject to begin</div>
-        <div style="font-size:12px;color:#64748b;">Pick an exam, class, and subject then click "Load Questions".</div>
+        <div style="font-weight:700;color:#0f172a;font-size:15px;margin-bottom:4px;">Select a subject above to begin</div>
+        <div style="font-size:12px;color:#64748b;">Click any subject card to view questions and add new ones.</div>
     </div>
 @endif
 
