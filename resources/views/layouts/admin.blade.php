@@ -156,8 +156,12 @@
                     </a>
                     @if($isAdmin)
                     <a href="{{ route('admin.subjects.index') }}" class="sidebar-link {{ request()->routeIs('admin.subjects.*') ? 'active' : '' }}">
-                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13M5.5 4.5h4.5a3 3 0 013 3v11.5a2.5 2.5 0 00-2.5-2.5H5.5v-12zM18.5 4.5h-4.5a3 3 0 00-3 3v11.5a2.5 2.5 0 012.5-2.5h5v-12z"/></svg>
                         Subjects
+                    </a>
+                    <a href="{{ route('admin.school-holidays.index') }}" class="sidebar-link {{ request()->routeIs('admin.school-holidays.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Holidays
                     </a>
                     @endif
                     <a href="{{ route('admin.folders.index') }}" class="sidebar-link {{ request()->routeIs('admin.folders.*') || request()->routeIs('admin.documents.*') ? 'active' : '' }}">

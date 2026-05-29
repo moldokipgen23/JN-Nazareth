@@ -57,12 +57,20 @@
     @endif
 </div>
 
-@if($existing->isNotEmpty())
+@if($isHoliday)
+<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+    <span style="font-size:18px;">🎉</span>
+    <div>
+        <div style="font-size:13px;font-weight:700;color:#92400e;">Today is a school holiday</div>
+        <div style="font-size:12px;color:#a16207;">Attendance cannot be submitted for holidays. Marked by the school administration.</div>
+    </div>
+</div>
+@elseif($existing->isNotEmpty())
 <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
     <span style="font-size:18px;">🔒</span>
     <div>
         <div style="font-size:13px;font-weight:700;color:#15803d;">Attendance already submitted for today</div>
-        <div style="font-size:12px;color:#059669;">Today's attendance has been recorded and cannot be changed. Contact the admin if corrections are needed.</div>
+        <div style="font-size:12px;color:#059669;">Today's attendance has been recorded and is pending admin approval. Contact the admin if corrections are needed.</div>
     </div>
 </div>
 @endif

@@ -364,6 +364,14 @@ Route::prefix('admin')
             Route::patch('students/{student}/enrollment-status', [StudentController::class, 'updateEnrollmentStatus'])->name('students.enrollment-status');
         });
 
+        // School Holidays — admin only
+        Route::get('school-holidays', [\App\Http\Controllers\Admin\SchoolHolidayController::class, 'index'])
+             ->name('school-holidays.index');
+        Route::post('school-holidays', [\App\Http\Controllers\Admin\SchoolHolidayController::class, 'store'])
+             ->name('school-holidays.store');
+        Route::delete('school-holidays/{schoolHoliday}', [\App\Http\Controllers\Admin\SchoolHolidayController::class, 'destroy'])
+             ->name('school-holidays.destroy');
+
         // Pages — admin only
         Route::middleware('role:admin')->group(function () {
             Route::get('pages', [PageController::class, 'index'])->name('pages.index');

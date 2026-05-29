@@ -7,6 +7,7 @@ use App\Models\AcademicYear;
 use App\Models\AttendanceRecord;
 use App\Models\ClassTeacherAssignment;
 use App\Models\Student;
+use App\Models\SchoolHoliday;
 use App\Models\StudentEnrollment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -70,6 +71,9 @@ class AttendanceController extends Controller
 
         $date = Carbon::today()->toDateString();
 
+        // Check if today is a school holiday
+        $isHoliday = SchoolHoliday::whereDate('date', $date)->exists();
+
         $enrollments = StudentEnrollment::forActiveYear()->active()
             ->where('class', $class)->where('section', $section)
             ->with('student')
@@ -91,6 +95,7 @@ class AttendanceController extends Controller
             'enrollments' => $enrollments,
             'existing'    => $existing,
             'statuses'    => AttendanceRecord::STATUSES,
+            'isHoliday'   => $isHoliday,
         ]);
     }
 
@@ -101,6 +106,11 @@ class AttendanceController extends Controller
         $this->authorizeClassAccess($class, $section);
 
         $today = Carbon::today()->toDateString();
+
+        // Block submission on holidays
+        if (SchoolHoliday::whereDate('date', $today)->exists()) {
+            return back()->withErrors(['date' => 'Today is marked as a school holiday. Attendance cannot be submitted.']);
+        }
 
         $data = $request->validate([
             'date'              => 'required|date|in:'.$today,
