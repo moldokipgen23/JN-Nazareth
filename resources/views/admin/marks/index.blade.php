@@ -15,6 +15,13 @@
        style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid {{ $view === 'review' ? '#0f766e' : 'transparent' }};color:{{ $view === 'review' ? '#0f766e' : '#94a3b8' }};margin-bottom:-2px;transition:all .15s;">
         Per-Subject Review
     </a>
+    @if($examId && $class)
+    <a href="{{ route('admin.marks.index', ['view' => 'summary', 'exam' => $examId, 'class' => $class, 'section' => $section]) }}"
+       style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid {{ $view === 'summary' ? '#0f766e' : 'transparent' }};color:{{ $view === 'summary' ? '#0f766e' : '#94a3b8' }};margin-bottom:-2px;transition:all .15s;">
+        Summary
+    </a>
+    @endif
+    @if($allSubmitted)
     <a href="{{ route('admin.marks.index', ['view' => 'rankings', 'exam' => $examId, 'class' => $class, 'section' => $section]) }}"
        style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid {{ $view === 'rankings' ? '#0f766e' : 'transparent' }};color:{{ $view === 'rankings' ? '#0f766e' : '#94a3b8' }};margin-bottom:-2px;transition:all .15s;">
         Rankings
@@ -23,6 +30,7 @@
        style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid {{ $view === 'results' ? '#0f766e' : 'transparent' }};color:{{ $view === 'results' ? '#0f766e' : '#94a3b8' }};margin-bottom:-2px;transition:all .15s;">
         Results
     </a>
+    @endif
 </div>
 
 <form method="GET" style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;box-shadow:0 1px 3px rgba(15,23,42,.06);">
@@ -191,6 +199,74 @@ function syncSection(form) {
         @endif
     @else
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">Pick exam + class + subject above.</div>
+    @endif
+@elseif($view === 'summary')
+    {{-- Summary View --}}
+    @if(!$examId || !$class || !$section)
+        <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">Pick exam + class above to view summary.</div>
+    @else
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+            <div style="background:#f0fdf4;color:#15803d;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;">
+                <div><span style="font-size:20px;font-weight:700;">{{ $passRankings->count() }}</span> <span style="font-size:12px;">Pass</span></div>
+            </div>
+            <div style="background:#fee2e2;color:#b91c1c;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;">
+                <div><span style="font-size:20px;font-weight:700;">{{ count($failRankings) }}</span> <span style="font-size:12px;">Needs Improvement</span></div>
+            </div>
+        </div>
+
+        @if(!empty($pendingSubjects))
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px 18px;margin-bottom:16px;">
+            <div style="font-weight:700;color:#92400e;font-size:13px;margin-bottom:6px;">⏳ Pending Subjects</div>
+            <div style="font-size:12px;color:#a16207;margin-bottom:8px;">These subjects still need marks submission before results can be generated:</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                @foreach($pendingSubjects as $ps)
+                    <span style="background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;">{{ $ps }}</span>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        {{-- Submission grid --}}
+        @if($submissionStatus->isNotEmpty())
+        <div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+            <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px;">Submission Status per Subject</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
+                @foreach($submissionStatus as $ss)
+                @php $complete = $ss->submitted_count === $ss->expected && $ss->total === $ss->expected; @endphp
+                <div style="background:{{ $complete ? '#f0fdf4' : '#fef3c7' }};border-radius:10px;padding:12px 14px;border:1px solid {{ $complete ? '#bbf7d0' : '#fde68a' }};">
+                    <div style="font-size:13px;font-weight:700;color:#0f172a;">{{ $ss->subject }}</div>
+                    <div style="font-size:11px;color:#64748b;margin-top:4px;">{{ $ss->submitted_count }}/{{ $ss->expected }} students submitted</div>
+                    <div style="margin-top:6px;">
+                        @if($complete)
+                            <span style="font-size:10px;color:#15803d;font-weight:600;">✅ Complete</span>
+                        @else
+                            <span style="font-size:10px;color:#92400e;font-weight:600;">⏳ {{ $ss->total - $ss->submitted_count }} pending</span>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @else
+        <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">
+            No marks entered yet for this class. Teachers need to enter marks first.
+        </div>
+        @endif
+
+        @if($allSubmitted)
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px 18px;margin-top:16px;display:flex;align-items:center;justify-content:space-between;">
+            <div>
+                <span style="font-size:13px;font-weight:700;color:#15803d;">✅ All subjects submitted</span>
+                <span style="font-size:12px;color:#64748b;margin-left:8px;">Results are ready. Switch to Rankings or Results tab.</span>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <a href="{{ route('admin.marks.index', ['view' => 'rankings', 'exam' => $examId, 'class' => $class, 'section' => $section]) }}"
+                   style="background:#15803d;color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;">View Rankings</a>
+                <a href="{{ route('admin.marks.index', ['view' => 'results', 'exam' => $examId, 'class' => $class, 'section' => $section]) }}"
+                   style="background:#0f766e;color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;">View Results</a>
+            </div>
+        </div>
+        @endif
     @endif
 @elseif($view === 'rankings')
     {{-- Rankings View --}}
