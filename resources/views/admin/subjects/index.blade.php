@@ -10,6 +10,18 @@
     <div style="font-size:12px;color:#94a3b8;">{{ $subjects->count() }} subject(s)</div>
 </div>
 
+{{-- Tabs --}}
+<div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid #e2e8f0;">
+    <a href="{{ route('admin.subjects.index') }}"
+       style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid #0f766e;color:#0f766e;margin-bottom:-2px;transition:all .15s;">
+        Global Subjects
+    </a>
+    <a href="{{ route('admin.class-subjects.index') }}"
+       style="padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid transparent;color:#94a3b8;margin-bottom:-2px;transition:all .15s;">
+        Class Subjects
+    </a>
+</div>
+
 @if(session('success'))
 <div style="background:#dcfce7;color:#15803d;border-radius:10px;padding:10px 16px;margin-bottom:14px;font-size:13px;font-weight:600;">{{ session('success') }}</div>
 @endif

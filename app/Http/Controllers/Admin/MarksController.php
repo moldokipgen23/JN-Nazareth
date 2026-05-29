@@ -75,11 +75,25 @@ class MarksController extends Controller
                 ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
                 ->with('student')->orderBy('roll_number')->get();
 
-            // Get all subjects that have ANY marks (draft or submitted) for this class
-            $allSubjects = Mark::where('academic_year_id', $year->id)
-                ->where('exam_id', $examId)->where('class', $class)
-                ->when($section, fn ($q) => $q->where('section', $section))
-                ->select('subject')->distinct()->pluck('subject')->sort()->values();
+            // Get expected subjects for this class from class_subjects
+            $classSubjectNames = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+                ->where('class', $class)
+                ->when($section, fn ($q) => $q->where(function ($q) use ($section) {
+                    $q->whereNull('section')->orWhere('section', $section);
+                }))
+                ->with('subject')
+                ->get()
+                ->pluck('subject.name')
+                ->sort()
+                ->values();
+
+            // Fallback: if no class_subjects setup yet, derive from marks table
+            $allSubjects = $classSubjectNames->isNotEmpty()
+                ? $classSubjectNames
+                : Mark::where('academic_year_id', $year->id)
+                    ->where('exam_id', $examId)->where('class', $class)
+                    ->when($section, fn ($q) => $q->where('section', $section))
+                    ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
             // Check per-subject: are ALL marks submitted for this subject?
             $pendingSubjects = [];
@@ -469,11 +483,21 @@ class MarksController extends Controller
         $exam = Exam::find($examId);
         if (!$exam) return back()->with('error', 'Exam not found.');
 
-        // Verify all subjects submitted before export
-        $subjList = Mark::where('academic_year_id', $year->id)
-            ->where('exam_id', $examId)->where('class', $class)
-            ->when($section, fn ($q) => $q->where('section', $section))
-            ->select('subject')->distinct()->pluck('subject');
+        // Verify all subjects submitted before export — use class_subjects if available
+        $expectedSubjects = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+            ->where('class', $class)
+            ->when($section, fn ($q) => $q->where(function ($q) use ($section) {
+                $q->whereNull('section')->orWhere('section', $section);
+            }))
+            ->with('subject')->get()->pluck('subject.name');
+
+        $subjList = $expectedSubjects->isNotEmpty()
+            ? $expectedSubjects
+            : Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)->where('class', $class)
+                ->when($section, fn ($q) => $q->where('section', $section))
+                ->select('subject')->distinct()->pluck('subject');
+
         $pendingSubj = [];
         foreach ($subjList as $subj) {
             if (Mark::where('academic_year_id', $year->id)->where('exam_id', $examId)

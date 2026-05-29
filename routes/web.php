@@ -326,6 +326,14 @@ Route::prefix('admin')
             Route::post('subjects/{subject}/toggle', [SubjectController::class, 'toggle'])->name('subjects.toggle');
             Route::post('subjects/reorder', [SubjectController::class, 'reorder'])->name('subjects.reorder');
 
+            // Class Subjects
+            Route::get('class-subjects', [\App\Http\Controllers\Admin\ClassSubjectController::class, 'index'])
+                 ->name('class-subjects.index');
+            Route::post('class-subjects', [\App\Http\Controllers\Admin\ClassSubjectController::class, 'store'])
+                 ->name('class-subjects.store');
+            Route::post('class-subjects/{classSubject}/config', [\App\Http\Controllers\Admin\ClassSubjectController::class, 'updateConfig'])
+                 ->name('class-subjects.config');
+
             // Grade Scale
             Route::get('grade-scales', [GradeScaleController::class, 'index'])->name('grade-scales.index');
             Route::post('grade-scales', [GradeScaleController::class, 'store'])->name('grade-scales.store');
