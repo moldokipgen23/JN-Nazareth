@@ -131,6 +131,12 @@ Route::prefix('admin')
                  ->name('attendance.export');
             Route::post('attendance/bulk', [AdminAttendanceController::class, 'bulkStore'])
                  ->name('attendance.bulk');
+            Route::post('attendance/approve-day', [AdminAttendanceController::class, 'approveDay'])
+                 ->name('attendance.approve-day');
+            Route::post('attendance/reject-day', [AdminAttendanceController::class, 'rejectDay'])
+                 ->name('attendance.reject-day');
+            Route::post('attendance/approve-all', [AdminAttendanceController::class, 'approveAllPending'])
+                 ->name('attendance.approve-all');
 
             // Exams & Marks
             Route::get('exams', [ExamController::class, 'index'])->name('exams.index');

@@ -40,6 +40,15 @@
         <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Date</label>
         <input type="date" name="date" value="{{ $date }}" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
     </div>
+    <div>
+        <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Status</label>
+        <select name="approval_status" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
+            <option value="">All</option>
+            <option value="pending" {{ $approvalStatus === 'pending' ? 'selected' : '' }}>Pending</option>
+            <option value="approved" {{ $approvalStatus === 'approved' ? 'selected' : '' }}>Approved</option>
+            <option value="rejected" {{ $approvalStatus === 'rejected' ? 'selected' : '' }}>Rejected</option>
+        </select>
+    </div>
     @else
     <div>
         <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Month</label>
@@ -73,6 +82,27 @@
         @endforeach
     </div>
 
+    {{-- Approve/Reject actions for daily view --}}
+    @if($class && $records->isNotEmpty() && $records->contains(fn($r) => $r->approval_status === 'pending'))
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span style="font-size:12px;font-weight:700;color:#92400e;">⚠️ Pending approval for {{ $class }} on {{ \Carbon\Carbon::parse($date)->format('d M Y') }}:</span>
+        <form method="POST" action="{{ route('admin.attendance.approve-day') }}" style="display:inline;">
+            @csrf
+            <input type="hidden" name="class" value="{{ $class }}">
+            <input type="hidden" name="section" value="{{ $section }}">
+            <input type="hidden" name="date" value="{{ $date }}">
+            <button type="submit" style="background:#dcfce7;color:#15803d;border:1px solid #86efac;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">✅ Approve Day</button>
+        </form>
+        <form method="POST" action="{{ route('admin.attendance.reject-day') }}" style="display:inline;">
+            @csrf
+            <input type="hidden" name="class" value="{{ $class }}">
+            <input type="hidden" name="section" value="{{ $section }}">
+            <input type="hidden" name="date" value="{{ $date }}">
+            <button type="submit" style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">✕ Reject Day</button>
+        </form>
+    </div>
+    @endif
+
     @if($records->isEmpty())
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">
             No records for {{ \Carbon\Carbon::parse($date)->format('d M Y') }}.
@@ -86,6 +116,7 @@
                         <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Student</th>
                         <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Status</th>
                         <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Marked By</th>
+                        <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Approval</th>
                         <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Override</th>
                     </tr>
                 </thead>
@@ -102,6 +133,13 @@
                             <span style="background:{{ $bg }};color:{{ $fg }};padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;">{{ $r->status }}</span>
                         </td>
                         <td style="padding:10px 14px;color:#64748b;font-size:12px;">{{ $r->marker?->name ?? '—' }}</td>
+                        <td style="padding:10px 14px;">
+                            @php
+                                $abg = match($r->approval_status) { 'approved' => '#dcfce7', 'pending' => '#fef3c7', 'rejected' => '#fee2e2', default => '#f1f5f9' };
+                                $afg = match($r->approval_status) { 'approved' => '#15803d', 'pending' => '#92400e', 'rejected' => '#b91c1c', default => '#64748b' };
+                            @endphp
+                            <span style="background:{{ $abg }};color:{{ $afg }};padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;text-transform:uppercase;">{{ $r->approval_status }}</span>
+                        </td>
                         <td style="padding:10px 14px;">
                             <form method="POST" action="{{ route('admin.attendance.update', $r) }}" style="display:flex;gap:6px;align-items:center;">
                                 @csrf @method('PUT')

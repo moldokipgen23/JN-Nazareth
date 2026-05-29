@@ -13,11 +13,21 @@ class AttendanceRecord extends Model
     public const STATUS_LATE    = 'late';
     public const STATUS_EXCUSED = 'excused';
 
+    public const APPROVAL_PENDING = 'pending';
+    public const APPROVAL_APPROVED = 'approved';
+    public const APPROVAL_REJECTED = 'rejected';
+
     public const STATUSES = [
         self::STATUS_PRESENT,
         self::STATUS_ABSENT,
         self::STATUS_LATE,
         self::STATUS_EXCUSED,
+    ];
+
+    public const APPROVAL_STATUSES = [
+        self::APPROVAL_PENDING,
+        self::APPROVAL_APPROVED,
+        self::APPROVAL_REJECTED,
     ];
 
     protected $fillable = [
@@ -29,6 +39,9 @@ class AttendanceRecord extends Model
         'status',
         'marked_by',
         'remarks',
+        'approval_status',
+        'approved_by',
+        'approved_at',
     ];
 
     protected $casts = [
@@ -48,6 +61,21 @@ class AttendanceRecord extends Model
     public function marker(): BelongsTo
     {
         return $this->belongsTo(User::class, 'marked_by');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('approval_status', self::APPROVAL_PENDING);
+    }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('approval_status', self::APPROVAL_APPROVED);
     }
 
     public function scopeForActiveYear(Builder $query): Builder

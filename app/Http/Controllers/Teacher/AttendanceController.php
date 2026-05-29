@@ -139,6 +139,7 @@ class AttendanceController extends Controller
                 'status'               => $row['status'],
                 'marked_by'            => auth()->id(),
                 'remarks'              => $row['remarks'] ?? null,
+                'approval_status'      => AttendanceRecord::APPROVAL_PENDING,
             ]);
             $saved++;
         }

@@ -31,6 +31,7 @@ class AttendanceController extends Controller
 
         $date       = $request->query('date', Carbon::today()->toDateString());
         $month      = $request->query('month', now()->format('Y-m'));
+        $approvalStatus = $request->query('approval_status', '');
         $records    = collect();
         $summary    = ['present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0];
 
@@ -40,7 +41,8 @@ class AttendanceController extends Controller
                 ->where('class', $class)
                 ->when($section, fn ($q) => $q->where('section', $section))
                 ->whereDate('date', $date)
-                ->with(['enrollment.student', 'marker']);
+                ->when($approvalStatus, fn ($q) => $q->where('approval_status', $approvalStatus))
+                ->with(['enrollment.student', 'marker', 'approver']);
 
             $records = $query->get()
                 ->sortBy(fn ($r) => [(int) ($r->enrollment->roll_number ?: 999999), $r->enrollment?->student?->name ?? ''])
@@ -56,7 +58,6 @@ class AttendanceController extends Controller
         $monthlyTrend = collect();
         $classAvgPct  = null;
         $totalDays    = 0;
-        $monthStart   = Carbon::parse($month.'-01')->startOfMonth();
         $monthEnd     = $monthStart->copy()->endOfMonth();
 
         if ($year && $class) {
@@ -116,10 +117,14 @@ class AttendanceController extends Controller
             }
         }
 
+        $pendingCount = $year
+            ? AttendanceRecord::forActiveYear()->where('approval_status', 'pending')->count()
+            : 0;
+
         return view('admin.attendance.index', compact(
-            'year', 'slots', 'class', 'section', 'date', 'records', 'summary',
-            'view', 'month', 'monthStart', 'monthEnd',
-            'studentStats', 'monthlyTrend', 'classAvgPct', 'totalDays'
+            'year', 'class', 'section', 'date', 'view', 'slots', 'month',
+            'records', 'summary', 'approvalStatus', 'pendingCount',
+            'studentStats', 'monthlyTrend', 'classAvgPct', 'existsForToday',
         ));
     }
 
@@ -182,6 +187,66 @@ class AttendanceController extends Controller
         ]);
     }
 
+    public function approveDay(Request $request)
+    {
+        $data = $request->validate([
+            'class'   => 'required|string',
+            'section' => 'nullable|string',
+            'date'    => 'required|date',
+        ]);
+
+        AttendanceRecord::forActiveYear()
+            ->where('class', $data['class'])
+            ->when($data['section'] ?? null, fn ($q) => $q->where('section', $data['section']))
+            ->whereDate('date', $data['date'])
+            ->where('approval_status', 'pending')
+            ->update([
+                'approval_status' => 'approved',
+                'approved_by'     => auth()->id(),
+                'approved_at'     => now(),
+            ]);
+
+        return back()->with('success', 'Attendance approved for ' . $data['class'] . ' on ' . $data['date']);
+    }
+
+    public function rejectDay(Request $request)
+    {
+        $data = $request->validate([
+            'class'   => 'required|string',
+            'section' => 'nullable|string',
+            'date'    => 'required|date',
+        ]);
+
+        AttendanceRecord::forActiveYear()
+            ->where('class', $data['class'])
+            ->when($data['section'] ?? null, fn ($q) => $q->where('section', $data['section']))
+            ->whereDate('date', $data['date'])
+            ->where('approval_status', 'pending')
+            ->update([
+                'approval_status' => 'rejected',
+                'approved_by'     => auth()->id(),
+                'approved_at'     => now(),
+            ]);
+
+        return back()->with('success', 'Attendance rejected for ' . $data['class'] . ' on ' . $data['date']);
+    }
+
+    public function approveAllPending(Request $request)
+    {
+        $year = AcademicYear::current();
+        abort_unless($year, 409);
+
+        $count = AttendanceRecord::forActiveYear()
+            ->where('approval_status', 'pending')
+            ->update([
+                'approval_status' => 'approved',
+                'approved_by'     => auth()->id(),
+                'approved_at'     => now(),
+            ]);
+
+        return back()->with('success', "{$count} pending attendance records approved.");
+    }
+
     public function bulkStore(Request $request)
     {
         $year = AcademicYear::current();
@@ -225,6 +290,9 @@ class AttendanceController extends Controller
                         'section'          => $data['section'],
                         'status'           => $data['status'],
                         'marked_by'        => auth()->id(),
+                        'approval_status'  => 'approved',
+                        'approved_by'      => auth()->id(),
+                        'approved_at'      => now(),
                     ]
                 );
                 $count++;
