@@ -37,15 +37,19 @@ class ResultCardController extends Controller
                 ->when($section, fn ($q) => $q->where('section', $section))
                 ->select('subject')->distinct()->pluck('subject');
 
+        $enrolledCount = StudentEnrollment::forActiveYear()->active()
+            ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))->count();
+
         $pending = [];
         foreach ($subjects as $subj) {
-            $baseQuery = Mark::where('academic_year_id', $year->id)
+            $submittedCount = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $exam->id)->where('class', $class)
                 ->when($section, fn ($q) => $q->where('section', $section))
-                ->where('subject', $subj);
-            $hasAny = (clone $baseQuery)->exists();
-            $hasDraft = !$hasAny || (clone $baseQuery)->whereNull('submitted_at')->exists();
-            if ($hasDraft) {
+                ->where('subject', $subj)
+                ->whereNotNull('submitted_at')
+                ->count();
+            $isComplete = $submittedCount >= $enrolledCount && $enrolledCount > 0;
+            if (!$isComplete) {
                 $pending[] = $subj;
             }
         }

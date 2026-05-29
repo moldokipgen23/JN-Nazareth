@@ -109,16 +109,19 @@ class MarksController extends Controller
                     ->when($section, fn ($q) => $q->where('section', $section))
                     ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
-            // Check per-subject: are ALL marks submitted for this subject?
+            // Check per-subject: every enrolled student must have submitted marks
+            $enrolledCount = StudentEnrollment::forActiveYear()->active()
+                ->where('class', $class)->where('section', $section)->count();
             $pendingSubjects = [];
             foreach ($allSubjects as $subj) {
-                $hasDraft = Mark::where('academic_year_id', $year->id)
+                $submittedCount = Mark::where('academic_year_id', $year->id)
                     ->where('exam_id', $examId)->where('class', $class)
                     ->when($section, fn ($q) => $q->where('section', $section))
                     ->where('subject', $subj)
-                    ->whereNull('submitted_at')
-                    ->exists();
-                if ($hasDraft) {
+                    ->whereNotNull('submitted_at')
+                    ->count();
+                $isComplete = $submittedCount >= $enrolledCount && $enrolledCount > 0;
+                if (!$isComplete) {
                     $pendingSubjects[] = $subj;
                 }
             }
@@ -159,20 +162,29 @@ class MarksController extends Controller
                     $rows[] = $row;
                 }
 
-                // Pass/Fail split: pass = has marks for ALL subjects
+                // Load class_subjects to check optional + pass_marks
+                $classSubjects = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+                    ->where('class', $class)
+                    ->when($section, fn ($q) => $q->where(function ($q) use ($section) {
+                        $q->whereNull('section')->orWhere('section', $section);
+                    }))
+                    ->with('subject')->get();
+
+                // Pass/Fail split: fail if any non-optional subject scored below pass_marks
                 $passRows = [];
                 $failRows = [];
                 foreach ($rows as $r) {
-                    $allMarked = true;
                     $failedSubjects = [];
                     foreach ($analyticsSubjects as $subj) {
                         $sd = $r['subjectData'][$subj] ?? null;
-                        if ($sd === null) {
-                            $allMarked = false;
+                        $cs = $classSubjects->firstWhere('subject.name', $subj);
+                        if ($cs && $cs->is_optional) continue; // skip optional subjects
+                        $passMark = $cs?->pass_marks ?? $r['enrollment']?->pass_marks ?? 33;
+                        if ($sd === null || $sd['pct'] === null || $sd['pct'] < $passMark) {
                             $failedSubjects[] = $subj;
                         }
                     }
-                    if ($allMarked && ($r['avgPct'] ?? 0) > 0) {
+                    if (empty($failedSubjects) && ($r['avgPct'] ?? 0) > 0) {
                         $passRows[] = $r;
                     } else {
                         $r['failedSubjects'] = $failedSubjects;
@@ -562,12 +574,15 @@ class MarksController extends Controller
                 ->when($section, fn ($q) => $q->where('section', $section))
                 ->select('subject')->distinct()->pluck('subject');
 
+        $enrolledCount = StudentEnrollment::forActiveYear()->active()
+            ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))->count();
         $pendingSubj = [];
         foreach ($subjList as $subj) {
-            if (Mark::where('academic_year_id', $year->id)->where('exam_id', $examId)
+            $submittedCount = Mark::where('academic_year_id', $year->id)->where('exam_id', $examId)
                 ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
-                ->where('subject', $subj)->whereNull('submitted_at')->exists()
-            ) { $pendingSubj[] = $subj; }
+                ->where('subject', $subj)->whereNotNull('submitted_at')->count();
+            $isComplete = $submittedCount >= $enrolledCount && $enrolledCount > 0;
+            if (!$isComplete) { $pendingSubj[] = $subj; }
         }
         if ($pendingSubj) {
             return back()->with('error', 'Cannot export results: '.implode(', ', $pendingSubj).' still have unsubmitted marks.');
