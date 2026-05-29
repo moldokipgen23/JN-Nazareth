@@ -23,3 +23,6 @@ public/storage
 
 # Local SQLite database (demo data — never commit)
 database/database.sqlite
+
+# Site images (uploaded directly on server, not in git)
+public/images/

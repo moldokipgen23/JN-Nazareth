@@ -22,5 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
+            if ($request->is('teacher*') || str_starts_with($request->path(), login_path('teacher'))) {
+                return redirect()->guest(route('teacher.login'));
+            }
+            return redirect()->guest(route('login'));
+        });
     })->create();

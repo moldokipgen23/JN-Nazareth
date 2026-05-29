@@ -150,6 +150,18 @@ class TeacherController extends Controller
             Storage::disk('public')->delete($teacher->photo);
         }
 
+        // If the linked user only has teacher role, delete them too
+        // so the deleted teacher cannot login anymore.
+        $teacher->users()->each(function (User $user) {
+            if ($user->isTeacherOnly()) {
+                $user->delete();
+            } else {
+                // User has other roles (admin/staff) — just unlink
+                $user->teacher_id = null;
+                $user->save();
+            }
+        });
+
         $name = $teacher->name;
         $teacher->delete();
 
