@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
 use App\Models\AttendanceRecord;
+use App\Models\ClassSubject;
 use App\Models\Exam;
 use App\Models\Mark;
 use App\Models\Student;
@@ -14,6 +15,34 @@ use Illuminate\Http\Request;
 
 class ResultCardController extends Controller
 {
+    /**
+     * Returns the list of subjects a student failed in (below pass_marks)
+     * for non-optional subjects. Empty = student is passing.
+     */
+    private function failedSubjectsFor($enrollment, $marks, $year): array
+    {
+        $classSubjects = ClassSubject::where('academic_year_id', $year->id)
+            ->where('class', $enrollment->class)
+            ->when($enrollment->section, fn ($q) => $q->where(function ($q) use ($enrollment) {
+                $q->whereNull('section')->orWhere('section', $enrollment->section);
+            }))
+            ->with('subject')->get();
+
+        $failed = [];
+        foreach ($classSubjects as $cs) {
+            if ($cs->is_optional) continue;
+            $subjName = $cs->subject?->name;
+            if (!$subjName) continue;
+            $mark = $marks->firstWhere('subject', $subjName);
+            $passMark = $cs->pass_marks ?? ($mark->pass_marks ?? 33);
+            $pct = $mark ? $mark->percentage() : null;
+            if ($pct === null || $pct < $passMark) {
+                $failed[] = $subjName;
+            }
+        }
+        return $failed;
+    }
+
     private function requireAllSubjectsSubmitted(Exam $exam, string $class, ?string $section): void
     {
         $year = AcademicYear::current();
@@ -97,23 +126,30 @@ class ResultCardController extends Controller
         $avgPct = $pcts->isNotEmpty() ? round($pcts->avg(), 2) : null;
         $cgpa   = $gps->isNotEmpty() ? round($gps->avg(), 2) : null;
 
-        // Compute class rank — only include submitted marks
+        // Compute class rank — only passing students included in pool
         $rank = null;
-        if ($avgPct !== null) {
-            $allPcts = Mark::whereHas('exam', fn($q) => $q->where('id', $exam->id))
+        $isPassing = empty($this->failedSubjectsFor($enrollment, $marks, $year));
+        if ($avgPct !== null && $isPassing) {
+            $marksByStudent = Mark::whereHas('exam', fn($q) => $q->where('id', $exam->id))
                 ->whereHas('enrollment', fn($q) => $q->where('class', $enrollment->class)
                     ->where('academic_year_id', $exam->academic_year_id))
                 ->whereNotNull('submitted_at')
+                ->with('enrollment')
                 ->get()
-                ->groupBy('student_enrollment_id')
-                ->map(function ($ms) {
-                    $p = $ms->map(fn($m) => $m->percentage())->filter();
-                    return $p->isNotEmpty() ? round($p->avg(), 2) : 0;
-                })
-                ->sortDesc()
-                ->values();
-            $rank = $allPcts->search(fn($p) => abs($p - $avgPct) < 0.01);
+                ->groupBy('student_enrollment_id');
+
+            $passingPcts = $marksByStudent->map(function ($ms) use ($year) {
+                $enr = $ms->first()->enrollment;
+                if (!$enr) return null;
+                $failed = $this->failedSubjectsFor($enr, $ms, $year);
+                if (!empty($failed)) return null;
+                $p = $ms->map(fn($m) => $m->percentage())->filter();
+                return $p->isNotEmpty() ? round($p->avg(), 2) : null;
+            })->filter()->sortDesc()->values();
+
+            $rank = $passingPcts->search(fn($p) => abs($p - $avgPct) < 0.01);
             if ($rank !== false) $rank++;
+            else $rank = null;
         }
 
         $totalObtained = $subjects->sum('total');
@@ -195,9 +231,10 @@ class ResultCardController extends Controller
         $totalObtained = $subjects->sum('total');
         $totalMax = $subjects->sum('full');
 
-        // Rank — only include submitted marks
+        // Rank — only passing students (no subject below pass_marks)
         $rank = null;
-        if ($avgPct !== null) {
+        $studentFailed = $subjects->contains(fn ($s) => $s['status'] === 'fail');
+        if ($avgPct !== null && !$studentFailed) {
             $allPcts = StudentEnrollment::where('class', $enrollment->class)
                 ->where('academic_year_id', $year->id)
                 ->where('status', 'active')
@@ -208,17 +245,25 @@ class ResultCardController extends Controller
                         ->whereNotNull('submitted_at')
                         ->get()
                         ->groupBy('subject');
-                    $p = $ms->map(function ($m) {
+                    if ($ms->isEmpty()) return null;
+                    $hasFail = false;
+                    $pctsPerSubject = $ms->map(function ($m) use (&$hasFail) {
                         $full = $m->first()->full_marks;
+                        $pass = $m->first()->pass_marks;
                         $total = $m->sum(fn($x) => $x->total_marks ?? $x->obtained_marks);
-                        return $full > 0 ? round($total / ($m->count() * $full) * 100, 2) : 0;
+                        $pct = $full > 0 ? round($total / ($m->count() * $full) * 100, 2) : 0;
+                        if ($pct < $pass) $hasFail = true;
+                        return $pct;
                     });
-                    return $p->isNotEmpty() ? round($p->avg(), 2) : 0;
+                    if ($hasFail) return null;
+                    return $pctsPerSubject->isNotEmpty() ? round($pctsPerSubject->avg(), 2) : null;
                 })
+                ->filter()
                 ->sortDesc()
                 ->values();
             $rank = $allPcts->search(fn($p) => abs($p - $avgPct) < 0.01);
             if ($rank !== false) $rank++;
+            else $rank = null;
         }
 
         $attendance = AttendanceRecord::where('student_enrollment_id', $enrollment->id)

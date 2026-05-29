@@ -671,6 +671,7 @@ class MarksController extends Controller
     /**
      * Bulk download results for ALL classes in an exam.
      * Produces a ZIP containing one file per class (PDF or CSV).
+     * Refuses if any (class, subject) is still pending school-wide.
      */
     public function bulkDownload(Request $request)
     {
@@ -685,6 +686,37 @@ class MarksController extends Controller
 
         $exam = Exam::find($examId);
         if (!$exam) return back()->with('error', 'Exam not found.');
+
+        // School-wide completion gate: every class_subject must have all enrolled students submitted
+        $pendingList = [];
+        $classSubjectsByClass = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+            ->with('subject')->get()->groupBy('class');
+        foreach ($classSubjectsByClass as $cls => $csRows) {
+            $sections = StudentEnrollment::forActiveYear()->active()
+                ->where('class', $cls)->select('section')->distinct()->pluck('section');
+            foreach ($sections as $sec) {
+                $enrolled = StudentEnrollment::forActiveYear()->active()
+                    ->where('class', $cls)->where('section', $sec)->count();
+                if ($enrolled === 0) continue;
+                foreach ($csRows as $cs) {
+                    $subjName = $cs->subject?->name;
+                    if (!$subjName) continue;
+                    $submitted = Mark::where('academic_year_id', $year->id)
+                        ->where('exam_id', $examId)->where('class', $cls)
+                        ->where('section', $sec)->where('subject', $subjName)
+                        ->whereNotNull('submitted_at')->count();
+                    if ($submitted < $enrolled) {
+                        $pendingList[] = "$cls–$sec $subjName";
+                    }
+                }
+            }
+        }
+
+        if (!empty($pendingList)) {
+            $sample = array_slice($pendingList, 0, 5);
+            $more = count($pendingList) > 5 ? ' (+'.(count($pendingList) - 5).' more)' : '';
+            return back()->with('error', 'School-wide results not yet complete. Pending: '.implode(', ', $sample).$more);
+        }
 
         // Get all classes that have submitted marks for this exam
         $classSections = Mark::where('academic_year_id', $year->id)

@@ -42,7 +42,7 @@
     </div>
     <div>
         <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Class / Section</label>
-        <select name="class" onchange="syncSection(this.form)" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;min-width:160px;">
+        <select name="class" onchange="syncSection(this.form); this.form.submit()" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;min-width:160px;">
             <option value="">— pick —</option>
             @foreach($slots as $s)
                 <option value="{{ $s->class }}" data-section="{{ $s->section }}"
@@ -69,14 +69,8 @@
         <a href="{{ route('admin.marks.export', ['exam' => $examId, 'class' => $class, 'section' => $section, 'subject' => $subject]) }}" style="background:#fff;color:#0f766e;border:1px solid #0f766e;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">Export CSV</a>
     @endif
     @if($view === 'results' && $examId && $class)
-        <a href="{{ route('admin.marks.export-results', ['exam' => $examId, 'class' => $class, 'section' => $section]) }}" style="background:#0f766e;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
-            Export CSV (Ranking)
-        </a>
         <a href="{{ route('admin.marks.export-result-cards', ['exam' => $examId, 'class' => $class, 'section' => $section]) }}" style="background:#7c3aed;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
-            Download PDFs (ZIP)
-        </a>
-        <a href="{{ route('admin.marks.gradesheet', ['exam' => $examId, 'class' => $class, 'section' => $section, 'format' => 'pdf']) }}" style="background:#1e3a5f;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
-            Gradesheet PDF
+            Class Result ZIP
         </a>
         <a href="{{ route('admin.marks.gradesheet', ['exam' => $examId, 'class' => $class, 'section' => $section, 'format' => 'csv']) }}" style="background:#fff;color:#1e3a5f;border:1px solid #1e3a5f;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
             Gradesheet CSV
@@ -452,27 +446,57 @@ function syncSection(form) {
         </div>
         @endif
 
-        {{-- Bulk download all classes --}}
+        {{-- School-wide aggregate export --}}
         @if($examId)
+        @php
+            $_pendingSchool = [];
+            $_csByClass = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+                ->with('subject')->get()->groupBy('class');
+            foreach ($_csByClass as $_cls => $_csRows) {
+                $_sections = \App\Models\StudentEnrollment::forActiveYear()->active()
+                    ->where('class', $_cls)->select('section')->distinct()->pluck('section');
+                foreach ($_sections as $_sec) {
+                    $_enrolled = \App\Models\StudentEnrollment::forActiveYear()->active()
+                        ->where('class', $_cls)->where('section', $_sec)->count();
+                    if ($_enrolled === 0) continue;
+                    foreach ($_csRows as $_cs) {
+                        $_subj = $_cs->subject?->name;
+                        if (!$_subj) continue;
+                        $_sub = \App\Models\Mark::where('academic_year_id', $year->id)
+                            ->where('exam_id', $examId)->where('class', $_cls)
+                            ->where('section', $_sec)->where('subject', $_subj)
+                            ->whereNotNull('submitted_at')->count();
+                        if ($_sub < $_enrolled) {
+                            $_pendingSchool[] = "$_cls–$_sec $_subj";
+                        }
+                    }
+                }
+            }
+            $_schoolReady = empty($_pendingSchool);
+        @endphp
         <div style="background:#fff;border-radius:12px;padding:18px 20px;margin-top:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
-            <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:6px;">Download All Classes</div>
-            <div style="font-size:12px;color:#64748b;margin-bottom:12px;">Generate result sheets for every class in this exam. Each class gets its own separate file inside a ZIP.</div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <form method="GET" action="{{ route('admin.marks.bulk-download') }}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                    <input type="hidden" name="exam" value="{{ $examId }}">
-                    <select name="format" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
-                        <option value="pdf">PDF</option>
-                        <option value="csv">CSV</option>
-                    </select>
-                    <select name="subject_wise" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
-                        <option value="1">Subject-wise (detailed)</option>
-                        <option value="0">Ranking only (% + CGPA)</option>
-                    </select>
-                    <button type="submit" style="background:linear-gradient(135deg,#1e3a5f,#4f46e5);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
-                        Download ZIP
-                    </button>
-                </form>
+            <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:6px;">Export ALL Class Results (School-wide)</div>
+            <div style="font-size:12px;color:#64748b;margin-bottom:12px;">
+                @if($_schoolReady)
+                    All classes complete. Final school-wide results can be exported.
+                @else
+                    Pending: {{ implode(', ', array_slice($_pendingSchool, 0, 5)) }}{{ count($_pendingSchool) > 5 ? ' (+'.(count($_pendingSchool) - 5).' more)' : '' }}
+                @endif
             </div>
+            <form method="GET" action="{{ route('admin.marks.bulk-download') }}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <input type="hidden" name="exam" value="{{ $examId }}">
+                <select name="format" {{ $_schoolReady ? '' : 'disabled' }} style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
+                    <option value="pdf">PDF</option>
+                    <option value="csv">CSV</option>
+                </select>
+                <select name="subject_wise" {{ $_schoolReady ? '' : 'disabled' }} style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
+                    <option value="1">Subject-wise (detailed)</option>
+                    <option value="0">Ranking only (% + CGPA)</option>
+                </select>
+                <button type="submit" {{ $_schoolReady ? '' : 'disabled' }} title="{{ $_schoolReady ? 'Export every class' : 'School-wide submission incomplete' }}" style="background:{{ $_schoolReady ? 'linear-gradient(135deg,#1e3a5f,#4f46e5)' : '#cbd5e1' }};color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:{{ $_schoolReady ? 'pointer' : 'not-allowed' }};">
+                    Export ALL Class Results
+                </button>
+            </form>
         </div>
         @endif
     @endif
