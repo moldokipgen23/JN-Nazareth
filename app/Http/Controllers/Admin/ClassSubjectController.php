@@ -36,10 +36,6 @@ class ClassSubjectController extends Controller
             'class'         => 'required|string',
             'subject_ids'   => 'nullable|array',
             'subject_ids.*' => 'integer|exists:subjects,id',
-            'full_marks'    => 'nullable|array',
-            'pass_marks'    => 'nullable|array',
-            'is_optional'   => 'nullable|array',
-            'grade_only'    => 'nullable|array',
             'section'       => 'nullable|string|max:20',
         ]);
 
@@ -72,17 +68,15 @@ class ClassSubjectController extends Controller
             ->when($data['section'] ?? null, fn ($q) => $q->where('section', $data['section']))
             ->delete();
 
-        // Insert new selections with config
+        // Insert new selections — marks config is now per-exam, not per-class.
         foreach ($subjectIds as $subjectId) {
             ClassSubject::create([
                 'class'             => $class,
                 'subject_id'        => $subjectId,
                 'academic_year_id'  => $year->id,
                 'section'           => $data['section'] ?? null,
-                'full_marks'        => $data['full_marks'][$subjectId] ?? null,
-                'pass_marks'        => $data['pass_marks'][$subjectId] ?? null,
-                'is_optional'       => isset($data['is_optional'][$subjectId]),
-                'grade_only'        => isset($data['grade_only'][$subjectId]),
+                'is_optional'       => false,
+                'grade_only'        => false,
             ]);
         }
 

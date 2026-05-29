@@ -72,25 +72,13 @@
                         <label style="display:flex;align-items:center;gap:6px;padding:7px 10px;cursor:pointer;font-size:12px;font-weight:{{ $checked ? '700' : '400' }};color:#0f172a;">
                             <input type="checkbox" name="subject_ids[]" value="{{ $subject->id }}"
                                    class="cs-cb-{{ $loop->parent->index }}" data-class-index="{{ $loop->parent->index }}" data-subject="{{ $subject->name }}"
-                                   {{ $checked ? 'checked' : '' }} onchange="toggleConfig(this, {{ $loop->parent->index }})"
+                                   {{ $checked ? 'checked' : '' }}
                                    style="accent-color:#0f766e;">
                             <span>{{ $subject->name }}</span>
                             @if($subject->code)
                                 <span style="font-size:10px;color:#94a3b8;">({{ $subject->code }})</span>
                             @endif
                         </label>
-                        <div id="config-{{ $loop->parent->index }}-{{ $subject->id }}" style="display:{{ $checked ? 'flex' : 'none' }};gap:4px;padding:0 10px 6px;flex-wrap:wrap;">
-                            <input type="number" name="full_marks[{{ $subject->id }}]" placeholder="FM" value="{{ old('full_marks.'.$subject->id, $cs->full_marks ?? '') }}"
-                                   style="width:50px;border:1px solid #e2e8f0;border-radius:4px;padding:2px 5px;font-size:10px;color:#475569;" title="Full Marks">
-                            <input type="number" name="pass_marks[{{ $subject->id }}]" placeholder="PM" value="{{ old('pass_marks.'.$subject->id, $cs->pass_marks ?? '') }}"
-                                   style="width:50px;border:1px solid #e2e8f0;border-radius:4px;padding:2px 5px;font-size:10px;color:#475569;" title="Pass Marks">
-                            <label style="font-size:10px;color:#64748b;display:flex;align-items:center;gap:2px;cursor:pointer;">
-                                <input type="checkbox" name="is_optional[{{ $subject->id }}]" value="1" {{ $cs?->is_optional ? 'checked' : '' }} style="accent-color:#0f766e;"> Opt
-                            </label>
-                            <label style="font-size:10px;color:#64748b;display:flex;align-items:center;gap:2px;cursor:pointer;">
-                                <input type="checkbox" name="grade_only[{{ $subject->id }}]" value="1" {{ $cs?->grade_only ? 'checked' : '' }} style="accent-color:#0f766e;"> Grade
-                            </label>
-                        </div>
                     </div>
                 @endforeach
             </div>
@@ -101,11 +89,6 @@
 @endif
 
 <script>
-function toggleConfig(cb, idx) {
-    const config = document.getElementById('config-' + idx + '-' + cb.value);
-    if (config) config.style.display = cb.checked ? 'flex' : 'none';
-}
-
 function copySubjects(targetClass, idx) {
     const sel = document.getElementById('copy-source-' + idx);
     const sourceClass = sel.value;
