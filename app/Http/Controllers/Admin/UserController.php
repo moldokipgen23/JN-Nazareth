@@ -12,11 +12,17 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('roles')->orderBy('name')->paginate(15);
+        $role = $request->query('role');
 
-        return view('admin.users.index', compact('users'));
+        $users = User::with('roles')
+            ->when($role === 'teacher', fn ($q) => $q->whereHas('roles', fn ($r) => $r->where('name', 'teacher')))
+            ->when($role === 'admin_staff', fn ($q) => $q->whereHas('roles', fn ($r) => $r->whereIn('name', ['admin', 'staff'])))
+            ->orderBy('name')
+            ->paginate(15);
+
+        return view('admin.users.index', compact('users', 'role'));
     }
 
     public function create()

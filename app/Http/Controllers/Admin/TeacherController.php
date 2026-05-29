@@ -160,8 +160,9 @@ class TeacherController extends Controller
             if ($user->isTeacherOnly()) {
                 $user->delete();
             } else {
-                // User has other roles (admin/staff) — just unlink
+                // User has other roles (admin/staff) — just unlink and remove teacher role
                 $user->teacher_id = null;
+                $user->removeRole('teacher');
                 $user->save();
             }
         });
@@ -264,6 +265,7 @@ class TeacherController extends Controller
         }
 
         $user->teacher_id = null;
+        $user->removeRole('teacher');
         $user->save();
 
         ActivityLogger::log('teacher_user_unlinked', null, "Unlinked user {$user->name} from teacher: {$teacher->name}");
