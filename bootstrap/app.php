@@ -23,9 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
-            // Teacher-protected pages show 404 instead of redirecting to login.
-            // Only the configured teacher login URL itself works for login.
-            if ($request->is('teacher*')) {
+            // Teacher-protected pages show 404 instead of redirecting to login,
+            // EXCEPT for the logout route (needs to work when authenticated).
+            if ($request->is('teacher*') && ! $request->is('teacher/logout')) {
                 abort(404);
             }
             return redirect()->guest(route('login'));

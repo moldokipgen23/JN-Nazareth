@@ -36,8 +36,8 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Logging in via the teacher portal always goes to teacher dashboard.
-        if (config('session.cookie') === 'teacher_portal_session') {
+        // Logging in via the teacher login URL always goes to teacher dashboard.
+        if (str_starts_with($request->path(), login_path('teacher'))) {
             return redirect()->intended(route('teacher.dashboard'));
         }
 
@@ -56,7 +56,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        $isTeacher = config('session.cookie') === 'teacher_portal_session';
+        $isTeacher = str_starts_with($request->path(), 'teacher');
 
         Auth::guard('web')->logout();
 
