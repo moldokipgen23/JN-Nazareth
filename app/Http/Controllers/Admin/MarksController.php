@@ -145,12 +145,35 @@ class MarksController extends Controller
                     $rows[] = $row;
                 }
 
-                $rankings = collect($rows)->sortByDesc(fn ($r) => $r['cgpa'] ?? 0)
+                // Pass/Fail split: pass = has marks for ALL subjects
+                $passRows = [];
+                $failRows = [];
+                foreach ($rows as $r) {
+                    $allMarked = true;
+                    $failedSubjects = [];
+                    foreach ($analyticsSubjects as $subj) {
+                        $sd = $r['subjectData'][$subj] ?? null;
+                        if ($sd === null) {
+                            $allMarked = false;
+                            $failedSubjects[] = $subj;
+                        }
+                    }
+                    if ($allMarked && ($r['avgPct'] ?? 0) > 0) {
+                        $passRows[] = $r;
+                    } else {
+                        $r['failedSubjects'] = $failedSubjects;
+                        $failRows[] = $r;
+                    }
+                }
+
+                $rankedPass = collect($passRows)->sortByDesc(fn ($r) => $r['avgPct'] ?? 0)
                     ->values()->map(fn ($r, $i) => array_merge($r, ['rank' => $i + 1]));
+
+                $rankings = $rankedPass;
 
                 foreach ($analyticsSubjects as $subj) {
                     $pcts = []; $grades = [];
-                    foreach ($rankings as $r) {
+                    foreach ($rankedPass as $r) {
                         $sd = $r['subjectData'][$subj] ?? null;
                         if ($sd && $sd['pct'] !== null) { $pcts[] = $sd['pct']; $grades[] = $sd['grade']; }
                     }
@@ -226,6 +249,8 @@ class MarksController extends Controller
             'submissionStatus' => $submissionStatus,
             'allSubmitted' => $allSubmitted ?? false,
             'pendingSubjects' => $pendingSubjects ?? [],
+            'passRankings' => $rankedPass ?? collect(),
+            'failRankings' => $failRows ?? [],
         ]);
     }
 

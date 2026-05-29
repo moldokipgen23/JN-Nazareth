@@ -211,7 +211,7 @@ function syncSection(form) {
                 @endforeach
             </div>
         </div>
-    @elseif($rankings->isEmpty())
+    @elseif($rankings->isEmpty() && empty($failRankings))
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">No marks found for this combination.</div>
     @else
         @if(!empty($subjectStats))
@@ -227,9 +227,14 @@ function syncSection(form) {
         </div>
         @endif
 
-        <div style="background:#fff;border-radius:12px;overflow-x:auto;">
+        {{-- PASS SECTION --}}
+        @if($passRankings->isNotEmpty())
+        <div style="background:#f0fdf4;border-radius:12px 12px 0 0;padding:10px 16px;border:1px solid #bbf7d0;border-bottom:none;">
+            <span style="font-size:13px;font-weight:700;color:#15803d;">✅ Pass — Ranked ({{ $passRankings->count() }})</span>
+        </div>
+        <div style="background:#fff;overflow-x:auto;border:1px solid #bbf7d0;border-top:none;border-radius:0 0 12px 12px;margin-bottom:16px;">
             <table style="width:100%;border-collapse:collapse;font-size:13px;">
-                <thead style="background:#f8fafc;">
+                <thead style="background:#f0fdf4;">
                     <tr>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Rank</th>
                         <th style="text-align:left;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Roll</th>
@@ -242,7 +247,7 @@ function syncSection(form) {
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($rankings as $r)
+                    @foreach($passRankings as $r)
                     <tr style="border-top:1px solid #f1f5f9;">
                         <td style="text-align:center;padding:10px 10px;font-weight:800;color:#0f766e;">#{{ $r['rank'] }}</td>
                         <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']->roll_number ?: '—' }}</td>
@@ -265,6 +270,56 @@ function syncSection(form) {
                 </tbody>
             </table>
         </div>
+        @endif
+
+        {{-- FAIL SECTION --}}
+        @if(!empty($failRankings))
+        <div style="background:#fef2f2;border-radius:12px 12px 0 0;padding:10px 16px;border:1px solid #fecaca;border-bottom:none;">
+            <span style="font-size:13px;font-weight:700;color:#b91c1c;">❌ Needs Improvement — No Rank ({{ count($failRankings) }})</span>
+        </div>
+        <div style="background:#fff;overflow-x:auto;border:1px solid #fecaca;border-top:none;border-radius:0 0 12px 12px;margin-bottom:16px;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead style="background:#fef2f2;">
+                    <tr>
+                        <th style="text-align:left;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Roll</th>
+                        <th style="text-align:left;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Student</th>
+                        @foreach($analyticsSubjects as $subj)
+                            <th style="text-align:center;padding:10px 6px;font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">{{ $subj }}</th>
+                        @endforeach
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Avg %</th>
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Failed In</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($failRankings as $r)
+                    <tr style="border-top:1px solid #f1f5f9;">
+                        <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']->roll_number ?: '—' }}</td>
+                        <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']->student?->name ?? '—' }}</td>
+                        @foreach($analyticsSubjects as $subj)
+                            @php $sd = $r['subjectData'][$subj] ?? null; @endphp
+                            <td style="text-align:center;padding:10px 6px;font-size:12px;">
+                                @if($sd && $sd['pct'] !== null)
+                                    <span style="font-weight:600;">{{ $sd['pct'].'%' }}</span>
+                                    <span style="font-size:10px;color:#94a3b8;">{{ $sd['grade'] ?? '' }}</span>
+                                @else
+                                    <span style="color:#e2e8f0;">—</span>
+                                @endif
+                            </td>
+                        @endforeach
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
+                        <td style="text-align:center;padding:10px 10px;">
+                            @if(!empty($r['failedSubjects']))
+                                <span style="font-size:10px;color:#b91c1c;font-weight:600;">{{ implode(', ', $r['failedSubjects']) }}</span>
+                            @else
+                                <span style="color:#94a3b8;">—</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
     @endif
 @elseif($view === 'results')
     {{-- Results View --}}
@@ -281,23 +336,26 @@ function syncSection(form) {
                 @endforeach
             </div>
         </div>
-    @elseif($rankings->isEmpty())
+    @elseif($passRankings->isEmpty() && empty($failRankings))
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">No marks found for this combination.</div>
     @else
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
             <div style="background:#f0fdf4;color:#15803d;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                <div><span style="font-size:20px;font-weight:700;">{{ $rankings->count() }}</span> <span style="font-size:12px;">Students</span></div>
+                <div><span style="font-size:20px;font-weight:700;">{{ $passRankings->count() }}</span> <span style="font-size:12px;">Pass</span></div>
             </div>
-            <div style="background:#fef3c7;color:#92400e;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l4 4 9-9"/></svg>
-                <div><span style="font-size:12px;">All subjects must be submitted before finalizing results.</span></div>
+            <div style="background:#fee2e2;color:#b91c1c;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;">
+                <div><span style="font-size:20px;font-weight:700;">{{ count($failRankings) }}</span> <span style="font-size:12px;">Needs Improvement</span></div>
             </div>
         </div>
 
-        <div style="background:#fff;border-radius:12px;overflow-x:auto;">
+        {{-- PASS SECTION --}}
+        @if($passRankings->isNotEmpty())
+        <div style="background:#f0fdf4;border-radius:12px 12px 0 0;padding:10px 16px;border:1px solid #bbf7d0;border-bottom:none;">
+            <span style="font-size:13px;font-weight:700;color:#15803d;">✅ Pass — Ranked</span>
+        </div>
+        <div style="background:#fff;overflow-x:auto;border:1px solid #bbf7d0;border-top:none;border-radius:0 0 12px 12px;margin-bottom:16px;">
             <table style="width:100%;border-collapse:collapse;font-size:13px;">
-                <thead style="background:#f8fafc;">
+                <thead style="background:#f0fdf4;">
                     <tr>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Rank</th>
                         <th style="text-align:left;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Roll</th>
@@ -310,7 +368,7 @@ function syncSection(form) {
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($rankings as $r)
+                    @foreach($passRankings as $r)
                     <tr style="border-top:1px solid #f1f5f9;{{ $r['rank'] <= 3 ? 'background:#f0fdf4;' : '' }}">
                         <td style="text-align:center;padding:10px 10px;">
                             @if($r['rank'] === 1)
@@ -343,6 +401,56 @@ function syncSection(form) {
                 </tbody>
             </table>
         </div>
+        @endif
+
+        {{-- FAIL SECTION --}}
+        @if(!empty($failRankings))
+        <div style="background:#fef2f2;border-radius:12px 12px 0 0;padding:10px 16px;border:1px solid #fecaca;border-bottom:none;">
+            <span style="font-size:13px;font-weight:700;color:#b91c1c;">❌ Needs Improvement — No Rank</span>
+        </div>
+        <div style="background:#fff;overflow-x:auto;border:1px solid #fecaca;border-top:none;border-radius:0 0 12px 12px;margin-bottom:16px;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead style="background:#fef2f2;">
+                    <tr>
+                        <th style="text-align:left;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Roll</th>
+                        <th style="text-align:left;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Student</th>
+                        @foreach($analyticsSubjects as $subj)
+                            <th style="text-align:center;padding:10px 6px;font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">{{ $subj }}</th>
+                        @endforeach
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Avg %</th>
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Failed In</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($failRankings as $r)
+                    <tr style="border-top:1px solid #f1f5f9;">
+                        <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']->roll_number ?: '—' }}</td>
+                        <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']->student?->name ?? '—' }}</td>
+                        @foreach($analyticsSubjects as $subj)
+                            @php $sd = $r['subjectData'][$subj] ?? null; @endphp
+                            <td style="text-align:center;padding:10px 6px;font-size:12px;">
+                                @if($sd && $sd['pct'] !== null)
+                                    <span style="font-weight:600;">{{ $sd['pct'].'%' }}</span>
+                                    <span style="font-size:10px;color:#94a3b8;">{{ $sd['grade'] ?? '' }}</span>
+                                @else
+                                    <span style="color:#e2e8f0;">—</span>
+                                @endif
+                            </td>
+                        @endforeach
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
+                        <td style="text-align:center;padding:10px 10px;">
+                            @if(!empty($r['failedSubjects']))
+                                <span style="font-size:10px;color:#b91c1c;font-weight:600;">{{ implode(', ', $r['failedSubjects']) }}</span>
+                            @else
+                                <span style="color:#94a3b8;">—</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
 
         {{-- Bulk download all classes --}}
         @if($examId)
