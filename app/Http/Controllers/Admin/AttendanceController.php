@@ -58,6 +58,7 @@ class AttendanceController extends Controller
         $monthlyTrend = collect();
         $classAvgPct  = null;
         $totalDays    = 0;
+        $monthStart   = Carbon::parse($month.'-01')->startOfMonth();
         $monthEnd     = $monthStart->copy()->endOfMonth();
 
         if ($year && $class) {
@@ -124,7 +125,7 @@ class AttendanceController extends Controller
         return view('admin.attendance.index', compact(
             'year', 'class', 'section', 'date', 'view', 'slots', 'month',
             'records', 'summary', 'approvalStatus', 'pendingCount',
-            'studentStats', 'monthlyTrend', 'classAvgPct', 'existsForToday',
+            'studentStats', 'monthlyTrend', 'classAvgPct', 'monthStart', 'monthEnd', 'totalDays',
         ));
     }
 
