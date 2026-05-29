@@ -37,10 +37,37 @@
     @endforeach
 </div>
 
-{{-- Submission Summary --}}
-@if($groups->isNotEmpty())
+{{-- Progress Summary (class_subjects based) --}}
+@if($classProgress->isNotEmpty())
 <div style="margin-bottom:16px;">
-    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Submission Summary</div>
+    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Progress per Class</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
+        @foreach($classProgress as $cp)
+        @php
+            $allDone = $cp['approved_count'] === $cp['expected_count'];
+            $pct = $cp['expected_count'] > 0 ? round($cp['approved_count'] / $cp['expected_count'] * 100) : 0;
+        @endphp
+        <div style="background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(15,23,42,.06);border:1px solid {{ $allDone ? '#bbf7d0' : '#fde68a' }};">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:13px;font-weight:700;color:#0f172a;">{{ $cp['class'] }}</span>
+                <span style="font-size:11px;font-weight:600;color:{{ $allDone ? '#15803d' : '#92400e' }};">{{ $cp['approved_count'] }}/{{ $cp['expected_count'] }}</span>
+            </div>
+            <div style="height:6px;background:#f1f5f9;border-radius:99px;overflow:hidden;margin-bottom:8px;">
+                <div style="height:100%;width:{{ $pct }}%;background:{{ $allDone ? '#22c55e' : '#eab308' }};border-radius:99px;transition:width .3s;"></div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                @foreach($cp['expected'] as $subj)
+                    @php $done = in_array($subj, $cp['approved']); @endphp
+                    <span style="font-size:9px;font-weight:600;padding:2px 8px;border-radius:99px;background:{{ $done ? '#dcfce7' : '#fef3c7' }};color:{{ $done ? '#15803d' : '#92400e' }};">{{ $subj }}</span>
+                @endforeach
+            </div>
+        </div>
+        @endforeach
+    </div>
+</div>
+@elseif($groups->isNotEmpty())
+<div style="margin-bottom:16px;">
+    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Submission Summary (no class_subjects configured)</div>
     @php $byExam = $groups->groupBy('exam_name'); @endphp
     @foreach($byExam as $examName => $examGroups)
     <div style="background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(15,23,42,.06);">

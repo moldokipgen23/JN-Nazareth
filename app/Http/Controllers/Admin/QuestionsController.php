@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
+use App\Models\ClassSubject;
 use App\Models\Exam;
 use App\Models\ExamQuestion;
+use App\Models\Student;
+use App\Models\Subject;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -68,7 +71,34 @@ class QuestionsController extends Controller
             'approved'        => (clone $baseQuery)->where('status', 'approved')->count(),
         ];
 
-        return view('admin.questions.index', compact('groups', 'exams', 'year', 'examId', 'class', 'subject', 'status', 'stats', 'availableClasses', 'availableSubjects'));
+        // Build per-class progress from class_subjects
+        $classProgress = collect();
+        if ($year && $examId) {
+            $classes = Student::classes();
+            $approvedSubjects = ExamQuestion::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)
+                ->where('status', 'approved')
+                ->select('class', 'subject')->distinct()->get()
+                ->groupBy('class')->map(fn ($g) => $g->pluck('subject')->toArray());
+
+            foreach ($classes as $c) {
+                $expected = ClassSubject::where('academic_year_id', $year->id)
+                    ->where('class', $c)
+                    ->with('subject')->get()
+                    ->pluck('subject.name');
+                if ($expected->isEmpty()) continue;
+                $approved = $approvedSubjects->get($c, []);
+                $classProgress->push([
+                    'class' => $c,
+                    'expected' => $expected->values()->toArray(),
+                    'approved' => $approved,
+                    'approved_count' => count(array_intersect($approved, $expected->toArray())),
+                    'expected_count' => $expected->count(),
+                ]);
+            }
+        }
+
+        return view('admin.questions.index', compact('groups', 'exams', 'year', 'examId', 'class', 'subject', 'status', 'stats', 'availableClasses', 'availableSubjects', 'classProgress'));
     }
 
     public function export(Request $request)

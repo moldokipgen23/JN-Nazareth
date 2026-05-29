@@ -154,6 +154,7 @@ Route::prefix('admin')
             Route::get('marks/gradesheet', [AdminMarksController::class, 'gradesheet'])->name('marks.gradesheet');
             Route::post('marks/{mark}/reset-submission', [AdminMarksController::class, 'resetSubmission'])->name('marks.reset-submission');
             Route::get('marks/analytics', [MarksAnalyticsController::class, 'index'])->name('marks.analytics');
+            Route::get('exam-summary', [AdminMarksController::class, 'examSummary'])->name('marks.exam-summary');
 
             Route::get('questions', [AdminQuestionsController::class, 'index'])->name('questions.index');
             Route::get('questions/export', [AdminQuestionsController::class, 'export'])->name('questions.export');

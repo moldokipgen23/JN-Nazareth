@@ -940,4 +940,59 @@ class MarksController extends Controller
 
         return back()->with('success', 'Mark updated and submission reset.');
     }
+
+    public function examSummary(Request $request)
+    {
+        $year = AcademicYear::current();
+        $examId = $request->query('exam');
+        $exams = $year ? Exam::forActiveYear()->orderBy('sort_order')->orderBy('name')->get() : collect();
+
+        $classData = collect();
+        if ($year && $examId) {
+            $classes = Student::classes();
+
+            // Questions progress per class
+            $approvedQSubjects = \App\Models\ExamQuestion::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)
+                ->where('status', 'approved')
+                ->select('class', 'subject')->distinct()->get()
+                ->groupBy('class')->map(fn ($g) => $g->pluck('subject')->toArray());
+
+            // Marks progress per class
+            $submittedMSubjects = Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)
+                ->whereNotNull('submitted_at')
+                ->select('class', 'subject')->distinct()->get()
+                ->groupBy('class')->map(fn ($g) => $g->pluck('subject')->toArray());
+
+            foreach ($classes as $c) {
+                $expected = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+                    ->where('class', $c)
+                    ->with('subject')->get()
+                    ->pluck('subject.name');
+                if ($expected->isEmpty()) continue;
+
+                $expectedArr = $expected->values()->toArray();
+                $qApproved = $approvedQSubjects->get($c, []);
+                $mSubmitted = $submittedMSubjects->get($c, []);
+
+                $qCount = count(array_intersect($qApproved, $expectedArr));
+                $mCount = count(array_intersect($mSubmitted, $expectedArr));
+                $total = count($expectedArr);
+
+                $classData->push([
+                    'class' => $c,
+                    'expected_count' => $total,
+                    'questions_done' => $qCount,
+                    'marks_done' => $mCount,
+                    'questions_complete' => $qCount === $total,
+                    'marks_complete' => $mCount === $total,
+                    'all_complete' => $qCount === $total && $mCount === $total,
+                    'section' => 'A',
+                ]);
+            }
+        }
+
+        return view('admin.marks.exam-summary', compact('year', 'exams', 'examId', 'classData'));
+    }
 }
