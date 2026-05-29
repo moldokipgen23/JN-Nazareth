@@ -5,7 +5,7 @@
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
     <div>
         <h1 style="font-size:20px;font-weight:700;color:#0f172a;margin:0;">Exam Questions</h1>
-        <div style="font-size:12px;color:#64748b;margin-top:2px;">Questions are grouped by subject. Click <strong>View</strong> to see all questions for a subject.</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">Click a summary card to filter, or use dropdowns below. Click <strong>View</strong> to see all questions for a subject.</div>
     </div>
     <div style="display:flex;gap:8px;">
         @if($examId && $class && $subject)
@@ -25,6 +25,10 @@
 
 {{-- Stats cards --}}
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
+    <div style="background:#f1f5f9;color:#1e293b;border-radius:10px;padding:12px 14px;">
+        <div style="font-size:22px;font-weight:700;line-height:1;">{{ $stats['total'] ?? 0 }}</div>
+        <div style="font-size:11px;font-weight:600;margin-top:4px;text-transform:uppercase;">Total</div>
+    </div>
     @foreach(['pending'=>['#fef3c7','#92400e'],'revision_needed'=>['#fee2e2','#b91c1c'],'approved'=>['#dcfce7','#15803d']] as $key=>$col)
         <div style="background:{{ $col[0] }};color:{{ $col[1] }};border-radius:10px;padding:12px 14px;">
             <div style="font-size:22px;font-weight:700;line-height:1;">{{ $stats[$key] ?? 0 }}</div>
@@ -33,7 +37,55 @@
     @endforeach
 </div>
 
-<form method="GET" style="background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+{{-- Submission Summary --}}
+@if($groups->isNotEmpty())
+<div style="margin-bottom:16px;">
+    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Submission Summary</div>
+    @php $byExam = $groups->groupBy('exam_name'); @endphp
+    @foreach($byExam as $examName => $examGroups)
+    <div style="background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+        <div style="font-size:12px;font-weight:700;color:#1e3a5f;margin-bottom:6px;">{{ $examName }}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            @foreach($examGroups as $g)
+            <button type="button" class="summary-card"
+                data-exam="{{ $g['exam_id'] }}"
+                data-class="{{ $g['class'] }}"
+                data-subject="{{ $g['subject'] }}"
+                onclick="applyFilter(this)"
+                style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;cursor:pointer;text-align:left;min-width:180px;flex:1 0 auto;transition:all .15s;"
+                onmouseover="this.style.borderColor='#0f766e';this.style.background='#f0fdfa'"
+                onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                    <div>
+                        <div style="font-size:13px;font-weight:700;color:#0f172a;">{{ $g['subject'] }}</div>
+                        <div style="font-size:11px;color:#64748b;">{{ $g['class'] }}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:16px;font-weight:700;color:#0f172a;">{{ $g['total'] }}</div>
+                        <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;">submitted</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:4px;margin-top:5px;">
+                    @php $sc = $g['status_counts']; @endphp
+                    @if(($sc['approved'] ?? 0) > 0)
+                        <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;background:#dcfce7;color:#15803d;">{{ $sc['approved'] }} approved</span>
+                    @endif
+                    @if(($sc['pending'] ?? 0) > 0)
+                        <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;background:#fef3c7;color:#92400e;">{{ $sc['pending'] }} pending</span>
+                    @endif
+                    @if(($sc['revision_needed'] ?? 0) > 0)
+                        <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;background:#fee2e2;color:#b91c1c;">{{ $sc['revision_needed'] }} revision</span>
+                    @endif
+                </div>
+            </button>
+            @endforeach
+        </div>
+    </div>
+    @endforeach
+</div>
+@endif
+
+<form method="GET" class="filter-form" style="background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;box-shadow:0 1px 3px rgba(15,23,42,.06);">
     <div>
         <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Exam</label>
         <select name="exam" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
@@ -69,15 +121,12 @@
         </select>
     </div>
     <button type="submit" style="background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Filter</button>
+    @if($examId || $class || $subject || $status)
+    <a href="{{ route('admin.questions.index') }}" style="background:#fff;color:#64748b;border:1px solid #e2e8f0;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:4px;">Clear</a>
+    @endif
 </form>
 
-@if(!$examId && !$class)
-<div style="background:#fff;border-radius:12px;padding:48px 24px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06);">
-    <div style="font-size:32px;opacity:.3;margin-bottom:8px;">🔍</div>
-    <div style="font-weight:700;color:#0f172a;font-size:15px;margin-bottom:4px;">Select filters to view questions</div>
-    <div style="font-size:12px;color:#64748b;">Pick exam, class, and subject above to see question groups.</div>
-</div>
-@elseif($groups->isEmpty())
+@if($groups->isEmpty())
 <div style="background:#fff;border-radius:12px;padding:48px 24px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06);">
     <div style="font-weight:600;color:#475569;">No questions match the selected filters.</div>
 </div>
@@ -222,6 +271,13 @@ function toggleGroup(id) {
 function showRevForm(id) {
     var f = document.getElementById('rev-form-' + id);
     if (f) f.style.display = 'block';
+}
+function applyFilter(btn) {
+    document.querySelector('select[name="exam"]').value = btn.dataset.exam;
+    document.querySelector('select[name="class"]').value = btn.dataset.class;
+    document.querySelector('select[name="subject"]').value = btn.dataset.subject;
+    document.querySelector('select[name="status"]').value = '';
+    document.querySelector('.filter-form').submit();
 }
 </script>
 @endsection

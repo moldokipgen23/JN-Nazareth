@@ -36,7 +36,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Role-aware landing page: teachers go straight to their dashboard.
+        // Logging in via the teacher portal always goes to teacher dashboard.
+        if (config('session.cookie') === 'teacher_portal_session') {
+            return redirect()->intended(route('teacher.dashboard'));
+        }
+
+        // Role-aware landing page: pure teachers go straight to their dashboard.
         $user = $request->user();
         if ($user && $user->hasRole('teacher')
             && ! $user->hasAnyRole(['admin', 'staff'])) {
@@ -51,12 +56,14 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $isTeacher = config('session.cookie') === 'teacher_portal_session';
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
 
-        return redirect()->to(login_path('teacher'));
+        return redirect()->to(login_path($isTeacher ? 'teacher' : 'admin'));
     }
 }

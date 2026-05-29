@@ -136,7 +136,7 @@
     </nav>
     <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,.07)">
         <a href="{{ route('home') }}" target="_blank" style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:12px;text-decoration:none;padding:7px 10px;border-radius:7px;margin-bottom:4px" onmouseover="this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.background='transparent'"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>View Public Site</a>
-        <form method="POST" action="{{ route('logout') }}">
+        <form method="POST" action="{{ route('teacher.logout') }}">
             @csrf
             <button type="submit" style="display:flex;align-items:center;gap:8px;color:#f87171;font-size:12px;background:none;border:none;cursor:pointer;padding:7px 10px;border-radius:7px;width:100%" onmouseover="this.style.background='rgba(248,113,113,.1)'" onmouseout="this.style.background='transparent'"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>Sign Out</button>
         </form>
@@ -161,7 +161,7 @@
             </div>
             <div style="display:flex;align-items:center;gap:6px">
                 <span style="font-size:11px;color:#94a3b8" class="resp-hide-mob">{{ now()->format('d M') }}</span>
-                <a href="{{ route('profile.edit') }}" style="display:flex;align-items:center;gap:6px;text-decoration:none;background:#f8fafc;border:1px solid #e2e8f0;padding:5px 8px;border-radius:8px">
+                <a href="{{ route('teacher.profile.edit') }}" style="display:flex;align-items:center;gap:6px;text-decoration:none;background:#f8fafc;border:1px solid #e2e8f0;padding:5px 8px;border-radius:8px">
                     <div style="width:26px;height:26px;background:linear-gradient(135deg,#14b8a6,#0f766e);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff">{{ strtoupper(substr(Auth::user()->name,0,1)) }}</div>
                     <span style="font-size:12px;font-weight:600;color:#334155" class="resp-hide-mob">{{ Auth::user()->name }}</span>
                 </a>
@@ -232,7 +232,7 @@
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             Notes &amp; Assignments
         </a>
-        <a href="{{ route('profile.edit') }}" class="action-sheet-item" @click="more=false">
+        <a href="{{ route('teacher.profile.edit') }}" class="action-sheet-item" @click="more=false">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
             Profile
         </a>
@@ -242,7 +242,7 @@
             Switch to Admin
         </a>
         @endif
-        <form method="POST" action="{{ route('logout') }}" style="margin:0">
+        <form method="POST" action="{{ route('teacher.logout') }}" style="margin:0">
             @csrf
             <button type="submit" class="action-sheet-item danger" style="background:none;border:none;cursor:pointer;width:100%;text-align:left;font-family:inherit">
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>

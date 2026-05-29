@@ -402,7 +402,7 @@ Route::prefix('admin')
 
 Route::prefix('teacher')
     ->name('teacher.')
-    ->middleware(['teacher.session', 'auth', 'role:teacher,admin'])
+    ->middleware(['auth', 'role:teacher,admin'])
     ->group(function () {
         Route::get('/',         [TeacherPortalController::class, 'dashboard'])->name('dashboard');
         Route::get('/classes',  [TeacherPortalController::class, 'classes'])->name('classes');
@@ -433,4 +433,10 @@ Route::prefix('teacher')
         Route::get('/notes', [TeacherNotesController::class, 'index'])->name('notes.index');
         Route::post('/notes', [TeacherNotesController::class, 'store'])->name('notes.store');
         Route::delete('/notes/{note}', [TeacherNotesController::class, 'destroy'])->name('notes.destroy');
+
+        // Teacher-specific profile & logout (uses teacher session)
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+        Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     });

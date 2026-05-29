@@ -59,10 +59,13 @@ class QuestionsController extends Controller
         $availableSubjects = ExamQuestion::where('academic_year_id', $year?->id)
             ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
+        // Global stats (unfiltered)
+        $baseQuery = ExamQuestion::where('academic_year_id', $year?->id);
         $stats = [
-            'pending'         => ExamQuestion::where('status', 'pending')->count(),
-            'revision_needed' => ExamQuestion::where('status', 'revision_needed')->count(),
-            'approved'        => ExamQuestion::where('status', 'approved')->count(),
+            'total'           => (clone $baseQuery)->count(),
+            'pending'         => (clone $baseQuery)->where('status', 'pending')->count(),
+            'revision_needed' => (clone $baseQuery)->where('status', 'revision_needed')->count(),
+            'approved'        => (clone $baseQuery)->where('status', 'approved')->count(),
         ];
 
         return view('admin.questions.index', compact('groups', 'exams', 'year', 'examId', 'class', 'subject', 'status', 'stats', 'availableClasses', 'availableSubjects'));

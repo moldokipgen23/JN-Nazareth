@@ -90,4 +90,10 @@ class User extends Authenticatable
     {
         return $this->hasRole('teacher') && ! $this->hasAnyRole(['admin', 'staff']);
     }
+
+    /** Primary role name used in admin user list (from Spatie roles relationship). */
+    public function getRoleAttribute(): ?string
+    {
+        return $this->roles->first()?->name;
+    }
 }

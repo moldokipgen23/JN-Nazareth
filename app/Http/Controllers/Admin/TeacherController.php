@@ -161,17 +161,44 @@ class TeacherController extends Controller
 
     public function createLogin(Teacher $teacher)
     {
-        if ($teacher->users()->exists()) {
-            return back()->with('error', "{$teacher->name} already has a login account.");
-        }
-
         $email = $teacher->email;
         if (! $email) {
             return back()->with('error', 'Set an email for this teacher first before creating a login.');
         }
 
+        // If teacher already has a linked user, regenerate password instead
+        if ($teacher->users()->exists()) {
+            $user = $teacher->users()->first();
+            $password = Str::password(10);
+            $user->password = Hash::make($password);
+            $user->save();
+
+            ActivityLogger::log('teacher_login_password_reset', $user, "Reset login password for teacher: {$teacher->name}");
+
+            return back()->with([
+                'success' => "Password reset for {$teacher->name}. Email: {$email}",
+                'generated_password' => $password,
+            ]);
+        }
+
+        // If an unlinked user with this email exists, re-link them
+        $existing = User::where('email', $email)->whereNull('teacher_id')->first();
+        if ($existing) {
+            $password = Str::password(10);
+            $existing->teacher_id = $teacher->id;
+            $existing->password = Hash::make($password);
+            $existing->save();
+
+            ActivityLogger::log('teacher_login_relinked', $existing, "Re-linked user to teacher: {$teacher->name}");
+
+            return back()->with([
+                'success' => "Login re-linked for {$teacher->name}. Email: {$email}",
+                'generated_password' => $password,
+            ]);
+        }
+
         if (User::where('email', $email)->exists()) {
-            return back()->with('error', "A user with email {$email} already exists. Link them instead.");
+            return back()->with('error', "A user with email {$email} already exists and is linked to another teacher.");
         }
 
         $password = Str::password(10);

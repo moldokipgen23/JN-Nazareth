@@ -34,12 +34,10 @@ Route::middleware('guest')->group(function () {
     Route::post(login_path('admin'), [AuthenticatedSessionController::class, 'store']);
 
     // Teacher login — separate branded page, own session cookie.
-    Route::middleware('teacher.session')->group(function () {
-        Route::get(login_path('teacher'), [AuthenticatedSessionController::class, 'createTeacher'])
-            ->name('teacher.login');
-        Route::post(login_path('teacher'), [AuthenticatedSessionController::class, 'store'])
-            ->name('teacher.login.store');
-    });
+    Route::get(login_path('teacher'), [AuthenticatedSessionController::class, 'createTeacher'])
+        ->name('teacher.login');
+    Route::post(login_path('teacher'), [AuthenticatedSessionController::class, 'store'])
+        ->name('teacher.login.store');
 
     // Emergency fallback — always available.
     Route::get(EMERGENCY_LOGIN_PATH, [AuthenticatedSessionController::class, 'create']);

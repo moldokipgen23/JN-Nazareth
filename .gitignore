@@ -20,3 +20,6 @@ public/storage
 
 # OS
 .DS_Store
+
+# Local SQLite database (demo data — never commit)
+database/database.sqlite
