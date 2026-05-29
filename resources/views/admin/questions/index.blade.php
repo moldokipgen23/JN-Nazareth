@@ -40,7 +40,8 @@
 {{-- Progress Summary (class_subjects based) --}}
 <div style="margin-bottom:16px;">
     @if($classProgress->isNotEmpty())
-    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Questions Progress per Class@if($progressExamId && $exams->firstWhere('id', $progressExamId)) — {{ $exams->firstWhere('id', $progressExamId)->name }}@endif</div>
+    @php $progressExamName = $progressExamId ? optional($exams->firstWhere('id', $progressExamId))->name : null; @endphp
+    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Questions Progress per Class{{ $progressExamName ? ' — '.$progressExamName : '' }}</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
         @foreach($classProgress as $cp)
         @php

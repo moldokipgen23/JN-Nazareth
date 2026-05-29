@@ -91,9 +91,18 @@ function syncSection(form) {
 @if($view === 'review')
     @if($examId && $class && $section && $subject)
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
-            @foreach(['total'=>['#f1f5f9','#475569'],'pass'=>['#dcfce7','#15803d'],'fail'=>['#fee2e2','#b91c1c'],'ungraded'=>['#fef3c7','#92400e'],'submitted'=>['#dbeafe','#1d4ed8']] as $key=>$col)
+            @php
+                $statCards = [
+                    'total'     => ['#f1f5f9', '#475569'],
+                    'pass'      => ['#dcfce7', '#15803d'],
+                    'fail'      => ['#fee2e2', '#b91c1c'],
+                    'ungraded'  => ['#fef3c7', '#92400e'],
+                    'submitted' => ['#dbeafe', '#1d4ed8'],
+                ];
+            @endphp
+            @foreach($statCards as $key => $col)
                 <div style="background:{{ $col[0] }};color:{{ $col[1] }};border-radius:10px;padding:12px 14px;">
-                    <div style="font-size:22px;font-weight:700;line-height:1;">{{ $stats[$key] }}</div>
+                    <div style="font-size:22px;font-weight:700;line-height:1;">{{ $stats[$key] ?? 0 }}</div>
                     <div style="font-size:11px;font-weight:600;margin-top:4px;text-transform:uppercase;">{{ ucfirst($key) }}</div>
                 </div>
             @endforeach
@@ -134,9 +143,15 @@ function syncSection(form) {
                         <td style="padding:10px 14px;color:#475569;">{{ $r->grade ?: '—' }}</td>
                         <td style="padding:10px 14px;">
                             @php
-                                $s = $r->status();
-                                $_bg = ['pass'=>'#dcfce7','fail'=>'#fee2e2','ungraded'=>'#f1f5f9'][$s];
-                                $_fg = ['pass'=>'#15803d','fail'=>'#b91c1c','ungraded'=>'#94a3b8'][$s];
+                                $s = $r->status() ?: 'ungraded';
+                                $statusColors = [
+                                    'pass'     => ['#dcfce7', '#15803d'],
+                                    'fail'     => ['#fee2e2', '#b91c1c'],
+                                    'ungraded' => ['#f1f5f9', '#94a3b8'],
+                                ];
+                                $sc = $statusColors[$s] ?? $statusColors['ungraded'];
+                                $_bg = $sc[0];
+                                $_fg = $sc[1];
                             @endphp
                             <span style="background:{{ $_bg }};color:{{ $_fg }};padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;">{{ $s }}</span>
                         </td>
