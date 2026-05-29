@@ -321,31 +321,63 @@ class TeacherController extends Controller
             return;
         }
 
-        $rows = $request->input('subject_assignments', []);
         $validClasses  = \App\Models\Student::classes();
         $validSubjects = \App\Models\Subject::active()->pluck('name')->all();
 
-        // Build the new set as [class, section, subject] keys
-        $keep = [];
-        foreach ($rows as $row) {
-            $class   = trim($row['class'] ?? '');
-            $section = strtoupper(trim($row['section'] ?? ''));
-            $subject = trim($row['subject'] ?? '');
-            if (! $class || ! $section || ! $subject) continue;
-            if (! in_array($class, $validClasses, true)) continue;
-            if (! in_array($subject, $validSubjects, true)) continue;
+        // Handle checkbox format: section[Class] + subjects[Class][]
+        $sections = $request->input('section', []);
+        $subjectsByClass = $request->input('subjects', []);
 
-            SubjectTeacherAssignment::updateOrCreate(
-                [
-                    'academic_year_id' => $year->id,
-                    'teacher_id'       => $teacher->id,
-                    'class'            => $class,
-                    'section'          => $section,
-                    'subject'          => $subject,
-                ],
-                []
-            );
-            $keep[] = "{$class}|{$section}|{$subject}";
+        $keep = [];
+
+        if (!empty($subjectsByClass)) {
+            // New checkbox format
+            foreach ($subjectsByClass as $class => $subjectList) {
+                $class = trim($class);
+                if (!in_array($class, $validClasses, true)) continue;
+                $section = strtoupper(trim($sections[$class] ?? 'A'));
+                if (!$section) continue;
+
+                foreach ($subjectList as $subject) {
+                    $subject = trim($subject);
+                    if (!in_array($subject, $validSubjects, true)) continue;
+
+                    SubjectTeacherAssignment::updateOrCreate(
+                        [
+                            'academic_year_id' => $year->id,
+                            'teacher_id'       => $teacher->id,
+                            'class'            => $class,
+                            'section'          => $section,
+                            'subject'          => $subject,
+                        ],
+                        []
+                    );
+                    $keep[] = "{$class}|{$section}|{$subject}";
+                }
+            }
+        } else {
+            // Legacy dropdown format: subject_assignments[$i][class/section/subject]
+            $rows = $request->input('subject_assignments', []);
+            foreach ($rows as $row) {
+                $class   = trim($row['class'] ?? '');
+                $section = strtoupper(trim($row['section'] ?? ''));
+                $subject = trim($row['subject'] ?? '');
+                if (! $class || ! $section || ! $subject) continue;
+                if (! in_array($class, $validClasses, true)) continue;
+                if (! in_array($subject, $validSubjects, true)) continue;
+
+                SubjectTeacherAssignment::updateOrCreate(
+                    [
+                        'academic_year_id' => $year->id,
+                        'teacher_id'       => $teacher->id,
+                        'class'            => $class,
+                        'section'          => $section,
+                        'subject'          => $subject,
+                    ],
+                    []
+                );
+                $keep[] = "{$class}|{$section}|{$subject}";
+            }
         }
 
         // Delete any existing assignments not in the new set
@@ -387,6 +419,8 @@ class TeacherController extends Controller
             'subject_assignments.*.class'     => ['nullable', 'string', 'max:100'],
             'subject_assignments.*.section'   => ['nullable', 'string', 'max:20'],
             'subject_assignments.*.subject'   => ['nullable', 'string', 'max:100'],
+            'subjects'                        => ['nullable', 'array'],
+            'section'                         => ['nullable', 'array'],
         ]);
     }
 }

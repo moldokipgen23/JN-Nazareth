@@ -36,65 +36,74 @@
 {{-- Tab 2: Subject Assignments --}}
 <div id="tab2" style="display:none;">
     <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.06);border:1px solid #f1f5f9;padding:24px 28px;">
-        <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:14px; padding-bottom:9px; border-bottom:1px solid #f1f5f9;">
-            Subjects Taught by {{ $teacher->name }}
-        </div>
-        <p style="font-size:12px;color:#64748b;margin:0 0 12px;">
-            Which subjects does this teacher teach, and in which classes/sections?
-        </p>
+        <form method="POST" action="{{ route('admin.teachers.update', $teacher) }}" enctype="multipart/form-data">
+            @csrf @method('PUT')
+            <input type="hidden" name="update_subjects_only" value="1">
 
-        <div id="subject-rows" style="display:flex;flex-direction:column;gap:8px;">
-@php
-    $rows = ($teacher ? $teacher->subjectAssignments() : []);
-    $classes = \App\Models\Student::classes();
-                $sections = \App\Models\Section::active()->orderBy('sort_order')->orderBy('name')->get();
-                $sectionNames = $sections->pluck('name')->unique()->sort()->values();
-                if ($sectionNames->isEmpty()) $sectionNames = collect(['A']);
-                $subjectsList = \App\Models\Subject::active()->orderBy('sort_order')->orderBy('name')->get();
-            @endphp
-            @forelse($rows as $i => $row)
-            @include('admin.teachers._subject-row', ['i' => $i, 'row' => $row, 'classes' => $classes, 'sectionNames' => $sectionNames, 'subjectsList' => $subjectsList])
-            @empty
-            @endforelse
-        </div>
-
-        <button type="button" onclick="addSubjectRowEdit()" style="background:#f0fdfa;color:#0f766e;border:1.5px dashed #99f6e4;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;margin-top:10px;">+ Add Subject</button>
-
-        <template id="subject-row-edit-template">
-            <div class="subject-row" style="display:grid;grid-template-columns:1.2fr 0.8fr 1.5fr 40px;gap:8px;align-items:center;">
-                <select name="subject_assignments[__INDEX__][class]" required style="border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;font-size:13px;width:100%;box-sizing:border-box;outline:none;">
-                    <option value="">— Class —</option>
-                    @foreach($classes as $c)<option value="{{ $c }}">{{ $c }}</option>@endforeach
-                </select>
-                <select name="subject_assignments[__INDEX__][section]" required style="border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;font-size:13px;width:100%;box-sizing:border-box;outline:none;">
-                    @foreach($sectionNames as $s)<option value="{{ $s }}">{{ $s }}</option>@endforeach
-                </select>
-                <select name="subject_assignments[__INDEX__][subject]" required style="border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;font-size:13px;width:100%;box-sizing:border-box;outline:none;">
-                    <option value="">— Subject —</option>
-                    @foreach($subjectsList as $subj)<option value="{{ $subj->name }}">{{ $subj->name }}</option>@endforeach
-                </select>
-                <button type="button" onclick="this.closest('.subject-row').remove()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;height:38px;cursor:pointer;font-size:18px;font-weight:700;" title="Remove">×</button>
+            <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:14px; padding-bottom:9px; border-bottom:1px solid #f1f5f9;">
+                Subjects Taught by {{ $teacher->name }}
             </div>
-        </template>
+            <p style="font-size:12px;color:#64748b;margin:0 0 12px;">
+                Which subjects does this teacher teach, and in which classes/sections?
+            </p>
 
-        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px;">
-            <a href="{{ route('admin.teachers.index') }}" style="background:#f1f5f9;color:#475569;font-size:13px;font-weight:600;padding:10px 20px;border-radius:9px;text-decoration:none;">Cancel</a>
-            <form method="POST" action="{{ route('admin.teachers.update', $teacher) }}" enctype="multipart/form-data">
-                @csrf @method('PUT')
-                <input type="hidden" name="update_subjects_only" value="1">
-                <button type="submit" style="background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;font-size:13px;font-weight:700;padding:10px 24px;border-radius:9px;border:none;cursor:pointer;">Save Assignments</button>
-            </form>
+@php
+    $allClasses = \App\Models\Student::classes();
+    $allSections = \App\Models\Section::active()->orderBy('sort_order')->orderBy('name')->get();
+    $allSectionNames = $allSections->pluck('name')->unique()->sort()->values();
+    if ($allSectionNames->isEmpty()) $allSectionNames = collect(['A']);
+    $allSubjects = \App\Models\Subject::active()->orderBy('sort_order')->orderBy('name')->get();
+    $assignmentsByClass = collect();
+    if ($teacher) {
+        foreach ($teacher->subjectAssignments() as $a) {
+            $assignmentsByClass->push(['class' => $a['class'], 'section' => $a['section'], 'subject' => $a['subject']]);
+        }
+    }
+    $assignedMap = [];
+    $sectionMap = [];
+    foreach ($assignmentsByClass as $a) {
+        $assignedMap[$a['class']][] = $a['subject'];
+        $sectionMap[$a['class']] = $a['section'];
+    }
+@endphp
+
+<div style="display:flex;flex-direction:column;gap:10px;">
+    @foreach($allClasses as $class)
+    <div style="background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="font-size:14px;font-weight:700;color:#0f172a;">{{ $class }}</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:11px;color:#94a3b8;">Section:</span>
+                <select name="section[{{ $class }}]" style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:12px;">
+                    @foreach($allSectionNames as $sn)
+                        <option value="{{ $sn }}" {{ ($sectionMap[$class] ?? 'A') === $sn ? 'selected' : '' }}>{{ $sn }}</option>
+                    @endforeach
+                </select>
+            </div>
         </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:5px;">
+            @foreach($allSubjects as $subject)
+            @php $checked = in_array($subject->name, $assignedMap[$class] ?? []); @endphp
+            <label style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;background:{{ $checked ? '#f0fdfa' : '#f8fafc' }};border:1px solid {{ $checked ? '#99f6e4' : '#e2e8f0' }};cursor:pointer;font-size:12px;font-weight:{{ $checked ? '700' : '400' }};color:#0f172a;">
+                <input type="checkbox" name="subjects[{{ $class }}][]" value="{{ $subject->name }}"
+                       {{ $checked ? 'checked' : '' }} style="accent-color:#0f766e;">
+                <span>{{ $subject->name }}</span>
+            </label>
+            @endforeach
+        </div>
+    </div>
+    @endforeach
+</div>
+
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px;">
+                <a href="{{ route('admin.teachers.index') }}" style="background:#f1f5f9;color:#475569;font-size:13px;font-weight:600;padding:10px 20px;border-radius:9px;text-decoration:none;">Cancel</a>
+                <button type="submit" style="background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;font-size:13px;font-weight:700;padding:10px 24px;border-radius:9px;border:none;cursor:pointer;">Save Assignments</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
-let subjectRowIndex = {{ count($rows ?? []) }};
-function addSubjectRowEdit() {
-    const tpl = document.getElementById('subject-row-edit-template').innerHTML.replace(/__INDEX__/g, subjectRowIndex++);
-    document.getElementById('subject-rows').insertAdjacentHTML('beforeend', tpl);
-}
-
 function switchTab(n) {
     document.getElementById('tab1').style.display = n === 1 ? 'block' : 'none';
     document.getElementById('tab2').style.display = n === 2 ? 'block' : 'none';
