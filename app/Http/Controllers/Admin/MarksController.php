@@ -669,6 +669,7 @@ class MarksController extends Controller
      */
     private function buildClassResultData($year, $exam, $class, $section): array
     {
+        $examId = $exam->id;
         $enrollments = StudentEnrollment::forActiveYear()->active()
             ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
             ->with('student')->orderBy('roll_number')->get();

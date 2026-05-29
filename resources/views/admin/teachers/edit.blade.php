@@ -44,9 +44,9 @@
         </p>
 
         <div id="subject-rows" style="display:flex;flex-direction:column;gap:8px;">
-            @php
-                $rows = $existingSubjectAssignments ?? [];
-                $classes = \App\Models\Student::classes();
+@php
+    $rows = ($teacher ? $teacher->subjectAssignments() : []);
+    $classes = \App\Models\Student::classes();
                 $sections = \App\Models\Section::active()->orderBy('sort_order')->orderBy('name')->get();
                 $sectionNames = $sections->pluck('name')->unique()->sort()->values();
                 if ($sectionNames->isEmpty()) $sectionNames = collect(['A']);
