@@ -52,7 +52,25 @@
     $allSections = \App\Models\Section::active()->orderBy('sort_order')->orderBy('name')->get();
     $allSectionNames = $allSections->pluck('name')->unique()->sort()->values();
     if ($allSectionNames->isEmpty()) $allSectionNames = collect(['A']);
-    $allSubjects = \App\Models\Subject::active()->orderBy('sort_order')->orderBy('name')->get();
+
+    // Subjects per class come from class_subjects (active year only) — NOT global subjects.
+    $activeYear = \App\Models\AcademicYear::current();
+    $subjectsPerClass = [];
+    if ($activeYear) {
+        $rows = \App\Models\ClassSubject::where('academic_year_id', $activeYear->id)
+            ->with('subject')->get();
+        foreach ($rows as $r) {
+            $sname = $r->subject?->name;
+            if ($sname) {
+                $subjectsPerClass[$r->class][$sname] = $sname; // de-dup by name
+            }
+        }
+        foreach ($subjectsPerClass as $cls => $subs) {
+            ksort($subs);
+            $subjectsPerClass[$cls] = array_values($subs);
+        }
+    }
+
     $assignmentsByClass = collect();
     if ($teacher) {
         foreach ($teacher->subjectAssignments() as $a) {
@@ -69,9 +87,10 @@
 
 <div style="display:flex;flex-direction:column;gap:10px;">
     @foreach($allClasses as $class)
+    @php $classSubjects = $subjectsPerClass[$class] ?? []; @endphp
     <div style="background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #e2e8f0;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <div style="font-size:14px;font-weight:700;color:#0f172a;">{{ $class }}</div>
+            <div style="font-size:14px;font-weight:700;color:#0f172a;">{{ $class }} <span style="font-size:11px;color:#94a3b8;font-weight:400;">({{ count($classSubjects) }} subject{{ count($classSubjects) === 1 ? '' : 's' }})</span></div>
             <div style="display:flex;align-items:center;gap:6px;">
                 <span style="font-size:11px;color:#94a3b8;">Section:</span>
                 <select name="section[{{ $class }}]" style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:12px;">
@@ -81,16 +100,23 @@
                 </select>
             </div>
         </div>
+        @if(empty($classSubjects))
+            <div style="font-size:12px;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:8px 12px;">
+                No subjects set up for {{ $class }} yet.
+                <a href="{{ route('admin.class-subjects.index') }}" style="color:#0f766e;font-weight:600;">Configure Class Subjects →</a>
+            </div>
+        @else
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:5px;">
-            @foreach($allSubjects as $subject)
-            @php $checked = in_array($subject->name, $assignedMap[$class] ?? []); @endphp
+            @foreach($classSubjects as $subjectName)
+            @php $checked = in_array($subjectName, $assignedMap[$class] ?? []); @endphp
             <label style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;background:{{ $checked ? '#f0fdfa' : '#f8fafc' }};border:1px solid {{ $checked ? '#99f6e4' : '#e2e8f0' }};cursor:pointer;font-size:12px;font-weight:{{ $checked ? '700' : '400' }};color:#0f172a;">
-                <input type="checkbox" name="subjects[{{ $class }}][]" value="{{ $subject->name }}"
+                <input type="checkbox" name="subjects[{{ $class }}][]" value="{{ $subjectName }}"
                        {{ $checked ? 'checked' : '' }} style="accent-color:#0f766e;">
-                <span>{{ $subject->name }}</span>
+                <span>{{ $subjectName }}</span>
             </label>
             @endforeach
         </div>
+        @endif
     </div>
     @endforeach
 </div>
