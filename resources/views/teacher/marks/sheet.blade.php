@@ -177,8 +177,18 @@
     </div>
 </div>
 
+@php
+    $gradeRangesJs = \App\Models\GradeScale::active()
+        ->orderBy('min_percent')->orderBy('name')->get()
+        ->map(fn($g) => [
+            'min' => (float) $g->min_percent,
+            'max' => (float) $g->max_percent,
+            'name' => $g->name,
+            'point' => (float) $g->grade_point,
+        ])->toArray();
+@endphp
 <script>
-var gradeRanges = @json(\App\Models\GradeScale::active()->orderBy('min_percent')->orderBy('name')->get()->map(fn($g) => ['min' => (float)$g->min_percent, 'max' => (float)$g->max_percent, 'name' => $g->name, 'point' => (float)$g->grade_point])->toArray());
+var gradeRanges = {!! json_encode($gradeRangesJs) !!};
 
 function showStd(id, name, father, mother, phone, address) {
     if (!id) return;
@@ -239,20 +249,20 @@ function recalc(input) {
     }
 }
 
-document.getElementById('fullMarks').addEventListener('input', function() {
+var _fm = document.getElementById('fullMarks');
+var _pm = document.getElementById('passMarks');
+if (_fm) _fm.addEventListener('input', function() {
     document.querySelectorAll('.mk-row').forEach(function(row) {
         var inputs = row.querySelectorAll('.mk-input');
         if (inputs.length > 0) recalc(inputs[0]);
     });
 });
-
-document.getElementById('passMarks').addEventListener('input', function() {
+if (_pm) _pm.addEventListener('input', function() {
     document.querySelectorAll('.mk-row').forEach(function(row) {
         var inputs = row.querySelectorAll('.mk-input');
         if (inputs.length > 0) recalc(inputs[0]);
     });
 });
 </script>
-@endif
 
 @endsection

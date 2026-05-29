@@ -419,8 +419,6 @@ class TeacherController extends Controller
             'subject_assignments.*.class'     => ['nullable', 'string', 'max:100'],
             'subject_assignments.*.section'   => ['nullable', 'string', 'max:20'],
             'subject_assignments.*.subject'   => ['nullable', 'string', 'max:100'],
-            'subjects'                        => ['nullable', 'array'],
-            'section'                         => ['nullable', 'array'],
         ]);
     }
 }
