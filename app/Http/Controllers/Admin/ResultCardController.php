@@ -34,9 +34,14 @@ class ResultCardController extends Controller
             $subjName = $cs->subject?->name;
             if (!$subjName) continue;
             $mark = $marks->firstWhere('subject', $subjName);
-            $passMark = $cs->pass_marks ?? ($mark->pass_marks ?? 33);
-            $pct = $mark ? $mark->percentage() : null;
-            if ($pct === null || $pct < $passMark) {
+            if (!$mark || $mark->full_marks <= 0) {
+                $failed[] = $subjName;
+                continue;
+            }
+            // Compare in the same unit: pct vs (pass_marks/full_marks)*100
+            $passPct = (float) $mark->pass_marks / (float) $mark->full_marks * 100;
+            $pct = $mark->percentage();
+            if ($pct === null || $pct < $passPct) {
                 $failed[] = $subjName;
             }
         }

@@ -62,21 +62,29 @@ class ClassSubjectController extends Controller
             }
         }
 
+        // Preserve existing is_optional / grade_only flags across re-saves
+        $existingFlags = $existing->keyBy('subject_id')
+            ->map(fn ($e) => [
+                'is_optional' => (bool) $e->is_optional,
+                'grade_only'  => (bool) $e->grade_only,
+            ])
+            ->toArray();
+
         // Remove existing assignments for this class
         ClassSubject::where('academic_year_id', $year->id)
             ->where('class', $class)
             ->when($data['section'] ?? null, fn ($q) => $q->where('section', $data['section']))
             ->delete();
 
-        // Insert new selections — marks config is now per-exam, not per-class.
+        // Insert new selections — marks config is per-exam, but flags carry over.
         foreach ($subjectIds as $subjectId) {
             ClassSubject::create([
                 'class'             => $class,
                 'subject_id'        => $subjectId,
                 'academic_year_id'  => $year->id,
                 'section'           => $data['section'] ?? null,
-                'is_optional'       => false,
-                'grade_only'        => false,
+                'is_optional'       => $existingFlags[$subjectId]['is_optional'] ?? false,
+                'grade_only'        => $existingFlags[$subjectId]['grade_only'] ?? false,
             ]);
         }
 

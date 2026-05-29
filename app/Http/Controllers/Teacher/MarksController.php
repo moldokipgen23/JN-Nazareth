@@ -83,6 +83,8 @@ class MarksController extends Controller
 
         // Marks config is admin-controlled per (exam, class, subject) — never teacher-editable.
         [$defaultFull, $defaultPass] = ExamSubjectMark::resolveMarks($exam->id, $class, $subject, $year->id);
+        $marksConfigured = ExamSubjectMark::where('exam_id', $exam->id)
+            ->where('class', $class)->where('subject', $subject)->exists();
 
         return view('teacher.marks.sheet', [
             'year'        => $year,
@@ -94,6 +96,7 @@ class MarksController extends Controller
             'existing'    => $existing,
             'defaultFull' => $defaultFull,
             'defaultPass' => $defaultPass,
+            'marksConfigured' => $marksConfigured,
         ]);
     }
 

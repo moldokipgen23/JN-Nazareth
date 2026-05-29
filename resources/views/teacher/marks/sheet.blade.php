@@ -94,6 +94,12 @@
 <form method="POST" action="{{ route('teacher.marks.store', ['exam' => $exam->id, 'class' => $class, 'section' => $section, 'subject' => $subject]) }}">
     @csrf
 
+    @if(!($marksConfigured ?? true))
+    <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;margin-bottom:10px;color:#92400e;font-size:12px;font-weight:600;">
+        ⚠️ Admin has not set the marks config for this exam yet. Using fallback values ({{ $defaultFull }} / {{ $defaultPass }}). Please ask admin to set Marks Config before submitting to avoid wrong calculations.
+    </div>
+    @endif
+
     {{-- Full/pass marks (set by admin — read-only here) --}}
     <div style="background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;box-shadow:0 1px 3px rgba(15,23,42,.06);">
         <div style="background:#eef2ff;color:#4338ca;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;">

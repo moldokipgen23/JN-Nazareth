@@ -152,7 +152,9 @@ class MarksController extends Controller
                         if ($mark && $mark->total_marks !== null) {
                             $pct = $mark->percentage();
                             $gp  = $mark->computedGradePoint();
-                            $row['subjectData'][$subj] = ['pct' => $pct, 'grade' => $mark->computedGrade() ?? $mark->grade, 'gp' => $gp];
+                            // Pass% = (pass_marks / full_marks) * 100 — keeps comparisons unit-safe when full ≠ 100
+                            $passPct = ($mark->full_marks > 0) ? round((float) $mark->pass_marks / (float) $mark->full_marks * 100, 2) : 33;
+                            $row['subjectData'][$subj] = ['pct' => $pct, 'grade' => $mark->computedGrade() ?? $mark->grade, 'gp' => $gp, 'passPct' => $passPct];
                             if ($pct !== null) { $row['totalPct'] += $pct; $row['totalGp'] += ($gp ?? 0); $row['markedSubjects']++; }
                             if (!$mark->submitted_at) $row['submitted'] = false;
                         } else { $row['subjectData'][$subj] = null; $row['submitted'] = false; }
@@ -171,7 +173,7 @@ class MarksController extends Controller
                     }))
                     ->with('subject')->get();
 
-                // Pass/Fail split: fail if any non-optional subject scored below pass_marks
+                // Pass/Fail split: fail if any non-optional subject's pct < its pass percentage
                 $passRows = [];
                 $failRows = [];
                 foreach ($rows as $r) {
@@ -180,8 +182,9 @@ class MarksController extends Controller
                         $sd = $r['subjectData'][$subj] ?? null;
                         $cs = $classSubjects->firstWhere('subject.name', $subj);
                         if ($cs && $cs->is_optional) continue; // skip optional subjects
-                        $passMark = $cs?->pass_marks ?? $r['enrollment']?->pass_marks ?? 33;
-                        if ($sd === null || $sd['pct'] === null || $sd['pct'] < $passMark) {
+                        // Use the per-mark pass percentage (full/pass_marks scaled correctly per ExamSubjectMark)
+                        $passPct = $sd['passPct'] ?? 33;
+                        if ($sd === null || $sd['pct'] === null || $sd['pct'] < $passPct) {
                             $failedSubjects[] = $subj;
                         }
                     }
