@@ -29,7 +29,7 @@ class MarksController extends Controller
         $subject = $request->query('subject');
 
         $exams = $year
-            ? Exam::forActiveYear()->orderBy('sort_order')->orderBy('name')->get()
+            ? Exam::forActiveYear()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get()
             : collect();
 
         $slots = $year
@@ -869,5 +869,53 @@ class MarksController extends Controller
         ]);
 
         return back()->with('success', 'Mark updated and submission reset.');
+    }
+
+    public function examSummary(Request $request)
+    {
+        $year = AcademicYear::current();
+        $examId = $request->query('exam');
+        $exams = $year ? Exam::forActiveYear()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get() : collect();
+
+        $classData = collect();
+        if ($year && $examId) {
+            $classes = Student::classes();
+
+            $approvedQSubjects = \App\Models\ExamQuestion::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)
+                ->where('status', 'approved')
+                ->select('class', 'subject')->distinct()->get()
+                ->groupBy('class')->map(fn ($g) => $g->pluck('subject')->toArray());
+
+            $submittedMSubjects = Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)
+                ->whereNotNull('submitted_at')
+                ->select('class', 'subject')->distinct()->get()
+                ->groupBy('class')->map(fn ($g) => $g->pluck('subject')->toArray());
+
+            foreach ($classes as $c) {
+                $expected = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+                    ->where('class', $c)->with('subject')->get()->pluck('subject.name');
+                if ($expected->isEmpty()) continue;
+
+                $expectedArr = $expected->values()->toArray();
+                $qApproved = $approvedQSubjects->get($c, []);
+                $mSubmitted = $submittedMSubjects->get($c, []);
+
+                $classData->push([
+                    'class' => $c,
+                    'expected_count' => count($expectedArr),
+                    'questions_done' => count(array_intersect($qApproved, $expectedArr)),
+                    'marks_done' => count(array_intersect($mSubmitted, $expectedArr)),
+                    'questions_complete' => count(array_intersect($qApproved, $expectedArr)) === count($expectedArr),
+                    'marks_complete' => count(array_intersect($mSubmitted, $expectedArr)) === count($expectedArr),
+                    'all_complete' => count(array_intersect($qApproved, $expectedArr)) === count($expectedArr)
+                        && count(array_intersect($mSubmitted, $expectedArr)) === count($expectedArr),
+                    'section' => 'A',
+                ]);
+            }
+        }
+
+        return view('admin.marks.exam-summary', compact('year', 'exams', 'examId', 'classData'));
     }
 }
