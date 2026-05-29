@@ -78,11 +78,13 @@ class MarksController extends Controller
             $marks = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $examId)->where('class', $class)
                 ->when($section, fn ($q) => $q->where('section', $section))
+                ->whereNotNull('submitted_at')
                 ->get()->groupBy('student_enrollment_id');
 
             $analyticsSubjects = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $examId)->where('class', $class)
                 ->when($section, fn ($q) => $q->where('section', $section))
+                ->whereNotNull('submitted_at')
                 ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
             $rows = [];
@@ -124,16 +126,23 @@ class MarksController extends Controller
             }
         }
 
-        // Submission summary per subject (for review tab)
+        // Submission summary per subject (for review tab) — only counts students with marks
         $submissionStatus = collect();
         if ($year && $examId && $class && $section) {
+            $totalStudents = StudentEnrollment::forActiveYear()->active()
+                ->where('class', $class)->where('section', $section)->count();
             $subjectsWithMarks = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $examId)->where('class', $class)->where('section', $section)
                 ->select('subject')
                 ->selectRaw('COUNT(*) as total')
                 ->selectRaw('SUM(CASE WHEN submitted_at IS NOT NULL THEN 1 ELSE 0 END) as submitted_count')
                 ->groupBy('subject')->get();
-            $submissionStatus = $subjectsWithMarks;
+            $submissionStatus = $subjectsWithMarks->map(fn ($s) => [
+                'subject' => $s->subject,
+                'total' => $s->total,
+                'submitted_count' => $s->submitted_count,
+                'expected' => $totalStudents,
+            ]);
         }
 
         return view('admin.marks.index', [
@@ -320,11 +329,13 @@ class MarksController extends Controller
         $subjects = Mark::where('academic_year_id', $year->id)
             ->where('exam_id', $examId)->where('class', $class)
             ->when($section, fn ($q) => $q->where('section', $section))
+            ->whereNotNull('submitted_at')
             ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
         $marks = Mark::where('academic_year_id', $year->id)
             ->where('exam_id', $examId)->where('class', $class)
             ->when($section, fn ($q) => $q->where('section', $section))
+            ->whereNotNull('submitted_at')
             ->get()->groupBy('student_enrollment_id');
 
         $attendance = \App\Models\AttendanceRecord::where('academic_year_id', $year->id)
@@ -438,12 +449,18 @@ class MarksController extends Controller
         $marks = Mark::where('academic_year_id', $year->id)
             ->where('exam_id', $examId)->where('class', $class)
             ->when($section, fn ($q) => $q->where('section', $section))
+            ->whereNotNull('submitted_at')
             ->get()->groupBy('student_enrollment_id');
 
         $subjects = Mark::where('academic_year_id', $year->id)
             ->where('exam_id', $examId)->where('class', $class)
             ->when($section, fn ($q) => $q->where('section', $section))
+            ->whereNotNull('submitted_at')
             ->select('subject')->distinct()->pluck('subject')->sort()->values();
+
+        if ($subjects->isEmpty()) {
+            return back()->with('error', 'No submitted marks yet for this combination. Teachers must submit marks before results can be generated.');
+        }
 
         $rows = [];
         foreach ($enrollments as $enrollment) {
@@ -526,9 +543,10 @@ class MarksController extends Controller
         $exam = Exam::find($examId);
         if (!$exam) return back()->with('error', 'Exam not found.');
 
-        // Get all classes that have marks for this exam
+        // Get all classes that have submitted marks for this exam
         $classSections = Mark::where('academic_year_id', $year->id)
             ->where('exam_id', $examId)
+            ->whereNotNull('submitted_at')
             ->select('class', 'section')
             ->distinct()
             ->get()
@@ -592,13 +610,15 @@ class MarksController extends Controller
             ->with('student')->orderBy('roll_number')->get();
 
         $marks = Mark::where('academic_year_id', $year->id)
-            ->where('exam_id', $exam->id)->where('class', $class)
+            ->where('exam_id', $examId)->where('class', $class)
             ->when($section, fn ($q) => $q->where('section', $section))
+            ->whereNotNull('submitted_at')
             ->get()->groupBy('student_enrollment_id');
 
         $subjects = Mark::where('academic_year_id', $year->id)
-            ->where('exam_id', $exam->id)->where('class', $class)
+            ->where('exam_id', $examId)->where('class', $class)
             ->when($section, fn ($q) => $q->where('section', $section))
+            ->whereNotNull('submitted_at')
             ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
         $rows = [];
