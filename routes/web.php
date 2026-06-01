@@ -161,14 +161,15 @@ Route::prefix('admin')
 
             Route::get('questions', [AdminQuestionsController::class, 'index'])->name('questions.index');
             Route::get('questions/export', [AdminQuestionsController::class, 'export'])->name('questions.export');
-            Route::post('questions/{question}/approve', [AdminQuestionsController::class, 'approve'])->name('questions.approve');
-            Route::post('questions/{question}/revision', [AdminQuestionsController::class, 'requestRevision'])->name('questions.revision');
-            Route::post('questions/{question}/review', [AdminQuestionsController::class, 'markReviewed'])->name('questions.review');
+            // Literal routes BEFORE parameterized {question} routes
             Route::get('questions/bulk/approve', fn () => redirect()->route('admin.questions.index')->with('error', 'Use the "Approve Paper" button on the Questions page.'))
                  ->name('questions.bulk-approve-get');
             Route::post('questions/bulk/approve', [AdminQuestionsController::class, 'approveGroup'])->name('questions.bulk-approve');
             Route::post('questions/bulk/revision', [AdminQuestionsController::class, 'requestRevisionGroup'])->name('questions.bulk-revision');
             Route::get('questions/question-paper', [AdminQuestionsController::class, 'exportQuestionPaper'])->name('questions.question-paper');
+            Route::post('questions/{question}/approve', [AdminQuestionsController::class, 'approve'])->name('questions.approve');
+            Route::post('questions/{question}/revision', [AdminQuestionsController::class, 'requestRevision'])->name('questions.revision');
+            Route::post('questions/{question}/review', [AdminQuestionsController::class, 'markReviewed'])->name('questions.review');
             Route::delete('questions/{question}', [AdminQuestionsController::class, 'destroy'])->name('questions.destroy');
 
             // Notes & Assignments — admin review
