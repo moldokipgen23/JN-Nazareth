@@ -1,10 +1,9 @@
-const CACHE_NAME = 'teacher-portal-v1';
+const CACHE_NAME = 'teacher-portal-v2';
 const OFFLINE_URL = '/offline';
 
 const PRECACHE_URLS = [
   '/',
   '/teacher',
-  '/manifest.json',
 ];
 
 self.addEventListener('install', (event) => {
