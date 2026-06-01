@@ -41,6 +41,7 @@ use App\Http\Controllers\Teacher\PortalController as TeacherPortalController;
 use App\Http\Controllers\Teacher\NotesController as TeacherNotesController;
 use App\Http\Controllers\Admin\NotesController as AdminNotesController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PwaController;
 use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\InquiryController as PublicInquiryController;
 use App\Http\Controllers\SitemapController;
@@ -53,6 +54,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap']);
 Route::get('/robots.txt',  [SitemapController::class, 'robots']);
+
+// ── PWA manifest & icons (dynamic — uses the logo uploaded in Site Customizer) ──
+Route::get('/manifest.json', [PwaController::class, 'manifest'])->name('manifest.json');
+Route::get('/pwa-icon-{size}.png', [PwaController::class, 'icon'])->where('size', '192|512');
 
 Route::get('/', [WebsiteController::class, 'home'])->name('home');
 Route::get('/about', [WebsiteController::class, 'about'])->name('about');

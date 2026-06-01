@@ -6,6 +6,38 @@ Newest entries on top.
 
 ---
 
+## Session: 2026-06-02 — Profile redirect guard fix, PWA dynamic icons from school logo
+
+### What changed
+
+#### 🐛 Bugs fixed
+- **Profile update redirects teacher to admin dashboard** — `ProfileController@update` always redirected to `route('profile.edit')` (admin profile). Now checks if teacher guard is active and redirects to `teacher.profile.edit` instead.
+- **Profile delete uses wrong guard** — `ProfileController@destroy` now uses `auth('teacher')->logout()` when teacher guard is active.
+
+#### 🔧 Improved
+- **PWA icons now use the actual school logo** — The old `icon-192.svg` / `icon-512.svg` showed "JN" text on a green background. Now the manifest is dynamic (served via a Laravel route) and reads the `school_logo` setting from Site Customizer. The `/pwa-icon-{size}.png` route center-crops and resizes whatever logo is uploaded.
+- **PNG icons added** — 192x192 and 512x512 PNG files generated from `images/logo.png`, with maskable variants for Android adaptive icons.
+- **`apple-touch-icon` uses PNG** instead of SVG for better iOS compatibility.
+- **Favicon fallback** in teacher layout uses `icon-192.png` instead of `icon-192.svg`.
+
+#### 🔧 New files
+- `app/Http/Controllers/PwaController.php` — serves dynamic manifest and resized icons
+
+### Files changed
+- `app/Http/Controllers/ProfileController.php` — guard-aware redirect on update, guard-aware logout on destroy
+- `public/manifest.json` — **removed** (replaced by dynamic route)
+- `routes/web.php` — added `/manifest.json` and `/pwa-icon-{size}.png` routes
+- `public/icon-192.png`, `public/icon-512.png`, `public/icon-192-maskable.png`, `public/icon-512-maskable.png` — added
+- `resources/views/layouts/teacher.blade.php` — apple-touch-icon uses PNG, favicon fallback uses PNG
+
+### Notes
+- The site logo from Site Customizer → General → School Logo is now used for the PWA install icon.
+- If no custom logo is uploaded, it falls back to `images/logo.png`.
+- The icon is center-cropped to a square and resized to 192/512px on request.
+- Users may need to re-add the PWA to their home screen for the new icon to appear.
+
+---
+
 ## Session: 2026-06-02 — Remember Me checkbox tick fix, middleware ordering, auth exception redirect
 
 ### What changed
