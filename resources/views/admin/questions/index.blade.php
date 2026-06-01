@@ -185,7 +185,7 @@
                                         <input type="hidden" name="question_ids[]" value="{{ $q->id }}">
                                     @endif
                                 @endforeach
-                                <button type="submit" onclick="return confirm('Approve all {{ $g['status_counts']['pending'] }} pending question(s) in this paper?')"
+                                <button type="submit" data-confirm="Approve all {{ $g['status_counts']['pending'] }} pending question(s) in this paper?"
                                     style="background:#15803d;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">
                                     ✅ Approve Paper
                                 </button>
@@ -263,9 +263,9 @@
                                     </form>
                                     <button type="button" onclick="showRevForm('{{ $q->id }}')" style="background:#fee2e2;color:#b91c1c;border:none;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;">Send Back</button>
                                     @endif
-                                    <form method="POST" action="{{ route('admin.questions.destroy', $q) }}" onsubmit="return confirm('Delete?')" style="display:inline;">
+                                    <form method="POST" action="{{ route('admin.questions.destroy', $q) }}" style="display:inline;">
                                         @csrf @method('DELETE')
-                                        <button type="submit" style="background:none;border:none;color:#dc2626;font-size:10px;font-weight:600;cursor:pointer;">🗑️</button>
+                                        <button type="submit" data-confirm="Delete this question?" style="background:none;border:none;color:#dc2626;font-size:10px;font-weight:600;cursor:pointer;">🗑️</button>
                                     </form>
                                 </div>
                             </div>
@@ -293,7 +293,51 @@
 
 @endif {{-- end view check --}}
 
+<div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:24px 28px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.2);text-align:center;">
+        <div style="font-size:18px;margin-bottom:6px;">⚠️</div>
+        <div id="confirm-message" style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:18px;"></div>
+        <div style="display:flex;gap:10px;justify-content:center;">
+            <button id="confirm-cancel" type="button" style="background:#f1f5f9;color:#475569;border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
+            <button id="confirm-ok" type="button" style="background:#15803d;color:#fff;border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Confirm</button>
+        </div>
+    </div>
+</div>
+
 <script>
+var _confirmTarget = null;
+
+document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-confirm]');
+    if (btn) {
+        e.preventDefault();
+        _confirmTarget = btn;
+        document.getElementById('confirm-message').textContent = btn.getAttribute('data-confirm');
+        document.getElementById('confirm-overlay').style.display = 'flex';
+    }
+});
+
+document.getElementById('confirm-ok').addEventListener('click', function () {
+    if (_confirmTarget) {
+        var form = _confirmTarget.closest('form');
+        if (form) form.submit();
+    }
+    document.getElementById('confirm-overlay').style.display = 'none';
+    _confirmTarget = null;
+});
+
+document.getElementById('confirm-cancel').addEventListener('click', function () {
+    document.getElementById('confirm-overlay').style.display = 'none';
+    _confirmTarget = null;
+});
+
+document.getElementById('confirm-overlay').addEventListener('click', function (e) {
+    if (e.target === this) {
+        this.style.display = 'none';
+        _confirmTarget = null;
+    }
+});
+
 function toggleGroup(id) {
     var row = document.getElementById(id);
     row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
