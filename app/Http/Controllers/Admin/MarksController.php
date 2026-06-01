@@ -199,7 +199,13 @@ class MarksController extends Controller
                 $rankedPass = collect($passRows)->sortByDesc(fn ($r) => $r['avgPct'] ?? 0)
                     ->values()->map(fn ($r, $i) => array_merge($r, ['rank' => $i + 1]));
 
+                // Single continuous rank across ALL students (pass + fail)
+                $allRanked = collect($rows)->sortByDesc(fn ($r) => $r['avgPct'] ?? 0)
+                    ->values()->map(fn ($r, $i) => array_merge($r, ['rank' => $i + 1]));
+
                 $rankings = $rankedPass;
+                $passRankings = $allRanked->filter(fn ($r) => empty($r['failedSubjects'] ?? []));
+                $failRankings = $allRanked->filter(fn ($r) => !empty($r['failedSubjects'] ?? []));
 
                 foreach ($analyticsSubjects as $subj) {
                     $pcts = []; $grades = [];
@@ -280,8 +286,8 @@ class MarksController extends Controller
             'submissionStatus' => $submissionStatus,
             'allSubmitted' => $allSubmitted ?? false,
             'pendingSubjects' => $pendingSubjects ?? [],
-            'passRankings' => $rankedPass ?? collect(),
-            'failRankings' => $failRows ?? [],
+            'passRankings' => $passRankings ?? collect(),
+            'failRankings' => $failRankings ?? collect(),
         ]);
     }
 

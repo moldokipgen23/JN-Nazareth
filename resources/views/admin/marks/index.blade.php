@@ -285,14 +285,15 @@ function syncSection(form) {
         @endif
 
         {{-- FAIL SECTION --}}
-        @if(!empty($failRankings))
+        @if($failRankings->isNotEmpty())
         <div style="background:#fef2f2;border-radius:12px 12px 0 0;padding:10px 16px;border:1px solid #fecaca;border-bottom:none;">
-            <span style="font-size:13px;font-weight:700;color:#b91c1c;">❌ Needs Improvement — No Rank ({{ count($failRankings) }})</span>
+            <span style="font-size:13px;font-weight:700;color:#b91c1c;">❌ Needs Improvement ({{ $failRankings->count() }})</span>
         </div>
         <div style="background:#fff;overflow-x:auto;border:1px solid #fecaca;border-top:none;border-radius:0 0 12px 12px;margin-bottom:16px;">
             <table style="width:100%;border-collapse:collapse;font-size:13px;">
                 <thead style="background:#fef2f2;">
                     <tr>
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Rank</th>
                         <th style="text-align:left;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Roll</th>
                         <th style="text-align:left;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Student</th>
                         @foreach($analyticsSubjects as $subj)
@@ -305,6 +306,7 @@ function syncSection(form) {
                 <tbody>
                     @foreach($failRankings as $r)
                     <tr style="border-top:1px solid #f1f5f9;">
+                        <td style="text-align:center;padding:10px 10px;"><span style="font-weight:800;color:#b91c1c;">#{{ $r['rank'] }}</span></td>
                         <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']?->roll_number ?: '—' }}</td>
                         <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']?->student?->name ?? '—' }}</td>
                         @foreach($analyticsSubjects as $subj)
@@ -348,7 +350,7 @@ function syncSection(form) {
                 @endforeach
             </div>
         </div>
-    @elseif($passRankings->isEmpty() && empty($failRankings))
+    @elseif($passRankings->isEmpty() && $failRankings->isEmpty())
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">No marks found for this combination.</div>
     @else
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
@@ -356,7 +358,7 @@ function syncSection(form) {
                 <div><span style="font-size:20px;font-weight:700;">{{ $passRankings->count() }}</span> <span style="font-size:12px;">Pass</span></div>
             </div>
             <div style="background:#fee2e2;color:#b91c1c;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;">
-                <div><span style="font-size:20px;font-weight:700;">{{ count($failRankings) }}</span> <span style="font-size:12px;">Needs Improvement</span></div>
+                <div><span style="font-size:20px;font-weight:700;">{{ $failRankings->count() }}</span> <span style="font-size:12px;">Needs Improvement</span></div>
             </div>
         </div>
 
@@ -416,14 +418,15 @@ function syncSection(form) {
         @endif
 
         {{-- FAIL SECTION --}}
-        @if(!empty($failRankings))
+        @if($failRankings->isNotEmpty())
         <div style="background:#fef2f2;border-radius:12px 12px 0 0;padding:10px 16px;border:1px solid #fecaca;border-bottom:none;">
-            <span style="font-size:13px;font-weight:700;color:#b91c1c;">❌ Needs Improvement — No Rank</span>
+            <span style="font-size:13px;font-weight:700;color:#b91c1c;">❌ Needs Improvement ({{ $failRankings->count() }})</span>
         </div>
         <div style="background:#fff;overflow-x:auto;border:1px solid #fecaca;border-top:none;border-radius:0 0 12px 12px;margin-bottom:16px;">
             <table style="width:100%;border-collapse:collapse;font-size:13px;">
                 <thead style="background:#fef2f2;">
                     <tr>
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Rank</th>
                         <th style="text-align:left;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Roll</th>
                         <th style="text-align:left;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Student</th>
                         @foreach($analyticsSubjects as $subj)
@@ -436,6 +439,7 @@ function syncSection(form) {
                 <tbody>
                     @foreach($failRankings as $r)
                     <tr style="border-top:1px solid #f1f5f9;">
+                        <td style="text-align:center;padding:10px 10px;"><span style="font-weight:800;color:#b91c1c;">#{{ $r['rank'] }}</span></td>
                         <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']?->roll_number ?: '—' }}</td>
                         <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']?->student?->name ?? '—' }}</td>
                         @foreach($analyticsSubjects as $subj)
