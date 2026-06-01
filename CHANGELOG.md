@@ -6,6 +6,25 @@ Newest entries on top.
 
 ---
 
+## Session: 2026-06-01 — Per-subject review fixes, Summary tab per-subject ticks
+
+### What changed
+
+#### 🐛 Bugs fixed
+- **Stats showing 0 Pass / 0 Fail / 0 Submitted** — `$stats` variable was overwritten by the submission-status loop (`$stats = $subjectsWithMarks->get($s)`), turning it into a DB row object. Renamed to `$subjStats`.
+- **Grade column showing "—"** — display used `$r->grade` (null when teacher submits without a grade). Added `$r->computedGrade()` as fallback.
+- **Override form overlapping** — Save/Reset buttons and grade input cramped. Added `flex-wrap:nowrap`, `flex-shrink:0`, wider spacing.
+
+#### 🎨 Improved
+- **Summary tab: per-subject status** — each class card now lists every subject individually with ✅ green tick (submitted) or ⏳ (pending), sorted alphabetically, replacing the old count-only display.
+- **Grade input pre-fills computed grade** — admin override grade input defaults to `computedGrade()` so admin sees the suggested grade immediately.
+
+### Files changed
+- `app/Http/Controllers/Admin/MarksController.php` — renamed `$stats` to `$subjStats` in submission-status loop
+- `resources/views/admin/marks/index.blade.php` — grade fallback, override form layout, Summary tab per-subject ticks
+
+---
+
 ## Session: 2026-05-29 — Per-exam marks config, paper-level approval, critical bug fixes
 
 ### What changed
