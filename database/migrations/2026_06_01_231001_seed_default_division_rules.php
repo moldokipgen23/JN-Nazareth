@@ -22,6 +22,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        DivisionRule::truncate();
+        DivisionRule::whereIn('name', ['Excellent', 'Distinction', 'I Division', 'II Division', 'III Division'])->delete();
     }
 };
