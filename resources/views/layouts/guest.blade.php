@@ -98,7 +98,6 @@
             outline: none;
         }
         .glass-card input[type=checkbox] {
-            background: rgba(255, 255, 255, .08);
             border-color: rgba(148, 163, 184, .35);
         }
         .glass-card .text-sm,

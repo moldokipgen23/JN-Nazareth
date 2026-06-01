@@ -6,7 +6,24 @@ Newest entries on top.
 
 ---
 
-## Session: 2026-06-02 — Fully independent admin/teacher portals with separate auth guards
+## Session: 2026-06-02 — Remember Me checkbox tick fix, middleware ordering, auth exception redirect
+
+### What changed
+
+#### 🐛 Bugs fixed
+- **Remember Me checkbox tick invisible** — `resources/views/layouts/guest.blade.php` used `background: rgba(...)` (CSS shorthand) which reset `background-image: none` and had higher specificity than Tailwind's `:where()` selector, preventing the white SVG checkmark from rendering. Fixed by removing the `background` override and letting Tailwind handle it.
+- **500 error on hard refresh (Cmd+Shift+R) for teacher routes** — `SetWorkingYear` middleware ran *before* `StartSession` (both were prepended to web group), causing `session()` to access an empty store. Moved `SetWorkingYear` and `NoHttpCache` to `append` (after default web middleware) so the session is started by the time they run.
+
+#### 🔧 Improved
+- **Teacher auth exception now redirects to teacher login** — Previously, hitting a `auth:teacher`-protected page while unauthenticated returned `abort(404)`. Now redirects to `route('teacher.login')` so users see the login form instead of a 404/500 error.
+- **Middleware order refactored in `bootstrap/app.php`**: `TeacherSession` stays prepended (needs to run before `StartSession`), `NoHttpCache` and `SetWorkingYear` moved to appended (need the session available).
+
+### Files changed
+- `resources/views/layouts/guest.blade.php` — removed `background` shorthand from checkbox CSS
+- `bootstrap/app.php` — fixed middleware order, changed auth exception redirect to teacher login
+
+### Notes
+- The "auto-login to teacher dashboard when admin is logged in" is likely caused by a lingering teacher remember-me cookie from a previous teacher login session. To force-logout, visit `/teacher/logout` or clear browser cookies.
 
 ### What changed
 

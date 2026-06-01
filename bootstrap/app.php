@@ -17,17 +17,18 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->web(prepend: [
+            \App\Http\Middleware\TeacherSession::class,   // must be before StartSession
+        ]);
+
+        $middleware->web(append: [
             \App\Http\Middleware\NoHttpCache::class,
-            \App\Http\Middleware\TeacherSession::class,
-            \App\Http\Middleware\SetWorkingYear::class,
+            \App\Http\Middleware\SetWorkingYear::class,   // needs session started
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
-            // Teacher-protected pages show 404 instead of redirecting to login,
-            // EXCEPT for the logout route (needs to work when authenticated).
             if ($request->is('teacher*') && ! $request->is('teacher/logout')) {
-                abort(404);
+                return redirect()->guest(route('teacher.login'));
             }
             return redirect()->guest(route('login'));
         });
