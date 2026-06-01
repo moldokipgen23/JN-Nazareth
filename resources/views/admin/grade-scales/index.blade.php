@@ -1,12 +1,24 @@
 @extends('layouts.admin')
-@section('page-title', 'Grade Scale')
+@section('page-title', 'Grade Scale & Division Rules')
 
 @section('content')
 
+{{-- Tabs --}}
+<div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid #e2e8f0;padding-bottom:0;">
+    <a href="{{ route('admin.grade-scales.index', ['tab' => 'grades']) }}" style="padding:10px 18px;font-size:13px;font-weight:700;text-decoration:none;border-radius:8px 8px 0 0;{{ $tab === 'grades' ? 'background:#fff;color:#0f766e;border:2px solid #e2e8f0;border-bottom-color:#fff;margin-bottom:-2px;' : 'color:#64748b;' }}">
+        📊 Grade Scale (CGPA)
+    </a>
+    <a href="{{ route('admin.grade-scales.index', ['tab' => 'divisions']) }}" style="padding:10px 18px;font-size:13px;font-weight:700;text-decoration:none;border-radius:8px 8px 0 0;{{ $tab === 'divisions' ? 'background:#fff;color:#0f766e;border:2px solid #e2e8f0;border-bottom-color:#fff;margin-bottom:-2px;' : 'color:#64748b;' }}">
+        🏆 Division Rules
+    </a>
+</div>
+
+@if($tab === 'grades')
+{{---------- GRADES TAB ----------}}
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
     <div>
         <h1 style="font-size:20px;font-weight:700;color:#0f172a;margin:0;">Grade Scale</h1>
-        <div style="font-size:12px;color:#64748b;margin-top:2px;">Define letter grades, percentage ranges, and grade points</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">Letter grades, percentage ranges, and grade points for CGPA</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <form method="POST" action="{{ route('admin.grade-scales.seed') }}" style="display:inline;">
@@ -19,7 +31,7 @@
     </div>
 </div>
 
-{{-- Add form --}}
+{{-- Add Grade form --}}
 <div id="addGrade" style="display:none;background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(15,23,42,.06);">
     <form method="POST" action="{{ route('admin.grade-scales.store') }}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;align-items:end;">
         @csrf
@@ -51,7 +63,7 @@
     <div style="background:#fff;border-radius:12px;padding:48px 24px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06);">
         <div style="font-size:36px;opacity:.3;margin-bottom:10px;">📊</div>
         <div style="font-weight:600;color:#475569;">No grades configured</div>
-        <div style="font-size:12px;color:#94a3b8;margin-top:6px;">Click "Seed Defaults" to add the standard A+–F scale, or add manually.</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:6px;">Click "Seed Defaults" to add the standard A1–E scale, or add manually.</div>
     </div>
 @else
     <div class="resp-table-wrap" style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(15,23,42,.06);">
@@ -104,6 +116,98 @@
             </tbody>
         </table>
     </div>
+@endif
+
+@elseif($tab === 'divisions')
+{{---------- DIVISIONS TAB ----------}}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+    <div>
+        <h1 style="font-size:20px;font-weight:700;color:#0f172a;margin:0;">Division Rules</h1>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">Define division names based on average percentage</div>
+    </div>
+    <div>
+        <button type="button" onclick="document.getElementById('addDivision').style.display='block'" style="background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+            + Add Division
+        </button>
+    </div>
+</div>
+
+{{-- Add Division form --}}
+<div id="addDivision" style="display:none;background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+    <form method="POST" action="{{ route('admin.division-rules.store') }}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;align-items:end;">
+        @csrf
+        <div>
+            <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Name *</label>
+            <input name="name" required maxlength="50" placeholder="e.g. I Div"
+                   style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
+        </div>
+        <div>
+            <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Min %</label>
+            <input type="number" name="min_percent" required step="0.01" min="0" max="100"
+                   style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
+        </div>
+        <div>
+            <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Max %</label>
+            <input type="number" name="max_percent" required step="0.01" min="0" max="100"
+                   style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;">
+        </div>
+        <button type="submit" style="background:#0f766e;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Save</button>
+    </form>
+</div>
+
+@if($divisions->isEmpty())
+    <div style="background:#fff;border-radius:12px;padding:48px 24px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+        <div style="font-size:36px;opacity:.3;margin-bottom:10px;">🏆</div>
+        <div style="font-weight:600;color:#475569;">No divisions configured</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:6px;">Add division rules like "I Div (60-79)", "II Div (50-59)", etc.</div>
+    </div>
+@else
+    <div class="resp-table-wrap" style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+        <table style="border-collapse:collapse;font-size:13px;">
+            <thead style="background:#f8fafc;">
+                <tr>
+                    <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Name</th>
+                    <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Min %</th>
+                    <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Max %</th>
+                    <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Active</th>
+                    <th style="text-align:right;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach($divisions as $d)
+                <tr style="border-top:1px solid #f1f5f9;">
+                    <form method="POST" action="{{ route('admin.division-rules.update', $d) }}" style="display:contents;">
+                        @csrf @method('PUT')
+                        <td style="padding:10px 14px;font-weight:700;color:#0f172a;">
+                            <input name="name" value="{{ $d->name }}" maxlength="50" required
+                                   style="border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;width:100px;font-weight:700;">
+                        </td>
+                        <td style="padding:10px 14px;">
+                            <input type="number" name="min_percent" value="{{ $d->min_percent }}" step="0.01" min="0" max="100" required
+                                   style="border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;width:70px;">
+                        </td>
+                        <td style="padding:10px 14px;">
+                            <input type="number" name="max_percent" value="{{ $d->max_percent }}" step="0.01" min="0" max="100" required
+                                   style="border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;width:70px;">
+                        </td>
+                        <td style="padding:10px 14px;">
+                            <button type="submit" formaction="{{ route('admin.division-rules.toggle', $d) }}" style="border:none;cursor:pointer;background:{{ $d->is_active ? '#dcfce7' : '#f1f5f9' }};color:{{ $d->is_active ? '#15803d' : '#94a3b8' }};padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;">
+                                {{ $d->is_active ? 'Active' : 'Inactive' }}
+                            </button>
+                        </td>
+                        <td style="padding:10px 14px;text-align:right;display:flex;gap:4px;justify-content:flex-end;">
+                            <button type="submit" style="background:#0f766e;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Save</button>
+                            <button type="submit" formaction="{{ route('admin.division-rules.destroy', $d) }}" formmethod="POST"
+                                    onclick="return confirm('Delete {{ $d->name }}?')"
+                                    style="background:#fff1f2;color:#e11d48;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Delete</button>
+                        </td>
+                    </form>
+                </tr>
+            @endforeach
+            </tbody>
+        </table>
+    </div>
+@endif
 @endif
 
 @endsection

@@ -106,5 +106,37 @@ php8.4 artisan view:clear && php8.4 artisan config:clear && php8.4 artisan view:
 
 ---
 
+## Session: 2026-06-01 (session 2) — CBSE grade scale, continuous ranking, raw marks, pass/fail bug, division rules
+
+### What changed
+
+#### 🆕 New features
+- **CBSE 10-point grade scale** — migration replaces A+/A/B+/B/C+/C/D/F (4.00 scale) with A1/A2/B1/B2/C1/C2/D/E (10.00 scale). `GradeScale::defaultScale()` updated accordingly.
+- **Continuous ranking across ALL students** — pass students get ranks 1–N (by avg% descending); fail students continue at N+1 onward. No separate ranking.
+- **Raw marks per subject + Total column** — subject cells show only the raw mark (e.g. "85" instead of "85/100 A1"). New "Total" column shows sum of raw marks per student.
+- **Division Rules feature** — `division_rules` table, `DivisionRule` model + controller (CRUD + toggle), routes under `/admin/division-rules/*`. Tabbed view under Academics → Grade Scale: "Grade Scale (CGPA)" + "Division Rules". Division column shown on all three Result section tables (pass, fail).
+
+#### 🐛 Bug fixed
+- **Pass/fail split: failedSubjects not propagated** — `$failedSubjects` was set on a local `$r` variable inside the loop, but the actual `$rows` collection was never updated. All students appeared as pass regardless of actual marks. Now builds `$failRows` with `failedSubjects` directly and ranks from there.
+
+#### 🔧 Files changed
+- `database/migrations/2026_06_01_230000_switch_to_cbse_grade_scale.php` — CBSE data migration
+- `database/migrations/2026_06_01_231000_create_division_rules_table.php` — new table
+- `app/Models/DivisionRule.php` — `divisionFor()`, scopes
+- `app/Models/GradeScale.php` — defaultScale returns CBSE scale
+- `app/Http/Controllers/Admin/MarksController.php` — pass/fail key propagation fix, division computation
+- `app/Http/Controllers/Admin/GradeScaleController.php` — tab param, passes divisions
+- `app/Http/Controllers/Admin/DivisionRuleController.php` — CRUD + toggle
+- `resources/views/admin/marks/index.blade.php` — raw marks, Total, Division columns, continuous ranks
+- `resources/views/admin/grade-scales/index.blade.php` — tabbed view
+- `routes/web.php` — division rule routes
+
+#### 🚀 Deployment
+```bash
+git pull origin main && php artisan migrate && php artisan view:clear && php artisan config:clear && php artisan view:cache && php artisan config:cache
+```
+
+---
+
 ## Earlier history
 Pre-2026-05-29 work: see `TODO.md` and `FEATURES.md` for the full feature list and the (already-implemented) earlier roadmap items.

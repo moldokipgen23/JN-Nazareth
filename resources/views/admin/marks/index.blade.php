@@ -257,6 +257,7 @@ function syncSection(form) {
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Total</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Avg %</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">CGPA</th>
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Division</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -278,6 +279,7 @@ function syncSection(form) {
                         <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['totalRaw'] }}</td>
                         <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
                         <td style="text-align:center;padding:10px 10px;font-weight:700;color:#0f766e;">{{ $r['cgpa'] !== null ? number_format($r['cgpa'], 2) : '—' }}</td>
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;color:#475569;">{{ $r['division'] ?? '—' }}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -302,6 +304,7 @@ function syncSection(form) {
                         @endforeach
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Total</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Avg %</th>
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Division</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Failed In</th>
                     </tr>
                 </thead>
@@ -323,6 +326,7 @@ function syncSection(form) {
                         @endforeach
                         <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['totalRaw'] }}</td>
                         <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;color:#475569;">{{ $r['division'] ?? '—' }}</td>
                         <td style="text-align:center;padding:10px 10px;">
                             @if(!empty($r['failedSubjects']))
                                 <span style="font-size:10px;color:#b91c1c;font-weight:600;">{{ implode(', ', $r['failedSubjects']) }}</span>
@@ -382,6 +386,7 @@ function syncSection(form) {
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Total</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Avg %</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">CGPA</th>
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Division</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -413,6 +418,7 @@ function syncSection(form) {
                         <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['totalRaw'] }}</td>
                         <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
                         <td style="text-align:center;padding:10px 10px;font-weight:700;color:#0f766e;">{{ $r['cgpa'] !== null ? number_format($r['cgpa'], 2) : '—' }}</td>
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;color:#475569;">{{ $r['division'] ?? '—' }}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -437,6 +443,7 @@ function syncSection(form) {
                         @endforeach
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Total</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Avg %</th>
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Division</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Failed In</th>
                     </tr>
                 </thead>
@@ -458,6 +465,7 @@ function syncSection(form) {
                         @endforeach
                         <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['totalRaw'] }}</td>
                         <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;color:#475569;">{{ $r['division'] ?? '—' }}</td>
                         <td style="text-align:center;padding:10px 10px;">
                             @if(!empty($r['failedSubjects']))
                                 <span style="font-size:10px;color:#b91c1c;font-weight:600;">{{ implode(', ', $r['failedSubjects']) }}</span>

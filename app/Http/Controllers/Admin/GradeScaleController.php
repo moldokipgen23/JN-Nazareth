@@ -3,16 +3,19 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\DivisionRule;
 use App\Models\GradeScale;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class GradeScaleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $tab = $request->query('tab', 'grades');
         $grades = GradeScale::orderBy('min_percent')->orderBy('name')->get();
-        return view('admin.grade-scales.index', compact('grades'));
+        $divisions = DivisionRule::orderBy('min_percent')->get();
+        return view('admin.grade-scales.index', compact('grades', 'divisions', 'tab'));
     }
 
     public function store(Request $request)

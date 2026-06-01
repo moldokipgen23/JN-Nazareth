@@ -347,6 +347,12 @@ Route::prefix('admin')
             Route::delete('grade-scales/{gradeScale}', [GradeScaleController::class, 'destroy'])->name('grade-scales.destroy');
             Route::post('grade-scales/{gradeScale}/toggle', [GradeScaleController::class, 'toggle'])->name('grade-scales.toggle');
             Route::post('grade-scales/seed', [GradeScaleController::class, 'seed'])->name('grade-scales.seed');
+
+            // Division Rules
+            Route::post('division-rules', [\App\Http\Controllers\Admin\DivisionRuleController::class, 'store'])->name('division-rules.store');
+            Route::put('division-rules/{divisionRule}', [\App\Http\Controllers\Admin\DivisionRuleController::class, 'update'])->name('division-rules.update');
+            Route::delete('division-rules/{divisionRule}', [\App\Http\Controllers\Admin\DivisionRuleController::class, 'destroy'])->name('division-rules.destroy');
+            Route::post('division-rules/{divisionRule}/toggle', [\App\Http\Controllers\Admin\DivisionRuleController::class, 'toggle'])->name('division-rules.toggle');
         });
 
         // Sections — admin only

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
 use App\Models\Exam;
+use App\Models\DivisionRule;
 use App\Models\GradeScale;
 use App\Models\Mark;
 use App\Models\Student;
@@ -162,7 +163,8 @@ class MarksController extends Controller
                     }
                     $c = $row['markedSubjects'];
                     $row['avgPct'] = $c > 0 ? round($row['totalPct'] / $c, 2) : null;
-                    $row['cgpa']   = $c > 0 ? round($row['totalGp'] / $c, 2) : null;
+                    $row['cgpa']     = $c > 0 ? round($row['totalGp'] / $c, 2) : null;
+                    $row['division'] = $row['avgPct'] !== null ? DivisionRule::divisionFor($row['avgPct'])?->name : null;
                     $rows[] = $row;
                 }
 
