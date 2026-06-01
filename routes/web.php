@@ -86,8 +86,11 @@ Route::post('/inquiry', [PublicInquiryController::class, 'store'])
 // ---------------------------------------------------------------------------
 
 Route::get('/dashboard', function () {
+    if (Auth::guard('teacher')->check()) {
+        return redirect()->route('teacher.dashboard');
+    }
     return redirect()->route('admin.dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth:web,teacher'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

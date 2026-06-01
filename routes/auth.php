@@ -24,12 +24,6 @@ Route::middleware('guest')->group(function () {
         ->name('login');
     Route::post(login_path('admin'), [AuthenticatedSessionController::class, 'store']);
 
-    // Teacher login — uses teacher guard for independent session.
-    Route::get(login_path('teacher'), [AuthenticatedSessionController::class, 'createTeacher'])
-        ->name('teacher.login')->middleware('guest:teacher');
-    Route::post(login_path('teacher'), [AuthenticatedSessionController::class, 'store'])
-        ->name('teacher.login.store')->middleware('guest:teacher');
-
     // Emergency fallback — always available.
     Route::get(EMERGENCY_LOGIN_PATH, [AuthenticatedSessionController::class, 'create']);
     Route::post(EMERGENCY_LOGIN_PATH, [AuthenticatedSessionController::class, 'store']);
@@ -43,8 +37,18 @@ Route::middleware('guest')->group(function () {
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
         ->name('password.reset');
 
-    Route::post('reset-password', [NewPasswordController::class, 'store'])
+    Route::post('reset-password/{token}', [NewPasswordController::class, 'store'])
         ->name('password.store');
+});
+
+// Teacher login — separate guard, separate session.
+// Uses its own 'guest:teacher' middleware so admin (web guard) can
+// simultaneously log in as teacher in a different tab.
+Route::middleware('guest:teacher')->group(function () {
+    Route::get(login_path('teacher'), [AuthenticatedSessionController::class, 'createTeacher'])
+        ->name('teacher.login');
+    Route::post(login_path('teacher'), [AuthenticatedSessionController::class, 'store'])
+        ->name('teacher.login.store');
 });
 
 Route::middleware('auth')->group(function () {
