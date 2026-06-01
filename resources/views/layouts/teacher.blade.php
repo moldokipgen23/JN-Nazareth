@@ -13,7 +13,7 @@
     @php
         $favicon = \App\Helpers\Settings::get('favicon')
             ? \App\Helpers\Settings::storageUrl(\App\Helpers\Settings::get('favicon'))
-            : asset('icon-192.svg');
+            : asset('icon-192.png');
     @endphp
     <link rel="icon" href="{{ $favicon }}">
     <link rel="apple-touch-icon" href="{{ asset('icon-192.png') }}">
