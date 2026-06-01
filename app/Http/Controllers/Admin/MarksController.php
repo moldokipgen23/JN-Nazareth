@@ -146,7 +146,7 @@ class MarksController extends Controller
 
                 foreach ($enrollments as $enrollment) {
                     $studentMarks = $marks->get($enrollment->id, collect());
-                    $row = ['enrollment' => $enrollment, 'subjectData' => [], 'totalPct' => 0, 'totalGp' => 0, 'markedSubjects' => 0, 'submitted' => true];
+                    $row = ['enrollment' => $enrollment, 'subjectData' => [], 'totalPct' => 0, 'totalGp' => 0, 'totalRaw' => 0, 'markedSubjects' => 0, 'submitted' => true];
                     foreach ($analyticsSubjects as $subj) {
                         $mark = $studentMarks->firstWhere('subject', $subj);
                         if ($mark && $mark->total_marks !== null) {
@@ -156,7 +156,7 @@ class MarksController extends Controller
                             // Pass% = (pass_marks / full_marks) * 100 — keeps comparisons unit-safe when full ≠ 100
                             $passPct = ($mark->full_marks > 0) ? round((float) $mark->pass_marks / (float) $mark->full_marks * 100, 2) : 33;
                             $row['subjectData'][$subj] = ['pct' => $pct, 'grade' => $mark->computedGrade() ?? $mark->grade, 'gp' => $gp, 'passPct' => $passPct, 'raw' => $raw, 'full' => $mark->full_marks];
-                            if ($pct !== null) { $row['totalPct'] += $pct; $row['totalGp'] += ($gp ?? 0); $row['markedSubjects']++; }
+                            if ($pct !== null) { $row['totalPct'] += $pct; $row['totalGp'] += ($gp ?? 0); $row['totalRaw'] += $raw; $row['markedSubjects']++; }
                             if (!$mark->submitted_at) $row['submitted'] = false;
                         } else { $row['subjectData'][$subj] = null; $row['submitted'] = false; }
                     }

@@ -254,6 +254,7 @@ function syncSection(form) {
                         @foreach($analyticsSubjects as $subj)
                             <th style="text-align:center;padding:10px 6px;font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">{{ $subj }}</th>
                         @endforeach
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Total</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Avg %</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">CGPA</th>
                     </tr>
@@ -268,13 +269,13 @@ function syncSection(form) {
                             @php $sd = $r['subjectData'][$subj] ?? null; @endphp
                             <td style="text-align:center;padding:10px 6px;font-size:12px;">
                                 @if($sd && $sd['pct'] !== null)
-                                    <span style="font-weight:600;">{{ $sd['raw'] }}</span><span style="font-size:10px;color:#94a3b8;">/{{ $sd['full'] }}</span>
-                                    <span style="font-size:10px;color:#94a3b8;margin-left:2px;">{{ $sd['grade'] ?? '' }}</span>
+                                    <span style="font-weight:600;">{{ $sd['raw'] }}</span>
                                 @else
                                     <span style="color:#cbd5e1;">—</span>
                                 @endif
                             </td>
                         @endforeach
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['totalRaw'] }}</td>
                         <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
                         <td style="text-align:center;padding:10px 10px;font-weight:700;color:#0f766e;">{{ $r['cgpa'] !== null ? number_format($r['cgpa'], 2) : '—' }}</td>
                     </tr>
@@ -299,6 +300,7 @@ function syncSection(form) {
                         @foreach($analyticsSubjects as $subj)
                             <th style="text-align:center;padding:10px 6px;font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">{{ $subj }}</th>
                         @endforeach
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Total</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Avg %</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Failed In</th>
                     </tr>
@@ -313,13 +315,13 @@ function syncSection(form) {
                             @php $sd = $r['subjectData'][$subj] ?? null; @endphp
                             <td style="text-align:center;padding:10px 6px;font-size:12px;">
                                 @if($sd && $sd['pct'] !== null)
-                                    <span style="font-weight:600;">{{ $sd['raw'] }}</span><span style="font-size:10px;color:#94a3b8;">/{{ $sd['full'] }}</span>
-                                    <span style="font-size:10px;color:#94a3b8;margin-left:2px;">{{ $sd['grade'] ?? '' }}</span>
+                                    <span style="font-weight:600;">{{ $sd['raw'] }}</span>
                                 @else
                                     <span style="color:#e2e8f0;">—</span>
                                 @endif
                             </td>
                         @endforeach
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['totalRaw'] }}</td>
                         <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
                         <td style="text-align:center;padding:10px 10px;">
                             @if(!empty($r['failedSubjects']))
@@ -377,6 +379,7 @@ function syncSection(form) {
                         @foreach($analyticsSubjects as $subj)
                             <th style="text-align:center;padding:10px 6px;font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">{{ $subj }}</th>
                         @endforeach
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Total</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Avg %</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">CGPA</th>
                     </tr>
@@ -401,13 +404,13 @@ function syncSection(form) {
                             @php $sd = $r['subjectData'][$subj] ?? null; @endphp
                             <td style="text-align:center;padding:10px 6px;font-size:12px;">
                                 @if($sd && $sd['pct'] !== null)
-                                    <span style="font-weight:600;">{{ $sd['raw'] }}</span><span style="font-size:10px;color:#94a3b8;">/{{ $sd['full'] }}</span>
-                                    <span style="font-size:10px;color:#94a3b8;margin-left:2px;">{{ $sd['grade'] ?? '' }}</span>
+                                    <span style="font-weight:600;">{{ $sd['raw'] }}</span>
                                 @else
                                     <span style="color:#cbd5e1;">—</span>
                                 @endif
                             </td>
                         @endforeach
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['totalRaw'] }}</td>
                         <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
                         <td style="text-align:center;padding:10px 10px;font-weight:700;color:#0f766e;">{{ $r['cgpa'] !== null ? number_format($r['cgpa'], 2) : '—' }}</td>
                     </tr>
@@ -432,6 +435,7 @@ function syncSection(form) {
                         @foreach($analyticsSubjects as $subj)
                             <th style="text-align:center;padding:10px 6px;font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">{{ $subj }}</th>
                         @endforeach
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Total</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Avg %</th>
                         <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Failed In</th>
                     </tr>
@@ -446,13 +450,13 @@ function syncSection(form) {
                             @php $sd = $r['subjectData'][$subj] ?? null; @endphp
                             <td style="text-align:center;padding:10px 6px;font-size:12px;">
                                 @if($sd && $sd['pct'] !== null)
-                                    <span style="font-weight:600;">{{ $sd['raw'] }}</span><span style="font-size:10px;color:#94a3b8;">/{{ $sd['full'] }}</span>
-                                    <span style="font-size:10px;color:#94a3b8;margin-left:2px;">{{ $sd['grade'] ?? '' }}</span>
+                                    <span style="font-weight:600;">{{ $sd['raw'] }}</span>
                                 @else
                                     <span style="color:#e2e8f0;">—</span>
                                 @endif
                             </td>
                         @endforeach
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['totalRaw'] }}</td>
                         <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
                         <td style="text-align:center;padding:10px 10px;">
                             @if(!empty($r['failedSubjects']))
