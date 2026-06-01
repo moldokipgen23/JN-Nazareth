@@ -6,6 +6,31 @@ Newest entries on top.
 
 ---
 
+## Session: 2026-06-02 — Fully independent admin/teacher portals with separate auth guards
+
+### What changed
+
+#### 🐛 Bugs fixed
+- **Admin & teacher cannot be logged in simultaneously** — both used the same `web` auth guard, causing colliding remember-me cookies (`remember_web_<hash>`). Teacher's remember token would overwrite admin's, and vice versa.
+
+#### 🏗️ Architecture
+- **Added `teacher` auth guard** in `config/auth.php` — uses the same `users` provider but stores auth state under a different session key (`login_teacher_<hash>` vs `login_web_<hash>`). This gives each portal its own remember-me cookie name, so they never collide.
+- **Teacher routes now use `auth:teacher`** middleware instead of the shared `auth` guard.
+- **Teacher login routes use `guest:teacher`** middleware so the teacher login page checks the teacher guard, not the admin one.
+- **`RoleMiddleware`** detects the correct guard from the route prefix (`teacher*` → teacher guard).
+- **`AuthenticatedSessionController`** uses `Auth::guard('teacher')` for teacher login/logout.
+- **`LoginRequest`** accepts an optional `$guard` parameter.
+
+### Files changed
+- `config/auth.php` — added `teacher` guard
+- `routes/web.php` — teacher routes use `auth:teacher`
+- `routes/auth.php` — teacher login routes use `guest:teacher`
+- `app/Http/Middleware/RoleMiddleware.php` — detect guard from route prefix
+- `app/Http/Requests/Auth/LoginRequest.php` — authenticate() accepts guard param
+- `app/Http/Controllers/Auth/AuthenticatedSessionController.php` — use teacher guard
+
+---
+
 ## Session: 2026-06-01 — Per-subject review fixes, Summary tab per-subject ticks
 
 ### What changed
