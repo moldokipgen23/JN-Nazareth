@@ -267,9 +267,9 @@ function syncSection(form) {
                         @foreach($analyticsSubjects as $subj)
                             @php $sd = $r['subjectData'][$subj] ?? null; @endphp
                             <td style="text-align:center;padding:10px 6px;font-size:12px;">
-                                @if($sd)
-                                    <span style="font-weight:600;">{{ $sd['pct'] !== null ? $sd['pct'].'%' : '—' }}</span>
-                                    <span style="font-size:10px;color:#94a3b8;">{{ $sd['grade'] ?? '' }}</span>
+                                @if($sd && $sd['pct'] !== null)
+                                    <span style="font-weight:600;">{{ $sd['raw'] }}</span><span style="font-size:10px;color:#94a3b8;">/{{ $sd['full'] }}</span>
+                                    <span style="font-size:10px;color:#94a3b8;margin-left:2px;">{{ $sd['grade'] ?? '' }}</span>
                                 @else
                                     <span style="color:#cbd5e1;">—</span>
                                 @endif
@@ -313,8 +313,8 @@ function syncSection(form) {
                             @php $sd = $r['subjectData'][$subj] ?? null; @endphp
                             <td style="text-align:center;padding:10px 6px;font-size:12px;">
                                 @if($sd && $sd['pct'] !== null)
-                                    <span style="font-weight:600;">{{ $sd['pct'].'%' }}</span>
-                                    <span style="font-size:10px;color:#94a3b8;">{{ $sd['grade'] ?? '' }}</span>
+                                    <span style="font-weight:600;">{{ $sd['raw'] }}</span><span style="font-size:10px;color:#94a3b8;">/{{ $sd['full'] }}</span>
+                                    <span style="font-size:10px;color:#94a3b8;margin-left:2px;">{{ $sd['grade'] ?? '' }}</span>
                                 @else
                                     <span style="color:#e2e8f0;">—</span>
                                 @endif
@@ -400,9 +400,9 @@ function syncSection(form) {
                         @foreach($analyticsSubjects as $subj)
                             @php $sd = $r['subjectData'][$subj] ?? null; @endphp
                             <td style="text-align:center;padding:10px 6px;font-size:12px;">
-                                @if($sd)
-                                    <span style="font-weight:600;">{{ $sd['pct'] !== null ? $sd['pct'].'%' : '—' }}</span>
-                                    <span style="font-size:10px;color:#94a3b8;">{{ $sd['grade'] ?? '' }}</span>
+                                @if($sd && $sd['pct'] !== null)
+                                    <span style="font-weight:600;">{{ $sd['raw'] }}</span><span style="font-size:10px;color:#94a3b8;">/{{ $sd['full'] }}</span>
+                                    <span style="font-size:10px;color:#94a3b8;margin-left:2px;">{{ $sd['grade'] ?? '' }}</span>
                                 @else
                                     <span style="color:#cbd5e1;">—</span>
                                 @endif
@@ -446,8 +446,8 @@ function syncSection(form) {
                             @php $sd = $r['subjectData'][$subj] ?? null; @endphp
                             <td style="text-align:center;padding:10px 6px;font-size:12px;">
                                 @if($sd && $sd['pct'] !== null)
-                                    <span style="font-weight:600;">{{ $sd['pct'].'%' }}</span>
-                                    <span style="font-size:10px;color:#94a3b8;">{{ $sd['grade'] ?? '' }}</span>
+                                    <span style="font-weight:600;">{{ $sd['raw'] }}</span><span style="font-size:10px;color:#94a3b8;">/{{ $sd['full'] }}</span>
+                                    <span style="font-size:10px;color:#94a3b8;margin-left:2px;">{{ $sd['grade'] ?? '' }}</span>
                                 @else
                                     <span style="color:#e2e8f0;">—</span>
                                 @endif

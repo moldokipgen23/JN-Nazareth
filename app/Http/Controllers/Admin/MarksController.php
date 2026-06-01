@@ -152,9 +152,10 @@ class MarksController extends Controller
                         if ($mark && $mark->total_marks !== null) {
                             $pct = $mark->percentage();
                             $gp  = $mark->computedGradePoint();
+                            $raw = $mark->obtained_marks ?? $mark->total_marks;
                             // Pass% = (pass_marks / full_marks) * 100 — keeps comparisons unit-safe when full ≠ 100
                             $passPct = ($mark->full_marks > 0) ? round((float) $mark->pass_marks / (float) $mark->full_marks * 100, 2) : 33;
-                            $row['subjectData'][$subj] = ['pct' => $pct, 'grade' => $mark->computedGrade() ?? $mark->grade, 'gp' => $gp, 'passPct' => $passPct];
+                            $row['subjectData'][$subj] = ['pct' => $pct, 'grade' => $mark->computedGrade() ?? $mark->grade, 'gp' => $gp, 'passPct' => $passPct, 'raw' => $raw, 'full' => $mark->full_marks];
                             if ($pct !== null) { $row['totalPct'] += $pct; $row['totalGp'] += ($gp ?? 0); $row['markedSubjects']++; }
                             if (!$mark->submitted_at) $row['submitted'] = false;
                         } else { $row['subjectData'][$subj] = null; $row['submitted'] = false; }
