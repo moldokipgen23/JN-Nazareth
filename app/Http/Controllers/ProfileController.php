@@ -48,7 +48,8 @@ class ProfileController extends Controller
             }
         }
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        $redirectRoute = auth('teacher')->check() ? 'teacher.profile.edit' : 'profile.edit';
+        return Redirect::route($redirectRoute)->with('status', 'profile-updated');
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -59,7 +60,11 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        Auth::logout();
+        if (auth('teacher')->check()) {
+            auth('teacher')->logout();
+        } else {
+            Auth::logout();
+        }
 
         $user->delete();
 
