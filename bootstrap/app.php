@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->web(prepend: [
+            \App\Http\Middleware\NoHttpCache::class,
             \App\Http\Middleware\TeacherSession::class,
             \App\Http\Middleware\SetWorkingYear::class,
         ]);
