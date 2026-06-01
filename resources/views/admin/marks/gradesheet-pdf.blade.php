@@ -50,6 +50,7 @@
             @endforeach
             <th style="min-width:32px;">Total</th>
             <th style="min-width:28px;">Avg %</th>
+            <th style="min-width:28px;">Division</th>
         </tr>
     </thead>
     <tbody>
@@ -70,6 +71,7 @@
             @endforeach
             <td style="font-weight:700;">{{ $r['totalObtained'] }}/{{ $r['totalFull'] }}</td>
             <td style="font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
+            <td style="font-weight:700;">{{ $r['division'] ?? '—' }}</td>
         </tr>
         @endforeach
     </tbody>

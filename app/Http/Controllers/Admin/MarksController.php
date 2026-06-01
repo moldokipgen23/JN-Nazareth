@@ -638,6 +638,7 @@ class MarksController extends Controller
                 if ($total !== null) { $row['totalObtained'] += (float) $total; $row['totalFull'] += (float) $full; }
             }
             $row['avgPct'] = $row['totalFull'] > 0 ? round(($row['totalObtained'] / $row['totalFull']) * 100, 2) : null;
+            $row['division'] = $row['avgPct'] !== null ? DivisionRule::divisionFor($row['avgPct'])?->name : null;
             $rows[] = $row;
         }
 
@@ -648,6 +649,7 @@ class MarksController extends Controller
             foreach ($subjects as $subj) { $header[] = $subj.' (T/F)'; }
             $header[] = 'Total (Obt/Full)';
             $header[] = 'Avg %';
+            $header[] = 'Division';
 
             $csv = implode(',', array_map(fn($h) => '"'.$h.'"', $header))."\n";
             foreach ($rows as $i => $r) {
@@ -658,6 +660,7 @@ class MarksController extends Controller
                 }
                 $line[] = $r['totalObtained'].'/'.$r['totalFull'];
                 $line[] = $r['avgPct'] !== null ? $r['avgPct'].'%' : '';
+                $line[] = $r['division'] ?? '';
                 $csv .= implode(',', $line)."\n";
             }
 
@@ -835,6 +838,7 @@ class MarksController extends Controller
             $c = $row['markedSubjects'];
             $row['avgPct'] = $c > 0 ? round($row['totalPct'] / $c, 2) : null;
             $row['cgpa']   = $c > 0 ? round($row['totalGp'] / $c, 2) : null;
+            $row['division'] = $row['avgPct'] !== null ? DivisionRule::divisionFor($row['avgPct'])?->name : null;
             $rows[] = $row;
         }
 
@@ -865,7 +869,7 @@ class MarksController extends Controller
         $lines[] = $exam->name.($exam->code ? ' ('.$exam->code.')' : '');
         $lines[] = 'Class: '.$class.($section ? ' - Section '.$section : '');
         $lines[] = '';
-        $lines[] = 'Rank,Roll No,Student Name'.($showSubjectWise ? implode('', array_map(fn($s) => ','.$s.' (%)', $classData['subjects'])) : '').',Avg %,CGPA';
+        $lines[] = 'Rank,Roll No,Student Name'.($showSubjectWise ? implode('', array_map(fn($s) => ','.$s.' (%)', $classData['subjects'])) : '').',Avg %,CGPA,Division';
         $lines[] = str_repeat('-', 80);
 
         foreach ($classData['rankings'] as $r) {
@@ -878,6 +882,7 @@ class MarksController extends Controller
             }
             $row[] = $r['avgPct'] !== null ? $r['avgPct'].'%' : '';
             $row[] = $r['cgpa'] !== null ? number_format($r['cgpa'], 2) : '';
+            $row[] = $r['division'] ?? '';
             $lines[] = implode(',', $row);
         }
 

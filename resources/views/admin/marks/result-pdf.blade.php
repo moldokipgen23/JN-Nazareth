@@ -95,6 +95,7 @@
                 @endif
                 <th style="min-width:44px;">Avg %</th>
                 <th style="min-width:32px;">CGPA</th>
+                <th style="min-width:32px;">Division</th>
             </tr>
         </thead>
         <tbody>
@@ -124,6 +125,7 @@
                 @endif
                 <td style="font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
                 <td style="font-weight:700;color:#4f46e5;">{{ $r['cgpa'] !== null ? number_format($r['cgpa'], 2) : '—' }}</td>
+                <td style="font-weight:700;">{{ $r['division'] ?? '—' }}</td>
             </tr>
             @endforeach
         </tbody>
