@@ -138,5 +138,24 @@ git pull origin main && php artisan migrate && php artisan view:clear && php art
 
 ---
 
+## Session: 2026-06-01 (session 3) — Mark fix, Rankings removed, admin override fix, per-subject breakdown
+
+### What changed
+
+#### 🐛 Critical fix
+- **Admin override no longer resets `submitted_at`** — Previously, when an admin edited a mark in Per-Subject Review, `submitted_at` was set to `null`. This made the subject appear "incomplete" and hid the entire class from Rankings/Results until a teacher re-submitted. Now admin edits preserve `submitted_at`.
+
+#### 🔧 Fixes
+- **Subject stats now include ALL students** — The per-subject avg/high/low stats (shown in Results tab) previously only included pass students. Now they include both pass and fail students for accurate class-wide numbers.
+
+#### 🗑️ Removed
+- **Rankings tab removed** — It was identical to the Results tab (same tables, same columns, same logic). The Results tab now shows the subject stats cards that were previously only on the Rankings tab. The Rankings tab link and its entire `@elseif($view === 'rankings')` block have been deleted.
+
+#### 🔧 Files changed
+- `app/Http/Controllers/Admin/MarksController.php` — removed `submitted_at => null` from admin update; merged pass+fail students into subject stats
+- `resources/views/admin/marks/index.blade.php` — removed Rankings tab, added subject stats to Results tab
+
+---
+
 ## Earlier history
 Pre-2026-05-29 work: see `TODO.md` and `FEATURES.md` for the full feature list and the (already-implemented) earlier roadmap items.

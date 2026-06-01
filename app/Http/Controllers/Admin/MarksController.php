@@ -212,9 +212,10 @@ class MarksController extends Controller
                 $passRankings = $rankedPass;
                 $failRankings = $rankedFail;
 
+                $allRanked = $rankedPass->concat($rankedFail);
                 foreach ($analyticsSubjects as $subj) {
                     $pcts = []; $grades = [];
-                    foreach ($rankedPass as $r) {
+                    foreach ($allRanked as $r) {
                         $sd = $r['subjectData'][$subj] ?? null;
                         if ($sd && $sd['pct'] !== null) { $pcts[] = $sd['pct']; $grades[] = $sd['grade']; }
                     }
@@ -916,11 +917,10 @@ class MarksController extends Controller
             'obtained_marks'   => $data['total_marks'] ?? $data['obtained_marks'] ?? null,
             'grade'            => $data['grade'] ?? $mark->computedGrade(),
             'remarks'          => $data['remarks'] ?? null,
-            'submitted_at'     => null, // Reset submission on admin override
             'entered_by'       => auth()->id(),
         ]);
 
-        return back()->with('success', 'Mark updated and submission reset.');
+        return back()->with('success', 'Mark updated.');
     }
 
     public function examSummary(Request $request)
