@@ -44,6 +44,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\InquiryController as PublicInquiryController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Illuminate\Support\Facades\Route;
 
 // ---------------------------------------------------------------------------

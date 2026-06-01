@@ -43,7 +43,7 @@
     @if($view !== 'summary')
     <div>
         <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Class / Section</label>
-        <select name="class" onchange="syncSection(this.form); this.form.submit()" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;min-width:160px;">
+        <select name="class" onchange="syncSection(this.form)" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;min-width:160px;">
             <option value="">— pick —</option>
             @foreach($slots as $s)
                 <option value="{{ $s->class }}" data-section="{{ $s->section }}"
@@ -465,7 +465,7 @@ function syncSection(form) {
         @endif
 
         {{-- School-wide aggregate export --}}
-        @if($examId)
+        @if($examId && $year)
         @php
             $_pendingSchool = [];
             $_csByClass = \App\Models\ClassSubject::where('academic_year_id', $year->id)
@@ -485,7 +485,7 @@ function syncSection(form) {
                             ->where('section', $_sec)->where('subject', $_subj)
                             ->whereNotNull('submitted_at')->count();
                         if ($_sub < $_enrolled) {
-                            $_pendingSchool[] = "$_cls–$_sec $_subj";
+                            $_pendingSchool[] = $_cls . '-' . $_sec . ' ' . $_subj;
                         }
                     }
                 }

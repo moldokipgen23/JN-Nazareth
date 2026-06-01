@@ -210,7 +210,7 @@ class MarksController extends Controller
                     $cnt = count($pcts);
                     $subjectStats[$subj] = [
                         'avg' => $cnt > 0 ? round(array_sum($pcts) / $cnt, 2) : null,
-                        'count' => $cnt, 'gradeDist' => array_count_values($grades),
+                        'count' => $cnt, 'gradeDist' => array_count_values(array_filter($grades)),
                         'highest' => $cnt > 0 ? max($pcts) : null,
                         'lowest'  => $cnt > 0 ? min($pcts) : null,
                     ];

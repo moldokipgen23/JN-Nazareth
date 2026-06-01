@@ -81,5 +81,30 @@ Newest entries on top.
 
 ---
 
+## Session: 2026-06-01 — Fixed Results tab 500 & marks filter UX
+
+### What changed
+
+#### 🐛 Bugs fixed
+- **Results tab 500 (array_count_values)** — `array_count_values($grades)` at `MarksController.php:213` crashed when a `grade` was null (no grade scale or ungraded student). Wrapped with `array_filter($grades)` to skip nulls.
+- **Results tab 500 (school-wide export block)** — `$_cls` undefined in compiled view due to en dash `–` in string interpolation and missing null guard for `$year`. Fixed: replaced en dash with regular hyphen, concatenated explicitly, added `$year` check to outer `@if`.
+- **Missing AuthenticatedSessionController import** — `routes/web.php:468` used `AuthenticatedSessionController::class` without `use` statement. Added the import.
+
+#### 🧹 UX improvements
+- **Class dropdown no longer auto-submits** — removed `this.form.submit()` from `onchange` on the class `<select>`. The user now clicks "Filter" manually after picking class + subject, avoiding a confusing page reload before they can select a subject.
+
+#### 🔧 Files changed
+- `app/Http/Controllers/Admin/MarksController.php` — `array_filter` guard on grade distribution.
+- `resources/views/admin/marks/index.blade.php` — class filter no longer auto-submits; school-wide block uses safe string concat + null guard.
+- `routes/web.php` — added missing `use` for `AuthenticatedSessionController`.
+
+#### 🚀 Deployment
+After `git push` + pull on server:
+```bash
+php8.4 artisan view:clear && php8.4 artisan config:clear && php8.4 artisan view:cache && php8.4 artisan config:cache
+```
+
+---
+
 ## Earlier history
 Pre-2026-05-29 work: see `TODO.md` and `FEATURES.md` for the full feature list and the (already-implemented) earlier roadmap items.
