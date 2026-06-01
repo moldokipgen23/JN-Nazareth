@@ -136,7 +136,7 @@ function syncSection(form) {
                             {{ $r->total_marks ?? $r->obtained_marks ?? '—' }}<span style="color:#94a3b8;font-weight:400;"> / {{ $r->full_marks }}</span>
                         </td>
                         <td style="padding:10px 14px;color:#475569;">{{ $r->percentage() !== null ? $r->percentage().'%' : '—' }}</td>
-                        <td style="padding:10px 14px;color:#475569;">{{ $r->grade ?: '—' }}</td>
+                        <td style="padding:10px 14px;color:#475569;">{{ $r->grade ?: $r->computedGrade() ?: '—' }}</td>
                         <td style="padding:10px 14px;">
                             @php
                                 $s = $r->status() ?: 'ungraded';
@@ -159,18 +159,18 @@ function syncSection(form) {
                             @endif
                         </td>
                         <td style="padding:10px 14px;color:#64748b;font-size:12px;">{{ $r->enteredBy?->name ?? '—' }}</td>
-                        <td style="padding:10px 14px;text-align:right;">
-                            <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center;flex-wrap:wrap;">
-                                <form method="POST" action="{{ route('admin.marks.update', $r) }}" style="display:flex;gap:4px;align-items:center;">
+                        <td style="padding:10px 14px;text-align:right;white-space:nowrap;">
+                            <div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;flex-wrap:nowrap;">
+                                <form method="POST" action="{{ route('admin.marks.update', $r) }}" style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
                                     @csrf @method('PUT')
-                                    <input type="number" step="0.01" min="0" max="{{ $r->full_marks }}" name="total_marks" value="{{ $r->total_marks ?? $r->obtained_marks }}" style="width:60px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;text-align:center;">
-                                    <input type="text" name="grade" value="{{ $r->grade }}" maxlength="5" placeholder="grade" style="width:40px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;text-align:center;">
-                                    <button type="submit" style="background:#0f766e;color:#fff;border:none;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;">Save</button>
+                                    <input type="number" step="0.01" min="0" max="{{ $r->full_marks }}" name="total_marks" value="{{ $r->total_marks ?? $r->obtained_marks }}" style="width:58px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;text-align:center;">
+                                    <input type="text" name="grade" value="{{ $r->grade ?: $r->computedGrade() }}" maxlength="5" placeholder="Grd" style="width:38px;padding:4px 4px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;text-align:center;">
+                                    <button type="submit" style="background:#0f766e;color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;">Save</button>
                                 </form>
                                 @if($r->submitted_at)
-                                <form method="POST" action="{{ route('admin.marks.reset-submission', $r) }}" style="display:inline;">
+                                <form method="POST" action="{{ route('admin.marks.reset-submission', $r) }}" style="display:inline;flex-shrink:0;">
                                     @csrf
-                                    <button type="submit" style="background:#fef3c7;color:#92400e;border:none;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;" onclick="return confirm('Reset submission for this student?')">Reset</button>
+                                    <button type="submit" style="background:#fef3c7;color:#92400e;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;" onclick="return confirm('Reset submission for this student?')">Reset</button>
                                 </form>
                                 @endif
                             </div>

@@ -254,11 +254,11 @@ class MarksController extends Controller
 
             if ($classSubjectNames->isNotEmpty()) {
                 foreach ($classSubjectNames as $s) {
-                    $stats = $subjectsWithMarks->get($s);
+                    $subjStats = $subjectsWithMarks->get($s);
                     $submissionStatus->push((object) [
                         'subject' => $s,
-                        'total' => $stats ? (int) $stats->total : 0,
-                        'submitted_count' => $stats ? (int) $stats->submitted_count : 0,
+                        'total' => $subjStats ? (int) $subjStats->total : 0,
+                        'submitted_count' => $subjStats ? (int) $subjStats->submitted_count : 0,
                         'expected' => $totalStudents,
                     ]);
                 }
