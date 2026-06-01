@@ -262,8 +262,18 @@ function syncSection(form) {
                 </thead>
                 <tbody>
                     @foreach($passRankings as $r)
-                    <tr style="border-top:1px solid #f1f5f9;">
-                        <td style="text-align:center;padding:10px 10px;font-weight:800;color:#0f766e;">#{{ $r['rank'] }}</td>
+                    <tr style="border-top:1px solid #f1f5f9;{{ $r['rank'] <= 3 ? 'background:#f0fdf4;' : '' }}">
+                        <td style="text-align:center;padding:10px 10px;">
+                            @if($r['rank'] === 1)
+                                <span style="background:#fbbf24;color:#92400e;border-radius:99px;padding:2px 10px;font-weight:800;font-size:12px;">#{{ $r['rank'] }}</span>
+                            @elseif($r['rank'] === 2)
+                                <span style="background:#e2e8f0;color:#475569;border-radius:99px;padding:2px 10px;font-weight:800;font-size:12px;">#{{ $r['rank'] }}</span>
+                            @elseif($r['rank'] === 3)
+                                <span style="background:#fed7aa;color:#9a3412;border-radius:99px;padding:2px 10px;font-weight:800;font-size:12px;">#{{ $r['rank'] }}</span>
+                            @else
+                                <span style="font-weight:800;color:#64748b;">#{{ $r['rank'] }}</span>
+                            @endif
+                        </td>
                         <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']?->roll_number ?: '—' }}</td>
                         <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']?->student?->name ?? '—' }}</td>
                         @foreach($analyticsSubjects as $subj)
@@ -274,6 +284,73 @@ function syncSection(form) {
                                 @else
                                     <span style="color:#cbd5e1;">—</span>
                                 @endif
+                            </td>
+                        @endforeach
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['totalRaw'] }}</td>
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;color:#0f766e;">{{ $r['cgpa'] !== null ? number_format($r['cgpa'], 2) : '—' }}</td>
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;color:#475569;">{{ $r['division'] ?? '—' }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+
+        {{-- FAIL SECTION --}}
+        @if($failRankings->isNotEmpty())
+        <div style="background:#fef2f2;border-radius:12px 12px 0 0;padding:10px 16px;border:1px solid #fecaca;border-bottom:none;">
+            <span style="font-size:13px;font-weight:700;color:#b91c1c;">❌ Needs Improvement ({{ $failRankings->count() }})</span>
+        </div>
+        <div style="background:#fff;overflow-x:auto;border:1px solid #fecaca;border-top:none;border-radius:0 0 12px 12px;margin-bottom:16px;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead style="background:#fef2f2;">
+                    <tr>
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Rank</th>
+                        <th style="text-align:left;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Roll</th>
+                        <th style="text-align:left;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Student</th>
+                        @foreach($analyticsSubjects as $subj)
+                            <th style="text-align:center;padding:10px 6px;font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">{{ $subj }}</th>
+                        @endforeach
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Total</th>
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Avg %</th>
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Division</th>
+                        <th style="text-align:center;padding:10px 10px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Failed In</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($failRankings as $r)
+                    <tr style="border-top:1px solid #f1f5f9;">
+                        <td style="text-align:center;padding:10px 10px;"><span style="font-weight:800;color:#b91c1c;">#{{ $r['rank'] }}</span></td>
+                        <td style="padding:10px 10px;color:#64748b;">{{ $r['enrollment']?->roll_number ?: '—' }}</td>
+                        <td style="padding:10px 10px;font-weight:600;color:#0f172a;">{{ $r['enrollment']?->student?->name ?? '—' }}</td>
+                        @foreach($analyticsSubjects as $subj)
+                            @php $sd = $r['subjectData'][$subj] ?? null; @endphp
+                            <td style="text-align:center;padding:10px 6px;font-size:12px;">
+                                @if($sd && $sd['pct'] !== null)
+                                    <span style="font-weight:600;">{{ $sd['raw'] }}</span>
+                                @else
+                                    <span style="color:#e2e8f0;">—</span>
+                                @endif
+                            </td>
+                        @endforeach
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['totalRaw'] }}</td>
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
+                        <td style="text-align:center;padding:10px 10px;font-weight:700;color:#475569;">{{ $r['division'] ?? '—' }}</td>
+                        <td style="text-align:center;padding:10px 10px;">
+                            @if(!empty($r['failedSubjects']))
+                                <span style="font-size:10px;color:#b91c1c;font-weight:600;">{{ implode(', ', $r['failedSubjects']) }}</span>
+                            @else
+                                <span style="color:#94a3b8;">—</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+    @endif
                             </td>
                         @endforeach
                         <td style="text-align:center;padding:10px 10px;font-weight:700;">{{ $r['totalRaw'] }}</td>
