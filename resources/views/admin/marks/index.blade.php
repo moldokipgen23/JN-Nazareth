@@ -451,6 +451,7 @@ function syncSection(form) {
                         'enrolled' => $enrolled,
                         'pending' => array_keys(array_filter($perSubject, fn ($v) => !$v)),
                         'complete' => $doneCount >= $totalExp,
+                        'subjects' => $perSubject,
                     ]);
                 }
             }
@@ -468,16 +469,14 @@ function syncSection(form) {
                 <div style="height:6px;background:#f1f5f9;border-radius:99px;overflow:hidden;margin-bottom:8px;">
                     <div style="height:100%;width:{{ $pct }}%;background:{{ $cd['complete'] ? '#22c55e' : '#eab308' }};border-radius:99px;"></div>
                 </div>
-                @if($cd['complete'])
-                    <div style="font-size:11px;color:#15803d;font-weight:600;">✅ All subjects submitted</div>
-                @else
-                    <div style="font-size:11px;color:#92400e;font-weight:600;margin-bottom:4px;">⏳ Pending:</div>
-                    <div style="display:flex;flex-wrap:wrap;gap:3px;">
-                        @foreach($cd['pending'] as $p)
-                            <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:99px;background:#fef3c7;color:#92400e;">{{ $p }}</span>
-                        @endforeach
-                    </div>
-                @endif
+                @php $sorted = collect($cd['subjects'])->sortKeys(); @endphp
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                    @foreach($sorted as $subjName => $submitted)
+                        <span style="font-size:11px;font-weight:600;color:{{ $submitted ? '#15803d' : '#92400e' }};display:flex;align-items:center;gap:4px;">
+                            {{ $submitted ? '✅' : '⏳' }} {{ $subjName }}
+                        </span>
+                    @endforeach
+                </div>
             </div>
             @endforeach
         </div>
