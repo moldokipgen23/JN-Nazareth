@@ -16,10 +16,13 @@ Newest entries on top.
 #### 🏗️ Architecture
 - **Added `teacher` auth guard** in `config/auth.php` — uses the same `users` provider but stores auth state under a different session key (`login_teacher_<hash>` vs `login_web_<hash>`). This gives each portal its own remember-me cookie name, so they never collide.
 - **Teacher routes now use `auth:teacher`** middleware instead of the shared `auth` guard.
-- **Teacher login routes use `guest:teacher`** middleware so the teacher login page checks the teacher guard, not the admin one.
+- **Teacher login routes** are now in their own `guest:teacher` middleware group (separate from the outer `guest` group), so an admin already logged in via the `web` guard can still access the teacher login page in a different tab.
+- **`/dashboard` route** uses `auth:web,teacher` middleware (accepts both guards) and redirects to `teacher.dashboard` or `admin.dashboard` accordingly. This prevents a redirect loop when `guest:teacher` sends an already-authenticated teacher to `/dashboard`.
 - **`RoleMiddleware`** detects the correct guard from the route prefix (`teacher*` → teacher guard).
 - **`AuthenticatedSessionController`** uses `Auth::guard('teacher')` for teacher login/logout.
 - **`LoginRequest`** accepts an optional `$guard` parameter.
+- **No `/login` route** is registered — only the configured slugs (`login_path('admin')` / `login_path('teacher')`) and the emergency path (`cms-recovery-7k3`) serve login pages. Everything else returns 404.  
+- **Logout routes**: admin at `/logout` (web guard), teacher at `/teacher/logout` (teacher guard) — fully independent.
 
 ### Files changed
 - `config/auth.php` — added `teacher` guard
