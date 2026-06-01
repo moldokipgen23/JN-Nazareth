@@ -9,12 +9,23 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, string ...$roles): mixed
     {
-        if (!auth()->check()) {
+        $guard = $request->is('teacher*') ? 'teacher' : 'web';
+
+        if (! auth($guard)->check()) {
+            if ($request->is('teacher*')) {
+                abort(404);
+            }
             return redirect()->route('login');
         }
 
+        $user = auth($guard)->user();
+
         foreach ($roles as $role) {
-            if (auth()->user()->hasRole($role)) {
+            if ($user->hasRole($role)) {
+                // Set on the default guard for convenience in views
+                if ($guard !== 'web') {
+                    auth()->setUser($user);
+                }
                 return $next($request);
             }
         }

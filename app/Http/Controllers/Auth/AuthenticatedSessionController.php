@@ -32,18 +32,21 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        $isTeacher = str_starts_with($request->path(), login_path('teacher'));
+        $guard = $isTeacher ? 'teacher' : 'web';
+
+        $request->authenticate($guard);
 
         $request->session()->regenerate();
 
-        $user = $request->user();
+        $user = Auth::guard($guard)->user();
 
         // Logging in via the teacher login URL — must have a linked teacher profile.
-        if (str_starts_with($request->path(), login_path('teacher'))) {
+        if ($isTeacher) {
             if ($user && $user->teacher) {
                 return redirect()->route('teacher.dashboard');
             }
-            Auth::guard('web')->logout();
+            Auth::guard($guard)->logout();
             $request->session()->invalidate();
             return back()->withErrors([
                 'email' => 'No teacher account found. Contact your school administration.',
@@ -52,7 +55,7 @@ class AuthenticatedSessionController extends Controller
 
         // Admin portal — only admin or staff roles allowed.
         if ($user && ! $user->hasAnyRole(['admin', 'staff'])) {
-            Auth::guard('web')->logout();
+            Auth::guard($guard)->logout();
             $request->session()->invalidate();
             return back()->withErrors([
                 'email' => 'Access denied. Only administrators can use this portal.',
@@ -68,8 +71,9 @@ class AuthenticatedSessionController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         $isTeacher = str_starts_with($request->path(), 'teacher');
+        $guard = $isTeacher ? 'teacher' : 'web';
 
-        Auth::guard('web')->logout();
+        Auth::guard($guard)->logout();
 
         $request->session()->invalidate();
 
