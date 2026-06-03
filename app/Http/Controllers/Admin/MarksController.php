@@ -689,7 +689,7 @@ class MarksController extends Controller
             'rankedFail' => $rankedFail,
             'passCount' => $passCount,
             'failCount' => $failCount,
-        ])->setPaper('a4', 'portrait');
+        ])->setPaper('a4', 'landscape');
 
         $sectionLabel = $section ? '_Sec-'.$section : '';
         $filename = 'class-result_'.$exam->name.'_'.$class.$sectionLabel.'.pdf';
@@ -913,7 +913,7 @@ class MarksController extends Controller
                     'class' => $cs->class,
                     'section' => $cs->section,
                     'showSubjectWise' => $showSubjectWise,
-                ])->setPaper('a4', 'portrait');
+        ])->setPaper('a4', 'landscape');
 
                 $filename = 'result-'.$exam->name.'-'.$cs->class.($cs->section ? '_Sec-'.$cs->section : '').'.pdf';
                 $filename = str_replace(['/', ' '], '_', $filename);

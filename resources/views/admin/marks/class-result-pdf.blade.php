@@ -4,35 +4,33 @@
     <meta charset="utf-8">
     <title>Result — {{ $exam->name }} — {{ $class }}</title>
     <style>
-        @page { margin: 12mm 15mm; }
-        body { font-family:'DejaVu Sans',sans-serif; font-size:9pt; color:#1e293b; line-height:1.4; }
-        .header { text-align:center; margin-bottom:10px; padding-bottom:10px; border-bottom:2px solid #1e3a5f; }
-        .header h1 { font-size:16pt; font-weight:800; color:#1e3a5f; margin:2px 0; }
-        .header p { font-size:8pt; color:#64748b; margin:2px 0; }
-        .result-title { font-size:14pt; font-weight:800; color:#1e3a5f; text-align:center; margin:8px 0 2px; letter-spacing:1px; }
-        .subtitle { text-align:center; font-size:8pt; color:#64748b; margin-bottom:10px; }
-        table { width:100%; border-collapse:collapse; font-size:7.5pt; margin-bottom:6px; }
-        th { padding:4px 4px; text-align:center; font-weight:700; font-size:7pt; }
-        td { padding:3px 4px; text-align:center; border-bottom:1px solid #e2e8f0; }
+        @page { margin: 10mm 12mm; }
+        body { font-family:'DejaVu Sans',sans-serif; font-size:8pt; color:#000; line-height:1.3; }
+        .header { text-align:center; margin-bottom:6px; padding-bottom:6px; border-bottom:2px solid #000; }
+        .header h1 { font-size:14pt; font-weight:700; margin:2px 0; }
+        .header p { font-size:7pt; color:#444; margin:1px 0; }
+        .result-title { font-size:12pt; font-weight:700; text-align:center; margin:6px 0 1px; letter-spacing:0.5px; }
+        .subtitle { text-align:center; font-size:7.5pt; color:#444; margin-bottom:6px; }
+        .summary-line { text-align:center; font-size:7pt; margin-bottom:8px; padding:3px 0; border-top:1px solid #ccc; border-bottom:1px solid #ccc; }
+        .section-head { font-size:8pt; font-weight:700; padding:4px 6px; margin:8px 0 2px; border:1px solid #000; background:#eee; }
+        table { width:100%; border-collapse:collapse; font-size:7pt; margin-bottom:4px; }
+        th { padding:3px 3px; text-align:center; font-weight:700; font-size:6.5pt; border:1px solid #000; }
+        td { padding:2px 3px; text-align:center; border:1px solid #999; }
         td.left { text-align:left; }
-        .pass-header { background:#15803d; color:#fff; }
-        .fail-header { background:#b91c1c; color:#fff; }
-        .section-label { font-size:10pt; font-weight:800; padding:6px 8px; margin:8px 0 4px; border-radius:3px; }
-        .section-pass { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
-        .section-fail { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
-        tr.top-1 td { background:#fef3c7; }
-        tr:nth-child(even) td { background:#f8fafc; }
-        tr.top-1 td { background:#fef3c7; font-weight:700; }
-        .rank-badge { display:inline-block; width:18px; height:18px; border-radius:50%; line-height:18px; font-weight:800; font-size:6.5pt; text-align:center; }
-        .rank-1 { background:#fbbf24; color:#92400e; }
-        .signatures { margin-top:14px; padding-top:8px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; font-size:8pt; }
-        .signatures .sig-line { width:140px; border-top:1px solid #1e293b; margin:24px auto 2px; padding-top:3px; font-weight:600; text-align:center; font-size:8pt; }
-        .signatures .sig-label { font-size:6.5pt; color:#64748b; text-align:center; }
-        .footer { text-align:center; font-size:6pt; color:#94a3b8; margin-top:6px; padding-top:4px; border-top:1px dashed #e2e8f0; }
-        .info-bar { font-size:7pt; color:#475569; margin-bottom:6px; text-align:center; }
-        .stat-box { display:flex; gap:8px; justify-content:center; margin-bottom:8px; }
-        .stat-box .stat { padding:4px 10px; border-radius:3px; text-align:center; font-size:7pt; }
-        .stat-box .stat .num { font-size:12pt; font-weight:800; }
+        .pass-th { background:#2b5a2b; color:#fff; }
+        .fail-th { background:#7a2020; color:#fff; }
+        tr.top1 td { background:#f5e6c8; }
+        tr.alt td { background:#f5f5f5; }
+        .sig-section { margin-top:12px; padding-top:6px; border-top:1px solid #000; overflow:hidden; }
+        .sig-block { float:left; width:30%; text-align:center; margin-right:3%; }
+        .sig-block .line { border-top:1px solid #000; margin:28px auto 0; padding-top:2px; font-weight:600; font-size:8pt; width:70%; }
+        .sig-block .label { font-size:6.5pt; color:#555; margin-top:0; }
+        .footer { text-align:center; font-size:6pt; color:#666; margin-top:6px; padding-top:4px; border-top:1px dashed #ccc; clear:both; }
+        .name-col { text-align:left; font-weight:600; }
+        .subject-col { min-width:28px; }
+        .total-col { font-weight:700; }
+        .rank-col { width:20px; }
+        .roll-col { width:24px; }
     </style>
 </head>
 <body>
@@ -45,27 +43,26 @@
     <div class="result-title">EXAMINATION RESULT</div>
     <div class="subtitle">
         {{ $exam->name }}{{ $exam->code ? ' ('.$exam->code.')' : '' }}
-        &nbsp;|&nbsp; Class {{ $class }}{{ $section ? ' · Section '.$section : '' }}
-        &nbsp;|&nbsp; {{ $year->name }}
+        &nbsp;|&nbsp; Class {{ $class }}{{ $section ? ' - Section '.$section : '' }}
+        &nbsp;|&nbsp; Academic Year {{ $year->name }}
     </div>
 
-    <div class="info-bar">
-        Total: <strong>{{ $passCount + $failCount }}</strong> |
-        Pass: <strong style="color:#15803d;">{{ $passCount }}</strong> |
-        Needs Improvement: <strong style="color:#b91c1c;">{{ $failCount }}</strong>
+    <div class="summary-line">
+        Total Students: <strong>{{ $passCount + $failCount }}</strong>
+        &nbsp;&nbsp;|&nbsp;&nbsp; Pass: <strong>{{ $passCount }}</strong>
+        &nbsp;&nbsp;|&nbsp;&nbsp; Needs Improvement: <strong>{{ $failCount }}</strong>
     </div>
 
-    {{-- PASS SECTION --}}
     @if($rankedPass->isNotEmpty())
-    <div class="section-label section-pass">PASS — Ranked</div>
-    <table>
+    <div class="section-head">PASS</div>
+    <table cellspacing="0">
         <thead>
-            <tr class="pass-header">
-                <th style="width:24px;">Rank</th>
-                <th style="width:28px;">Roll</th>
-                <th class="left">Student Name</th>
+            <tr class="pass-th">
+                <th class="rank-col">Rank</th>
+                <th class="roll-col">Roll</th>
+                <th>Student Name</th>
                 @foreach($analyticsSubjects as $subj)
-                    <th>{{ $subj }}</th>
+                    <th class="subject-col">{{ $subj }}</th>
                 @endforeach
                 <th>Total</th>
                 <th>Avg %</th>
@@ -75,41 +72,34 @@
         </thead>
         <tbody>
             @foreach($rankedPass as $r)
-            <tr class="top-{{ $r['rank'] <= 3 ? $r['rank'] : '' }}">
-                <td>
-                    @if($r['rank'] <= 3)
-                        <span class="rank-badge rank-{{ $r['rank'] }}">{{ $r['rank'] }}</span>
-                    @else
-                        {{ $r['rank'] }}
-                    @endif
-                </td>
+            <tr class="top{{ $r['rank'] == 1 ? '1' : '' }}{{ $loop->even ? ' alt' : '' }}">
+                <td><strong>{{ $r['rank'] }}</strong></td>
                 <td>{{ $r['enrollment']?->roll_number ?: '—' }}</td>
-                <td class="left" style="font-weight:600;">{{ $r['enrollment']?->student?->name ?? '—' }}</td>
+                <td class="name-col">{{ $r['enrollment']?->student?->name ?? '—' }}</td>
                 @foreach($analyticsSubjects as $subj)
                     @php $sd = $r['subjectData'][$subj] ?? null; @endphp
                     <td>{{ $sd && $sd['raw'] !== null ? $sd['raw'] : '—' }}</td>
                 @endforeach
-                <td style="font-weight:700;">{{ $r['totalRaw'] }}</td>
-                <td style="font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
-                <td style="font-weight:700;color:#0f766e;">{{ $r['cgpa'] !== null ? number_format($r['cgpa'], 2) : '—' }}</td>
-                <td style="font-weight:700;">{{ $r['division'] ?? '—' }}</td>
+                <td class="total-col">{{ $r['totalRaw'] }}</td>
+                <td class="total-col">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
+                <td>{{ $r['cgpa'] !== null ? number_format($r['cgpa'], 2) : '—' }}</td>
+                <td>{{ $r['division'] ?? '—' }}</td>
             </tr>
             @endforeach
         </tbody>
     </table>
     @endif
 
-    {{-- FAIL SECTION --}}
     @if($rankedFail->isNotEmpty())
-    <div class="section-label section-fail">NEEDS IMPROVEMENT</div>
-    <table>
+    <div class="section-head">NEEDS IMPROVEMENT</div>
+    <table cellspacing="0">
         <thead>
-            <tr class="fail-header">
-                <th style="width:24px;">Rank</th>
-                <th style="width:28px;">Roll</th>
-                <th class="left">Student Name</th>
+            <tr class="fail-th">
+                <th class="rank-col">Rank</th>
+                <th class="roll-col">Roll</th>
+                <th>Student Name</th>
                 @foreach($analyticsSubjects as $subj)
-                    <th>{{ $subj }}</th>
+                    <th class="subject-col">{{ $subj }}</th>
                 @endforeach
                 <th>Total</th>
                 <th>Avg %</th>
@@ -119,36 +109,36 @@
         </thead>
         <tbody>
             @foreach($rankedFail as $r)
-            <tr>
-                <td style="font-weight:800;color:#b91c1c;">{{ $r['rank'] }}</td>
+            <tr class="{{ $loop->even ? 'alt' : '' }}">
+                <td><strong>{{ $r['rank'] }}</strong></td>
                 <td>{{ $r['enrollment']?->roll_number ?: '—' }}</td>
-                <td class="left" style="font-weight:600;">{{ $r['enrollment']?->student?->name ?? '—' }}</td>
+                <td class="name-col">{{ $r['enrollment']?->student?->name ?? '—' }}</td>
                 @foreach($analyticsSubjects as $subj)
                     @php $sd = $r['subjectData'][$subj] ?? null; @endphp
                     <td>{{ $sd && $sd['raw'] !== null ? $sd['raw'] : '—' }}</td>
                 @endforeach
-                <td style="font-weight:700;">{{ $r['totalRaw'] }}</td>
-                <td style="font-weight:700;">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
-                <td style="font-weight:700;">{{ $r['division'] ?? '—' }}</td>
-                <td style="color:#b91c1c;font-weight:600;font-size:6.5pt;">{{ !empty($r['failedSubjects']) ? implode(', ', $r['failedSubjects']) : '—' }}</td>
+                <td class="total-col">{{ $r['totalRaw'] }}</td>
+                <td class="total-col">{{ $r['avgPct'] !== null ? $r['avgPct'].'%' : '—' }}</td>
+                <td>{{ $r['division'] ?? '—' }}</td>
+                <td style="font-size:6.5pt;">{{ !empty($r['failedSubjects']) ? implode(', ', $r['failedSubjects']) : '—' }}</td>
             </tr>
             @endforeach
         </tbody>
     </table>
     @endif
 
-    <div class="signatures">
+    <div class="sig-section">
         <div class="sig-block">
-            <div class="sig-line">Class Teacher</div>
-            <div class="sig-label">Signature</div>
+            <div class="line">Class Teacher</div>
+            <div class="label">Signature</div>
         </div>
         <div class="sig-block">
-            <div class="sig-line">Principal</div>
-            <div class="sig-label">{{ \App\Helpers\Settings::get('site_name', 'JN Nazareth School') }}</div>
+            <div class="line">Principal</div>
+            <div class="label">{{ \App\Helpers\Settings::get('site_name', 'JN Nazareth School') }}</div>
         </div>
         <div class="sig-block">
-            <div class="sig-line">Date</div>
-            <div class="sig-label">{{ now()->format('d M Y') }}</div>
+            <div class="line">{{ now()->format('d M Y') }}</div>
+            <div class="label">Date</div>
         </div>
     </div>
 

@@ -79,9 +79,6 @@
         <a href="{{ route('admin.marks.export-results', ['exam' => $examId, 'class' => $class, 'section' => $section]) }}" style="background:#fff;color:#0f766e;border:1px solid #0f766e;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
             Results CSV
         </a>
-        <a href="{{ route('admin.marks.gradesheet', ['exam' => $examId, 'class' => $class, 'section' => $section, 'format' => 'csv']) }}" style="background:#fff;color:#1e3a5f;border:1px solid #1e3a5f;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
-            Gradesheet CSV
-        </a>
     @endif
 </form>
 
