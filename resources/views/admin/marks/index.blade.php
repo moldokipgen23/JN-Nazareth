@@ -67,8 +67,17 @@
         <a href="{{ route('admin.marks.export', ['exam' => $examId, 'class' => $class, 'section' => $section, 'subject' => $subject]) }}" style="background:#fff;color:#0f766e;border:1px solid #0f766e;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">Export CSV</a>
     @endif
     @if($view === 'results' && $examId && $class)
+        @php
+            $_studentCount = \App\Models\StudentEnrollment::forActiveYear()->active()
+                ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
+                ->count();
+        @endphp
         <a href="{{ route('admin.marks.export-result-cards', ['exam' => $examId, 'class' => $class, 'section' => $section]) }}" style="background:#7c3aed;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
-            Class Result ZIP
+            Class Result PDF
+        </a>
+        <span style="font-size:11px;color:#64748b;">{{ $_studentCount }} students — single PDF, all ranked</span>
+        <a href="{{ route('admin.marks.export-results', ['exam' => $examId, 'class' => $class, 'section' => $section]) }}" style="background:#fff;color:#0f766e;border:1px solid #0f766e;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
+            Results CSV
         </a>
         <a href="{{ route('admin.marks.gradesheet', ['exam' => $examId, 'class' => $class, 'section' => $section, 'format' => 'csv']) }}" style="background:#fff;color:#1e3a5f;border:1px solid #1e3a5f;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
             Gradesheet CSV
@@ -412,7 +421,7 @@ function syncSection(form) {
     @endif
 @elseif($view === 'summary')
     {{-- Summary View — ALWAYS school-wide grid --}}
-    @if(!$examId)
+    @if(!$examId || !$year)
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">Pick an exam above to see submission status across all classes.</div>
     @else
         @php

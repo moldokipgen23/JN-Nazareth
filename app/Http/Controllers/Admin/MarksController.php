@@ -316,7 +316,12 @@ class MarksController extends Controller
             ->where('subject', $subject)
             ->with(['enrollment.student'])
             ->get()
-            ->sortBy(fn ($r) => [(int) ($r->enrollment->roll_number ?: 999999), $r->enrollment?->student?->name ?? '']);
+            ->filter(fn ($r) => $r->enrollment !== null)
+            ->sortBy(fn ($r) => [(int) ($r->enrollment?->roll_number ?: 999999), $r->enrollment?->student?->name ?? '']);
+
+        if ($records->isEmpty()) {
+            return back()->with('error', 'No marks found for this combination.');
+        }
 
         $examName = Exam::find($examId)?->name ?? 'exam';
 
@@ -324,8 +329,8 @@ class MarksController extends Controller
         foreach ($records as $r) {
             $status = $r->status();
             $csv .= implode(',', [
-                $r->enrollment->roll_number ?? '',
-                '"'.str_replace('"', '""', $r->enrollment->student?->name ?? '').'"',
+                $r->enrollment?->roll_number ?? '',
+                '"'.str_replace('"', '""', $r->enrollment?->student?->name ?? '').'"',
                 $r->class,
                 $r->section,
                 $r->subject,
@@ -359,6 +364,47 @@ class MarksController extends Controller
         $exam = Exam::find($examId);
         if (!$exam) return back()->with('error', 'Exam not found.');
 
+        // --- Completion gate: all subjects must be submitted ---
+        $classSubjectNames = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+            ->where('class', $class)
+            ->when($section, fn ($q) => $q->where(function ($q) use ($section) {
+                $q->whereNull('section')->orWhere('section', $section);
+            }))
+            ->with('subject')
+            ->get()
+            ->pluck('subject.name')
+            ->sort()
+            ->values();
+
+        $allSubjects = $classSubjectNames->isNotEmpty()
+            ? $classSubjectNames
+            : Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)->where('class', $class)
+                ->when($section, fn ($q) => $q->where('section', $section))
+                ->select('subject')->distinct()->pluck('subject')->sort()->values();
+
+        $enrolledCount = StudentEnrollment::forActiveYear()->active()
+            ->where('class', $class)->where('section', $section)->count();
+
+        $pendingSubjects = [];
+        foreach ($allSubjects as $subj) {
+            $submittedCount = Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)->where('class', $class)
+                ->when($section, fn ($q) => $q->where('section', $section))
+                ->where('subject', $subj)
+                ->whereNotNull('submitted_at')
+                ->count();
+            $isComplete = $submittedCount >= $enrolledCount && $enrolledCount > 0;
+            if (!$isComplete) {
+                $pendingSubjects[] = $subj;
+            }
+        }
+
+        if (!empty($pendingSubjects)) {
+            return back()->with('error', 'Cannot export results: '.implode(', ', $pendingSubjects).' still have unsubmitted marks.');
+        }
+
+        // --- Build data matching the filter page results view ---
         $enrollments = StudentEnrollment::forActiveYear()->active()
             ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
             ->with('student')->orderBy('roll_number')->get();
@@ -366,65 +412,144 @@ class MarksController extends Controller
         $marks = Mark::where('academic_year_id', $year->id)
             ->where('exam_id', $examId)->where('class', $class)
             ->when($section, fn ($q) => $q->where('section', $section))
+            ->whereNotNull('submitted_at')
             ->get()->groupBy('student_enrollment_id');
 
-        $subjects = Mark::where('academic_year_id', $year->id)
-            ->where('exam_id', $examId)->where('class', $class)
-            ->when($section, fn ($q) => $q->where('section', $section))
-            ->select('subject')->distinct()->pluck('subject')->sort()->values();
+        $analyticsSubjects = $allSubjects;
 
-        // Build rows with ranking
         $rows = [];
         foreach ($enrollments as $enrollment) {
             $studentMarks = $marks->get($enrollment->id, collect());
-            $row = ['roll' => $enrollment->roll_number, 'name' => $enrollment->student?->name ?? '', 'subjects' => [], 'totalPct' => 0, 'count' => 0];
-            foreach ($subjects as $subj) {
-                $m = $studentMarks->firstWhere('subject', $subj);
-                $pct = $m?->percentage();
-                $row['subjects'][$subj] = [
-                    'total' => $m?->total_marks ?? '',
-                    'full'  => $m?->full_marks ?? '',
-                    'pct'   => $pct,
-                    'grade' => $m?->grade ?? '',
-                    'gp'    => $m?->computedGradePoint(),
-                ];
-                if ($pct !== null) { $row['totalPct'] += $pct; $row['count']++; }
+            $row = ['enrollment' => $enrollment, 'subjectData' => [], 'totalPct' => 0, 'totalGp' => 0, 'totalRaw' => 0, 'markedSubjects' => 0, 'submitted' => true];
+            foreach ($analyticsSubjects as $subj) {
+                $mark = $studentMarks->firstWhere('subject', $subj);
+                if ($mark && $mark->total_marks !== null) {
+                    $pct = $mark->percentage();
+                    $gp  = $mark->computedGradePoint();
+                    $raw = $mark->obtained_marks ?? $mark->total_marks;
+                    $passPct = ($mark->full_marks > 0) ? round((float) $mark->pass_marks / (float) $mark->full_marks * 100, 2) : 33;
+                    $row['subjectData'][$subj] = ['pct' => $pct, 'grade' => $mark->computedGrade() ?? $mark->grade, 'gp' => $gp, 'passPct' => $passPct, 'raw' => $raw, 'full' => $mark->full_marks];
+                    if ($pct !== null) { $row['totalPct'] += $pct; $row['totalGp'] += ($gp ?? 0); $row['totalRaw'] += $raw; $row['markedSubjects']++; }
+                    if (!$mark->submitted_at) $row['submitted'] = false;
+                } else { $row['subjectData'][$subj] = null; $row['submitted'] = false; }
             }
-            $row['avgPct'] = $row['count'] > 0 ? round($row['totalPct'] / $row['count'], 2) : null;
+            $c = $row['markedSubjects'];
+            $row['avgPct'] = $c > 0 ? round($row['totalPct'] / $c, 2) : null;
+            $row['cgpa']     = $c > 0 ? round($row['totalGp'] / $c, 2) : null;
+            $row['division'] = $row['avgPct'] !== null ? DivisionRule::divisionFor($row['avgPct'])?->name : null;
             $rows[] = $row;
         }
 
-        // Sort by avgPct desc for ranking
-        usort($rows, fn ($a, $b) => ($b['avgPct'] ?? 0) <=> ($a['avgPct'] ?? 0));
+        // Load class_subjects to check optional + pass_marks
+        $classSubjects = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+            ->where('class', $class)
+            ->when($section, fn ($q) => $q->where(function ($q) use ($section) {
+                $q->whereNull('section')->orWhere('section', $section);
+            }))
+            ->with('subject')->get();
 
-        // Build CSV
-        $header = ['Rank', 'Roll No', 'Student Name'];
-        foreach ($subjects as $subj) {
-            $header[] = $subj.' (Total)';
-            $header[] = $subj.' (%)';
-            $header[] = $subj.' (Grade)';
-        }
-        $header[] = 'Avg %';
-        $header[] = 'CGPA';
-
-        $csv = implode(',', array_map(fn($h) => '"'.$h.'"', $header))."\n";
-        foreach ($rows as $i => $row) {
-            $line = [$i + 1, $row['roll'] ?? '', '"'.str_replace('"', '""', $row['name']).'"'];
-            foreach ($subjects as $subj) {
-                $s = $row['subjects'][$subj] ?? [];
-                $line[] = $s['total'] ?? '';
-                $line[] = $s['pct'] !== null ? $s['pct'].'%' : '';
-                $line[] = $s['grade'] ?? '';
+        // Pass/Fail split
+        $passRows = [];
+        $failRows = [];
+        foreach ($rows as $r) {
+            $failedSubjects = [];
+            foreach ($analyticsSubjects as $subj) {
+                $sd = $r['subjectData'][$subj] ?? null;
+                $cs = $classSubjects->firstWhere('subject.name', $subj);
+                if ($cs && $cs->is_optional) continue;
+                $passPct = $sd['passPct'] ?? 33;
+                if ($sd === null || $sd['pct'] === null || $sd['pct'] < $passPct) {
+                    $failedSubjects[] = $subj;
+                }
             }
-            $line[] = $row['avgPct'] !== null ? $row['avgPct'].'%' : '';
-            // Compute CGPA (avg of grade points)
-            $gps = [];
-            foreach ($row['subjects'] as $s) { if ($s['gp'] !== null) $gps[] = $s['gp']; }
-            $line[] = count($gps) > 0 ? number_format(array_sum($gps) / count($gps), 2) : '';
-            $csv .= implode(',', $line)."\n";
+            if (empty($failedSubjects) && ($r['avgPct'] ?? 0) > 0) {
+                $passRows[] = $r;
+            } else {
+                $r['failedSubjects'] = $failedSubjects;
+                $failRows[] = $r;
+            }
         }
 
-        $sectionLabel = $section ? '_Sec-'.$section : '';
+        $rankedPass = collect($passRows)->sortByDesc(fn ($r) => $r['avgPct'] ?? 0)
+            ->values()->map(fn ($r, $i) => array_merge($r, ['rank' => $i + 1]));
+
+        $passCount = $rankedPass->count();
+        $rankedFail = collect($failRows)->sortByDesc(fn ($r) => $r['avgPct'] ?? 0)
+            ->values()->map(fn ($r, $i) => array_merge($r, ['rank' => $i + 1 + $passCount]));
+
+        // --- Build CSV with proper template (school name, exam, class) ---
+        $schoolName = \App\Helpers\Settings::get('site_name', 'JN Nazareth School');
+        $sectionLabel = $section ? ' - Section '.$section : '';
+        $lines = [];
+
+        $lines[] = $schoolName;
+        $lines[] = 'Churachandpur, Manipur';
+        $lines[] = '';
+        $lines[] = 'EXAMINATION RESULT';
+        $lines[] = $exam->name.($exam->code ? ' ('.$exam->code.')' : '');
+        $lines[] = 'Class: '.$class.$sectionLabel;
+        $lines[] = '';
+
+        if ($rankedPass->isNotEmpty()) {
+            $lines[] = 'PASS - Ranked';
+            $passHeader = ['Rank', 'Roll No', 'Student Name'];
+            foreach ($analyticsSubjects as $subj) {
+                $passHeader[] = $subj;
+            }
+            $passHeader[] = 'Total';
+            $passHeader[] = 'Avg %';
+            $passHeader[] = 'CGPA';
+            $passHeader[] = 'Division';
+            $lines[] = implode(',', array_map(fn($h) => '"'.$h.'"', $passHeader));
+            $lines[] = str_repeat('-', 80);
+
+            foreach ($rankedPass as $r) {
+                $line = [$r['rank'], $r['enrollment']?->roll_number ?? '', '"'.str_replace('"', '""', $r['enrollment']?->student?->name ?? '').'"'];
+                foreach ($analyticsSubjects as $subj) {
+                    $sd = $r['subjectData'][$subj] ?? null;
+                    $line[] = $sd && $sd['raw'] !== null ? $sd['raw'] : '';
+                }
+                $line[] = $r['totalRaw'];
+                $line[] = $r['avgPct'] !== null ? $r['avgPct'].'%' : '';
+                $line[] = $r['cgpa'] !== null ? number_format($r['cgpa'], 2) : '';
+                $line[] = $r['division'] ?? '';
+                $lines[] = implode(',', $line);
+            }
+            $lines[] = '';
+        }
+
+        if ($rankedFail->isNotEmpty()) {
+            $lines[] = 'NEEDS IMPROVEMENT';
+            $failHeader = ['Rank', 'Roll No', 'Student Name'];
+            foreach ($analyticsSubjects as $subj) {
+                $failHeader[] = $subj;
+            }
+            $failHeader[] = 'Total';
+            $failHeader[] = 'Avg %';
+            $failHeader[] = 'Division';
+            $failHeader[] = 'Failed In';
+            $lines[] = implode(',', array_map(fn($h) => '"'.$h.'"', $failHeader));
+            $lines[] = str_repeat('-', 80);
+
+            foreach ($rankedFail as $r) {
+                $line = [$r['rank'], $r['enrollment']?->roll_number ?? '', '"'.str_replace('"', '""', $r['enrollment']?->student?->name ?? '').'"'];
+                foreach ($analyticsSubjects as $subj) {
+                    $sd = $r['subjectData'][$subj] ?? null;
+                    $line[] = $sd && $sd['raw'] !== null ? $sd['raw'] : '';
+                }
+                $line[] = $r['totalRaw'];
+                $line[] = $r['avgPct'] !== null ? $r['avgPct'].'%' : '';
+                $line[] = $r['division'] ?? '';
+                $line[] = !empty($r['failedSubjects']) ? implode(', ', $r['failedSubjects']) : '';
+                $lines[] = implode(',', $line);
+            }
+            $lines[] = '';
+        }
+
+        $lines[] = 'Authorised by '.$schoolName.' Administration';
+        $lines[] = 'Generated on: '.now()->format('d M Y');
+        $csv = implode("\n", $lines)."\n";
+
         return Response::make($csv, 200, [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="results-'.$exam->name.'-'.$class.$sectionLabel.'.csv"',
@@ -445,25 +570,44 @@ class MarksController extends Controller
         $exam = Exam::find($examId);
         if (!$exam) return back()->with('error', 'Exam not found.');
 
+        // --- Completion gate ---
+        $classSubjectNames = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+            ->where('class', $class)
+            ->when($section, fn ($q) => $q->where(function ($q) use ($section) {
+                $q->whereNull('section')->orWhere('section', $section);
+            }))
+            ->with('subject')->get()->pluck('subject.name')->sort()->values();
+
+        $allSubjects = $classSubjectNames->isNotEmpty()
+            ? $classSubjectNames
+            : Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)->where('class', $class)
+                ->when($section, fn ($q) => $q->where('section', $section))
+                ->select('subject')->distinct()->pluck('subject')->sort()->values();
+
+        $enrolledCount = StudentEnrollment::forActiveYear()->active()
+            ->where('class', $class)->where('section', $section)->count();
+
+        $pendingSubjects = [];
+        foreach ($allSubjects as $subj) {
+            $submittedCount = Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)->where('class', $class)
+                ->when($section, fn ($q) => $q->where('section', $section))
+                ->where('subject', $subj)->whereNotNull('submitted_at')->count();
+            if ($submittedCount < $enrolledCount) {
+                $pendingSubjects[] = $subj;
+            }
+        }
+
+        if (!empty($pendingSubjects)) {
+            return back()->with('error', 'Result not declared yet. Pending subjects: '.implode(', ', $pendingSubjects));
+        }
+
+        // --- Build pass/fail data matching the web page ---
+        $analyticsSubjects = $allSubjects;
         $enrollments = StudentEnrollment::forActiveYear()->active()
             ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
             ->with('student')->orderBy('roll_number')->get();
-
-        if ($enrollments->isEmpty()) {
-            return back()->with('error', 'No students found.');
-        }
-
-        $zip = new ZipArchive();
-        $zipName = tempnam(sys_get_temp_dir(), 'result_cards_');
-        if ($zip->open($zipName, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            return back()->with('error', 'Could not create archive.');
-        }
-
-        $subjects = Mark::where('academic_year_id', $year->id)
-            ->where('exam_id', $examId)->where('class', $class)
-            ->when($section, fn ($q) => $q->where('section', $section))
-            ->whereNotNull('submitted_at')
-            ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
         $marks = Mark::where('academic_year_id', $year->id)
             ->where('exam_id', $examId)->where('class', $class)
@@ -471,93 +615,87 @@ class MarksController extends Controller
             ->whereNotNull('submitted_at')
             ->get()->groupBy('student_enrollment_id');
 
-        $attendance = \App\Models\AttendanceRecord::where('academic_year_id', $year->id)
-            ->where('class', $class)
-            ->when($section, fn ($q) => $q->where('section', $section))
-            ->get()->groupBy('student_enrollment_id');
-
-        $gradeScale = GradeScale::active()->orderBy('min_percent')->get();
-
+        $rows = [];
         foreach ($enrollments as $enrollment) {
-            $student = $enrollment->student;
             $studentMarks = $marks->get($enrollment->id, collect());
-
-            $subjectData = [];
-            $totalObtained = 0; $totalFull = 0;
-            foreach ($subjects as $subj) {
-                $m = $studentMarks->firstWhere('subject', $subj);
-                $pct = $m?->percentage();
-                $gp = $m?->computedGradePoint();
-                $subjectData[] = [
-                    'name' => $subj,
-                    'full_marks' => $m?->full_marks ?? 0,
-                    'pass_marks' => $m?->pass_marks ?? 0,
-                    'theory' => $m?->theory_marks,
-                    'assignment' => $m?->assignment_marks,
-                    'total' => $m?->total_marks,
-                    'pct' => $pct,
-                    'grade' => $m?->computedGrade() ?? $m?->grade ?? '',
-                    'gp' => $gp,
-                    'status' => $m?->status() ?? 'ungraded',
-                ];
-                if ($m?->total_marks) $totalObtained += (float) $m->total_marks;
-                if ($m?->full_marks) $totalFull += (float) $m->full_marks;
+            $row = ['enrollment' => $enrollment, 'subjectData' => [], 'totalPct' => 0, 'totalGp' => 0, 'totalRaw' => 0, 'markedSubjects' => 0, 'submitted' => true];
+            foreach ($analyticsSubjects as $subj) {
+                $mark = $studentMarks->firstWhere('subject', $subj);
+                if ($mark && $mark->total_marks !== null) {
+                    $pct = $mark->percentage();
+                    $gp  = $mark->computedGradePoint();
+                    $raw = $mark->obtained_marks ?? $mark->total_marks;
+                    $passPct = ($mark->full_marks > 0) ? round((float) $mark->pass_marks / (float) $mark->full_marks * 100, 2) : 33;
+                    $row['subjectData'][$subj] = ['pct' => $pct, 'grade' => $mark->computedGrade() ?? $mark->grade, 'gp' => $gp, 'passPct' => $passPct, 'raw' => $raw, 'full' => $mark->full_marks];
+                    if ($pct !== null) { $row['totalPct'] += $pct; $row['totalGp'] += ($gp ?? 0); $row['totalRaw'] += $raw; $row['markedSubjects']++; }
+                    if (!$mark->submitted_at) $row['submitted'] = false;
+                } else { $row['subjectData'][$subj] = null; $row['submitted'] = false; }
             }
-
-            $gps = array_filter(array_column($subjectData, 'gp'));
-            $cgpa = count($gps) > 0 ? round(array_sum($gps) / count($gps), 2) : null;
-
-            // Ranking
-            $allEnr = StudentEnrollment::forActiveYear()->active()
-                ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
-                ->pluck('id');
-            $allMarks = Mark::where('academic_year_id', $year->id)
-                ->where('exam_id', $examId)->where('class', $class)
-                ->when($section, fn ($q) => $q->where('section', $section))
-                ->get()->groupBy('student_enrollment_id');
-            $ranked = [];
-            foreach ($allEnr as $eid) {
-                $sm = $allMarks->get($eid, collect());
-                $gps2 = [];
-                foreach ($subjects as $subj) {
-                    $mm = $sm->firstWhere('subject', $subj);
-                    if ($mm) { $gp2 = $mm->computedGradePoint(); if ($gp2 !== null) $gps2[] = $gp2; }
-                }
-                $ranked[$eid] = count($gps2) > 0 ? round(array_sum($gps2) / count($gps2), 2) : 0;
-            }
-            arsort($ranked);
-            $rank = array_search($enrollment->id, array_keys($ranked)) + 1;
-
-            $attRecs = $attendance->get($enrollment->id, collect());
-            $attSummary = ['present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0];
-            foreach ($attRecs as $a) { $attSummary[$a->status]++; }
-            $totalDays = array_sum($attSummary);
-            $presentDays = $attSummary['present'] + $attSummary['late'] + $attSummary['excused'];
-            $attPct = $totalDays > 0 ? round($presentDays / $totalDays * 100, 1) : null;
-
-            $pdf = Pdf::loadView('admin.students.result-card-pdf', [
-                'student' => $student,
-                'enrollment' => $enrollment,
-                'exam' => $exam,
-                'subjectData' => $subjectData,
-                'totalObtained' => $totalObtained,
-                'totalFull' => $totalFull,
-                'cgpa' => $cgpa,
-                'rank' => $rank,
-                'totalStudents' => count($allEnr),
-                'attSummary' => $attSummary,
-                'attPct' => $attPct,
-            ])->setPaper('a4', 'portrait');
-
-            $filename = 'result-'.str_replace(['/', ' '], '-', $student->name).'.pdf';
-            $zip->addFromString($filename, $pdf->output());
+            $c = $row['markedSubjects'];
+            $row['avgPct'] = $c > 0 ? round($row['totalPct'] / $c, 2) : null;
+            $row['cgpa']     = $c > 0 ? round($row['totalGp'] / $c, 2) : null;
+            $row['division'] = $row['avgPct'] !== null ? DivisionRule::divisionFor($row['avgPct'])?->name : null;
+            $rows[] = $row;
         }
 
-        $zip->close();
+        $classSubjects = \App\Models\ClassSubject::where('academic_year_id', $year->id)
+            ->where('class', $class)
+            ->when($section, fn ($q) => $q->where(function ($q) use ($section) {
+                $q->whereNull('section')->orWhere('section', $section);
+            }))
+            ->with('subject')->get();
+
+        $passRows = [];
+        $failRows = [];
+        foreach ($rows as $r) {
+            $failedSubjects = [];
+            foreach ($analyticsSubjects as $subj) {
+                $sd = $r['subjectData'][$subj] ?? null;
+                $cs = $classSubjects->firstWhere('subject.name', $subj);
+                if ($cs && $cs->is_optional) continue;
+                $passPct = $sd['passPct'] ?? 33;
+                if ($sd === null || $sd['pct'] === null || $sd['pct'] < $passPct) {
+                    $failedSubjects[] = $subj;
+                }
+            }
+            if (empty($failedSubjects) && ($r['avgPct'] ?? 0) > 0) {
+                $passRows[] = $r;
+            } else {
+                $r['failedSubjects'] = $failedSubjects;
+                $failRows[] = $r;
+            }
+        }
+
+        $rankedPass = collect($passRows)->sortByDesc(fn ($r) => $r['avgPct'] ?? 0)
+            ->values()->map(fn ($r, $i) => array_merge($r, ['rank' => $i + 1]));
+
+        $passCount = $rankedPass->count();
+        $rankedFail = collect($failRows)->sortByDesc(fn ($r) => $r['avgPct'] ?? 0)
+            ->values()->map(fn ($r, $i) => array_merge($r, ['rank' => $i + 1 + $passCount]));
+
+        $failCount = $rankedFail->count();
+
+        if ($rankedPass->isEmpty() && $rankedFail->isEmpty()) {
+            return back()->with('error', 'No results found for this class.');
+        }
+
+        $pdf = Pdf::loadView('admin.marks.class-result-pdf', [
+            'year' => $year,
+            'exam' => $exam,
+            'class' => $class,
+            'section' => $section,
+            'analyticsSubjects' => $analyticsSubjects,
+            'rankedPass' => $rankedPass,
+            'rankedFail' => $rankedFail,
+            'passCount' => $passCount,
+            'failCount' => $failCount,
+        ])->setPaper('a4', 'portrait');
 
         $sectionLabel = $section ? '_Sec-'.$section : '';
-        $zipFilename = 'result-cards_'.$exam->name.'_'.$class.$sectionLabel.'.zip';
-        return Response::download($zipName, $zipFilename)->deleteFileAfterSend(true);
+        $filename = 'class-result_'.$exam->name.'_'.$class.$sectionLabel.'.pdf';
+        $filename = str_replace(['/', ' '], '_', $filename);
+
+        return $pdf->download($filename);
     }
 
     public function gradesheet(Request $request)
