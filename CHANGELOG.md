@@ -6,6 +6,45 @@ Newest entries on top.
 
 ---
 
+## Session: 2026-06-03 — Export rewrites, student profile Marks tab rebuild, misc fixes
+
+### What changed
+
+#### 🆕 New features
+- **Student profile Marks tab rebuilt** — now shows an exam dropdown to select a specific exam. When an exam is selected, displays:
+  - Full marks table (Subject, Full, Pass, Theory, Assignment, Total, %, Grade, Status)
+  - Summary box (Average %, CGPA, Division, Rank)
+  - Attendance for that academic year (with daily dots)
+  - Falls back to grouped "All Exams" view when no exam is selected.
+  - Rank is computed against all students in the same exam + class.
+- **`exportCsvResults()` rewrite** — completion gate (all subjects submitted) before generating, pass/fail split, continuous ranking across both sections, proper CSV template (school name, exam, class, column headers).
+- **`exportAllResultCards()` rewrite** — changed from per-student ZIP (risk of server timeout/memory exhaustion for large classes) to single class result PDF with pass/fail data building and landscape orientation.
+- **`class-result-pdf.blade.php`** — new landscape PDF view matching the Results tab exactly: school header, pass table (with continuous ranks), fail table (ranks continue from pass), signature lines at bottom.
+
+#### 🐛 Bugs fixed
+- **Grade empty in student profile Marks tab** — was showing `$m->grade` only (manual entry). Added `$m->computedGrade()` as fallback so auto-computed grades appear.
+- **Missing `$year` in Summary tab** — 500 error when no active academic year. Added `@if(!$examId || !$year)` guard.
+- **Gradesheet CSV duplicate confusion** — removed from Results tab (identical data to Results CSV, confusing teachers).
+- **`exportCsv()` 500 on orphaned marks** — a Mark with no related `StudentEnrollment` crashed the sort closure. Added `->filter(fn ($r) => $r->enrollment !== null)` and null-safe operators throughout.
+
+#### 🧹 UX improvements
+- **PDF disclaimer moved to hover tooltip** — student-count text changed from visible `<span>` to `title` attribute on the Class Result PDF button, keeping the button layout compact.
+
+### Schema changes
+- None (additive only).
+
+### Files changed
+- `app/Http/Controllers/Admin/MarksController.php` — rewrote `exportCsvResults()` and `exportAllResultCards()`, null enrollment filter
+- `resources/views/admin/marks/index.blade.php` — removed gradesheet CSV button, added `$year` guard, disclaimer tooltip
+- `resources/views/admin/marks/class-result-pdf.blade.php` — new landscape PDF template
+- `resources/views/admin/students/show.blade.php` — rebuilt Marks tab with exam dropdown, full table, summary, attendance
+
+### Notes
+- Rank computation on student profile queries all marks for the same exam+class and finds this student's position. Optimized for a single student view (not class-wide).
+- The "All Exams" view remains unchanged for quick scanning across academic years.
+
+---
+
 ## Session: 2026-06-02 — Profile redirect guard fix, PWA dynamic icons from school logo
 
 ### What changed

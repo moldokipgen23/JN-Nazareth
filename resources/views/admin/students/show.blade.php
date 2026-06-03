@@ -249,17 +249,36 @@
     @if($activeTab === 'marks')
     {{-- Marks Summary --}}
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        @php
+            $yearEnrollments = $student->enrollments->sortByDesc('academic_year_id');
+            $enrollmentIds = $student->enrollments->pluck('id');
+            $examIdsWithMarks = \App\Models\Mark::whereIn('student_enrollment_id', $enrollmentIds)->distinct()->pluck('exam_id');
+            $allExams = $examIdsWithMarks->isNotEmpty()
+                ? \App\Models\Exam::whereIn('id', $examIdsWithMarks)->where('is_active', true)->orderBy('starts_on')->get()
+                : collect();
+        @endphp
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h3 class="font-semibold text-gray-900">Marks</h3>
+            <div class="flex items-center gap-3">
+                <h3 class="font-semibold text-gray-900">Marks</h3>
+                @if($allExams->isNotEmpty())
+                <select onchange="var v=this.value;if(v)window.location='{{ route('admin.students.show', $student) }}?tab=marks&exam='+v;else window.location='{{ route('admin.students.show', $student) }}?tab=marks';"
+                        class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-teal-500">
+                    <option value="">All Exams</option>
+                    @foreach($allExams as $e)
+                        <option value="{{ $e->id }}" {{ request('exam') == $e->id ? 'selected' : '' }}>{{ $e->name }}</option>
+                    @endforeach
+                </select>
+                @endif
+            </div>
             <div class="flex gap-2">
                 @if($student->currentEnrollment)
-                    @php $exams = \App\Models\Exam::where('academic_year_id', $student->currentEnrollment->academic_year_id)->where('is_active', true)->orderBy('starts_on')->get(); @endphp
+                    @php $rcExams = \App\Models\Exam::where('academic_year_id', $student->currentEnrollment->academic_year_id)->where('is_active', true)->orderBy('starts_on')->get(); @endphp
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition">
                             Result Card <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="open" @click.outside="open = false" class="absolute right-0 mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                            @foreach($exams as $exam)
+                            @foreach($rcExams as $exam)
                             <a href="{{ route('admin.students.result-card', ['student' => $student, 'exam' => $exam]) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">{{ $exam->name }}</a>
                             @endforeach
                             <a href="{{ route('admin.students.report-card.full-year', $student) }}" class="block px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 rounded-b-lg border-t border-gray-100">Full Year Report</a>
@@ -269,42 +288,220 @@
                 <a href="{{ route('admin.students.passport', $student) }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">Passport</a>
             </div>
         </div>
-        @php
-            $yearEnrollments = $student->enrollments->sortByDesc('academic_year_id');
-        @endphp
-        @forelse($yearEnrollments as $enr)
+
+        @php $selectedExamId = request('exam'); @endphp
+
+        @if($selectedExamId)
+            {{-- Detailed exam view --}}
             @php
-                $ay = $enr->academicYear;
-                $marks = \App\Models\Mark::where('student_enrollment_id', $enr->id)->where('academic_year_id', $ay->id)->with('exam')->get()->groupBy('exam_id');
+                $examModel = \App\Models\Exam::find($selectedExamId);
+                $examMarks = collect();
+                $avgPct = null;
+                $cgpa = null;
+                $division = null;
+                $rank = null;
+                $attRecords = collect();
+                $attSummary = ['present'=>0,'absent'=>0,'late'=>0,'excused'=>0];
+
+                if ($examModel) {
+                    $enrollment = $student->enrollments->firstWhere('academic_year_id', $examModel->academic_year_id);
+                    if ($enrollment) {
+                        $examMarks = \App\Models\Mark::where('student_enrollment_id', $enrollment->id)
+                            ->where('exam_id', $examModel->id)
+                            ->orderBy('subject')
+                            ->get();
+
+                        $pcts = $examMarks->map(fn($m) => $m->percentage())->filter();
+                        $avgPct = $pcts->isNotEmpty() ? round($pcts->avg(), 2) : null;
+
+                        $gps = $examMarks->map(fn($m) => $m->computedGradePoint())->filter();
+                        $cgpa = $gps->isNotEmpty() ? round($gps->avg(), 2) : null;
+
+                        if ($avgPct !== null) {
+                            $divModel = \App\Models\DivisionRule::divisionFor($avgPct);
+                            $division = $divModel?->name;
+                        }
+
+                        // Rank — compare this student against all others in same exam + class
+                        $allMarks = \App\Models\Mark::where('exam_id', $examModel->id)
+                            ->where('class', $enrollment->class)
+                            ->where('academic_year_id', $examModel->academic_year_id)
+                            ->get()
+                            ->groupBy('student_enrollment_id');
+
+                        $ranked = collect();
+                        foreach ($allMarks as $eid => $mks) {
+                            $pp = $mks->map(fn($m) => $m->percentage())->filter();
+                            if ($pp->isNotEmpty()) {
+                                $ranked->push(['eid' => $eid, 'pct' => round($pp->avg(), 2)]);
+                            }
+                        }
+                        $ranked = $ranked->sortByDesc('pct')->values();
+                        $pos = $ranked->search(fn($r) => (int)$r['eid'] === (int)$enrollment->id);
+                        $rank = $pos !== false ? $pos + 1 : null;
+
+                        // Attendance for the academic year
+                        $attRecords = \App\Models\AttendanceRecord::where('student_enrollment_id', $enrollment->id)
+                            ->where('academic_year_id', $examModel->academic_year_id)
+                            ->get();
+                        foreach ($attRecords as $r) { $attSummary[$r->status] = ($attSummary[$r->status] ?? 0) + 1; }
+                    }
+                }
             @endphp
-            @if($marks->isNotEmpty())
-            <div class="px-6 py-3 border-b border-gray-100">
-                <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">{{ $ay?->name ?? 'Unknown Year' }}</div>
-                @foreach($marks as $examId => $examMarks)
-                    @php $exam = $examMarks->first()->exam; @endphp
-                    <div style="margin-bottom:10px;">
-                        <div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">{{ $exam?->name ?? 'Exam' }}</div>
-                        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                            <thead><tr style="background:#f8fafc;"><th style="padding:4px 8px;text-align:left;">Subject</th><th style="padding:4px 8px;text-align:center;">Obtained</th><th style="padding:4px 8px;text-align:center;">Full</th><th style="padding:4px 8px;text-align:center;">%</th><th style="padding:4px 8px;text-align:center;">Grade</th></tr></thead>
-                            <tbody>
+
+            @if($examMarks->isNotEmpty())
+                {{-- Full marks table --}}
+                <div class="px-6 py-4 border-b border-gray-100">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">{{ $examModel?->name }} — Marks</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    <th class="px-3 py-2 text-left">Subject</th>
+                                    <th class="px-3 py-2 text-center">Full</th>
+                                    <th class="px-3 py-2 text-center">Pass</th>
+                                    <th class="px-3 py-2 text-center">Theory</th>
+                                    <th class="px-3 py-2 text-center">Assignment</th>
+                                    <th class="px-3 py-2 text-center">Total</th>
+                                    <th class="px-3 py-2 text-center">%</th>
+                                    <th class="px-3 py-2 text-center">Grade</th>
+                                    <th class="px-3 py-2 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
                                 @foreach($examMarks as $m)
-                                <tr style="border-top:1px solid #f1f5f9;">
-                                    <td style="padding:4px 8px;">{{ $m->subject }}</td>
-                                    <td style="padding:4px 8px;text-align:center;">{{ $m->total_marks ?? $m->obtained_marks ?? '—' }}</td>
-                                    <td style="padding:4px 8px;text-align:center;">{{ $m->full_marks }}</td>
-                                    <td style="padding:4px 8px;text-align:center;font-weight:600;">{{ $m->percentage() !== null ? $m->percentage().'%' : '—' }}</td>
-                                    <td style="padding:4px 8px;text-align:center;">{{ $m->grade ?? '—' }}</td>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-3 py-2 font-medium text-gray-800">{{ $m->subject }}</td>
+                                    <td class="px-3 py-2 text-center text-gray-700">{{ $m->full_marks }}</td>
+                                    <td class="px-3 py-2 text-center text-gray-700">{{ $m->pass_marks }}</td>
+                                    <td class="px-3 py-2 text-center text-gray-700">{{ $m->theory_marks ?? '—' }}</td>
+                                    <td class="px-3 py-2 text-center text-gray-700">{{ $m->assignment_marks ?? '—' }}</td>
+                                    <td class="px-3 py-2 text-center font-semibold text-gray-800">{{ $m->total_marks ?? $m->obtained_marks ?? '—' }}</td>
+                                    <td class="px-3 py-2 text-center font-semibold {{ ($m->percentage() !== null && $m->percentage() < 33) ? 'text-red-600' : 'text-gray-800' }}">{{ $m->percentage() !== null ? $m->percentage().'%' : '—' }}</td>
+                                    <td class="px-3 py-2 text-center">{{ $m->computedGrade() ?? $m->grade ?? '—' }}</td>
+                                    <td class="px-3 py-2 text-center">
+                                        @php $st = $m->status(); @endphp
+                                        @if($st === 'pass')
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Pass</span>
+                                        @elseif($st === 'fail')
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-600">Fail</span>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">—</span>
+                                        @endif
+                                    </td>
                                 </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
-                @endforeach
-            </div>
+                </div>
+
+                {{-- Summary box --}}
+                <div class="px-6 py-4 border-b border-gray-100">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">Summary</h4>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="text-xl font-bold text-gray-900">{{ $avgPct !== null ? $avgPct.'%' : '—' }}</div>
+                            <div class="text-xs font-medium text-gray-500 mt-0.5">Average</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="text-xl font-bold text-gray-900">{{ $cgpa !== null ? $cgpa : '—' }}</div>
+                            <div class="text-xs font-medium text-gray-500 mt-0.5">CGPA</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="text-xl font-bold text-gray-900">{{ $division ?? '—' }}</div>
+                            <div class="text-xs font-medium text-gray-500 mt-0.5">Division</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="text-xl font-bold text-gray-900">{{ $rank ? '#'.$rank : '—' }}</div>
+                            <div class="text-xs font-medium text-gray-500 mt-0.5">Rank</div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Attendance --}}
+                <div class="px-6 py-4">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">Attendance ({{ $examModel?->academicYear?->name ?? 'This Year' }})</h4>
+                    @php
+                        $totalDays = array_sum($attSummary);
+                        $presentDays = $attSummary['present'] + $attSummary['late'] + $attSummary['excused'];
+                        $attPct = $totalDays > 0 ? round($presentDays / $totalDays * 100, 1) : null;
+                    @endphp
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        <div class="bg-green-50 rounded-lg p-3 text-center">
+                            <div class="text-lg font-bold text-green-700">{{ $attSummary['present'] }}</div>
+                            <div class="text-xs font-medium text-green-600 mt-0.5">Present</div>
+                        </div>
+                        <div class="bg-red-50 rounded-lg p-3 text-center">
+                            <div class="text-lg font-bold text-red-600">{{ $attSummary['absent'] }}</div>
+                            <div class="text-xs font-medium text-red-500 mt-0.5">Absent</div>
+                        </div>
+                        <div class="bg-amber-50 rounded-lg p-3 text-center">
+                            <div class="text-lg font-bold text-amber-700">{{ $attSummary['late'] }}</div>
+                            <div class="text-xs font-medium text-amber-600 mt-0.5">Late</div>
+                        </div>
+                        <div class="bg-indigo-50 rounded-lg p-3 text-center">
+                            <div class="text-lg font-bold text-indigo-700">{{ $attSummary['excused'] }}</div>
+                            <div class="text-xs font-medium text-indigo-600 mt-0.5">Excused</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="text-lg font-bold text-gray-900">{{ $attPct !== null ? $attPct.'%' : '—' }}</div>
+                            <div class="text-xs font-medium text-gray-500 mt-0.5">Attendance %</div>
+                        </div>
+                    </div>
+                    @if($attRecords->count() > 0 && $attRecords->count() <= 31)
+                    <div class="flex flex-wrap gap-1.5 mt-3">
+                        @foreach($attRecords->sortByDesc('date') as $r)
+                            @php
+                                $dotBg = match($r->status) { 'present'=>'#15803d', 'absent'=>'#dc2626', 'late'=>'#d97706', 'excused'=>'#6366f1' };
+                            @endphp
+                            <span title="{{ $r->date->format('d M Y') }} - {{ ucfirst($r->status) }}"
+                                  style="width:24px;height:24px;border-radius:6px;background:{{ $dotBg }};display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;">
+                                {{ $r->date->format('d') }}
+                            </span>
+                        @endforeach
+                    </div>
+                    @endif
+                </div>
+            @else
+                <div class="text-center py-10 text-gray-400 text-sm">No marks found for this exam.</div>
             @endif
-        @empty
-            <div class="text-center py-10 text-gray-400 text-sm">No marks found.</div>
-        @endforelse
+        @else
+            {{-- Grouped view (all exams by year) --}}
+            @forelse($yearEnrollments as $enr)
+                @php
+                    $ay = $enr->academicYear;
+                    $marks = \App\Models\Mark::where('student_enrollment_id', $enr->id)->where('academic_year_id', $ay->id)->with('exam')->get()->groupBy('exam_id');
+                @endphp
+                @if($marks->isNotEmpty())
+                <div class="px-6 py-3 border-b border-gray-100">
+                    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">{{ $ay?->name ?? 'Unknown Year' }}</div>
+                    @foreach($marks as $examId => $examMarks)
+                        @php $exam = $examMarks->first()->exam; @endphp
+                        <div style="margin-bottom:10px;">
+                            <div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">{{ $exam?->name ?? 'Exam' }}</div>
+                            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                                <thead><tr style="background:#f8fafc;"><th style="padding:4px 8px;text-align:left;">Subject</th><th style="padding:4px 8px;text-align:center;">Obtained</th><th style="padding:4px 8px;text-align:center;">Full</th><th style="padding:4px 8px;text-align:center;">%</th><th style="padding:4px 8px;text-align:center;">Grade</th></tr></thead>
+                                <tbody>
+                                    @foreach($examMarks as $m)
+                                    <tr style="border-top:1px solid #f1f5f9;">
+                                        <td style="padding:4px 8px;">{{ $m->subject }}</td>
+                                        <td style="padding:4px 8px;text-align:center;">{{ $m->total_marks ?? $m->obtained_marks ?? '—' }}</td>
+                                        <td style="padding:4px 8px;text-align:center;">{{ $m->full_marks }}</td>
+                                        <td style="padding:4px 8px;text-align:center;font-weight:600;">{{ $m->percentage() !== null ? $m->percentage().'%' : '—' }}</td>
+                                        <td style="padding:4px 8px;text-align:center;">{{ $m->computedGrade() ?? $m->grade ?? '—' }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endforeach
+                </div>
+                @endif
+            @empty
+                <div class="text-center py-10 text-gray-400 text-sm">No marks found.</div>
+            @endforelse
+        @endif
     </div>
     @endif
 
