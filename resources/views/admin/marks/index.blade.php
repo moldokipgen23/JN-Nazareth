@@ -72,10 +72,9 @@
                 ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
                 ->count();
         @endphp
-        <a href="{{ route('admin.marks.export-result-cards', ['exam' => $examId, 'class' => $class, 'section' => $section]) }}" style="background:#7c3aed;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
+        <a href="{{ route('admin.marks.export-result-cards', ['exam' => $examId, 'class' => $class, 'section' => $section]) }}" title="{{ $_studentCount }} students — single PDF, all ranked" style="background:#7c3aed;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
             Class Result PDF
         </a>
-        <span style="font-size:11px;color:#64748b;">{{ $_studentCount }} students — single PDF, all ranked</span>
         <a href="{{ route('admin.marks.export-results', ['exam' => $examId, 'class' => $class, 'section' => $section]) }}" style="background:#fff;color:#0f766e;border:1px solid #0f766e;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
             Results CSV
         </a>
