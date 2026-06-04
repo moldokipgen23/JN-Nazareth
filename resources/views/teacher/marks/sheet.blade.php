@@ -264,35 +264,6 @@ if (_pm) _pm.addEventListener('input', function() {
     });
 });
 
-var _confirmCallback = null;
-function customConfirm(message, cb) {
-    document.getElementById('confirmMessage').textContent = message;
-    _confirmCallback = cb;
-    document.getElementById('confirmModal').style.display = 'flex';
-}
-function closeConfirm() {
-    document.getElementById('confirmModal').style.display = 'none';
-    _confirmCallback = null;
-}
-document.addEventListener('DOMContentLoaded', function() {
-    var okBtn = document.getElementById('confirmOkBtn');
-    if (okBtn) okBtn.addEventListener('click', function() {
-        if (_confirmCallback) _confirmCallback();
-        closeConfirm();
-    });
-});
 </script>
-
-{{-- Custom confirmation modal --}}
-<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target===this)closeConfirm()">
-    <div style="background:#fff;border-radius:16px;max-width:400px;width:90%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
-        <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:8px;">Confirm</div>
-        <div id="confirmMessage" style="font-size:13px;color:#475569;margin-bottom:20px;"></div>
-        <div style="display:flex;gap:10px;justify-content:flex-end;">
-            <button type="button" onclick="closeConfirm()" style="padding:8px 20px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#475569;">Cancel</button>
-            <button type="button" id="confirmOkBtn" style="padding:8px 20px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:#0f766e;color:#fff;">Confirm</button>
-        </div>
-    </div>
-</div>
 
 @endsection

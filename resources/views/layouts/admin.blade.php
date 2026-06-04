@@ -486,6 +486,37 @@ function closeSidebar() {
     o.style.display = 'none';
 }
 </script>
+
+<div id="confirmOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target===this)closeConfirm()">
+    <div style="background:#fff;border-radius:14px;padding:28px 32px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.25);text-align:center;">
+        <div style="font-size:40px;margin-bottom:10px;">⚠️</div>
+        <div id="confirmMessage" style="font-size:15px;font-weight:600;color:#0f172a;margin-bottom:4px;">Are you sure?</div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:20px;">This action cannot be undone.</div>
+        <div style="display:flex;gap:10px;justify-content:center;">
+            <button onclick="closeConfirm()" style="background:#f1f5f9;color:#475569;border:none;padding:9px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
+            <button id="confirmOkBtn" onclick="confirmOk()" style="background:#dc2626;color:#fff;border:none;padding:9px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Confirm</button>
+        </div>
+    </div>
+</div>
+<script>
+let _confirmCb = null;
+function customConfirm(message, cb, okText) {
+    document.getElementById('confirmMessage').textContent = message;
+    document.getElementById('confirmOverlay').style.display = 'flex';
+    if (okText) document.getElementById('confirmOkBtn').textContent = okText;
+    else document.getElementById('confirmOkBtn').textContent = 'Confirm';
+    _confirmCb = cb;
+}
+function confirmOk() {
+    document.getElementById('confirmOverlay').style.display = 'none';
+    if (_confirmCb) _confirmCb();
+    _confirmCb = null;
+}
+function closeConfirm() {
+    document.getElementById('confirmOverlay').style.display = 'none';
+    _confirmCb = null;
+}
+</script>
 @stack('scripts')
 </body>
 </html>

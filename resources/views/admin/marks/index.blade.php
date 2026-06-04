@@ -88,36 +88,7 @@ function syncSection(form) {
     form.querySelector('input[name="section"]').value = opt?.dataset.section || '';
 }
 
-var _confirmCallback = null;
-function customConfirm(message, cb) {
-    document.getElementById('confirmMessage').textContent = message;
-    _confirmCallback = cb;
-    document.getElementById('confirmModal').style.display = 'flex';
-}
-function closeConfirm() {
-    document.getElementById('confirmModal').style.display = 'none';
-    _confirmCallback = null;
-}
-document.addEventListener('DOMContentLoaded', function() {
-    var okBtn = document.getElementById('confirmOkBtn');
-    if (okBtn) okBtn.addEventListener('click', function() {
-        if (_confirmCallback) _confirmCallback();
-        closeConfirm();
-    });
-});
 </script>
-
-{{-- Custom confirmation modal --}}
-<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target===this)closeConfirm()">
-    <div style="background:#fff;border-radius:16px;max-width:400px;width:90%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
-        <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:8px;">Confirm</div>
-        <div id="confirmMessage" style="font-size:13px;color:#475569;margin-bottom:20px;"></div>
-        <div style="display:flex;gap:10px;justify-content:flex-end;">
-            <button type="button" onclick="closeConfirm()" style="padding:8px 20px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#475569;">Cancel</button>
-            <button type="button" id="confirmOkBtn" style="padding:8px 20px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:#0f766e;color:#fff;">Confirm</button>
-        </div>
-    </div>
-</div>
 
 @if($view === 'review')
     @if($examId && $class && $section && $subject)
@@ -168,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="hidden" name="class" value="{{ $class }}">
                     <input type="hidden" name="section" value="{{ $section }}">
                     <input type="hidden" name="subject" value="{{ $subject }}">
-                    <button type="button" onclick="customConfirm('Delete all pending marks for {{ $subject }}? This cannot be undone.',()=>this.closest('form').submit())"
+                    <button type="button" onclick="customConfirm('Delete all pending marks for {{ $subject }}? This cannot be undone.',()=>this.closest('form').submit(),'Delete')"
                             style="background:#fee2e2;color:#b91c1c;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">🗑 Delete All</button>
                 </form>
                 <form method="POST" action="{{ route('admin.marks.index', ['view' => 'review', 'exam' => $examId, 'class' => $class, 'section' => $section, 'subject' => $subject]) }}" style="display:none;"></form>
@@ -352,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <input type="hidden" name="class" value="{{ $pr->class }}">
                                 <input type="hidden" name="section" value="{{ $pr->section }}">
                                 <input type="hidden" name="subject" value="{{ $pr->subject }}">
-                                <button type="button" onclick="customConfirm('Delete all {{ $pr->student_count }} mark(s) for {{ $pr->subject }}? This cannot be undone.',()=>this.closest('form').submit())"
+                                <button type="button" onclick="customConfirm('Delete all {{ $pr->student_count }} mark(s) for {{ $pr->subject }}? This cannot be undone.',()=>this.closest('form').submit(),'Delete')"
                                         style="background:#fee2e2;color:#b91c1c;border:none;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Delete</button>
                             </form>
                         </div>
@@ -595,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <option value="{{ $c }}">{{ $c }}</option>
                     @endforeach
                 </select>
-                <button type="button" onclick="customConfirm('Delete ALL marks for this class across all sections and subjects? This cannot be undone.',()=>this.closest('form').submit())"
+                <button type="button" onclick="customConfirm('Delete ALL marks for this class across all sections and subjects? This cannot be undone.',()=>this.closest('form').submit(),'Delete')"
                         style="background:#fee2e2;color:#b91c1c;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🗑 Clear Class</button>
             </form>
         </div>
