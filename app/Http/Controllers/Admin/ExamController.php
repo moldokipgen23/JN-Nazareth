@@ -45,6 +45,11 @@ class ExamController extends Controller
 
     public function destroy(Exam $exam)
     {
+        $marksCount = $exam->marks()->count();
+        if ($marksCount > 0) {
+            return back()->with('error', "Cannot delete \"{$exam->name}\": {$marksCount} mark(s) are linked. Remove or approve marks through the Marks dashboard first.");
+        }
+
         $exam->delete();
         return back()->with('success', 'Exam deleted.');
     }

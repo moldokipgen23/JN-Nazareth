@@ -6,6 +6,15 @@ Newest entries on top.
 
 ---
 
+## Session: 2026-06-04 (part 2) — Fix completion gates + backfill migration + exam delete safeguard
+
+### What changed (incremental)
+- Added safeguard in `ExamController@destroy()`: blocks exam deletion if marks are linked, with error showing exact count.
+- Removed misleading confirm text from exams index view.
+- (Everything from part 1 above also applies.)
+
+---
+
 ## Session: 2026-06-04 (part 2) — Fix completion gates + backfill migration
 
 ### What changed

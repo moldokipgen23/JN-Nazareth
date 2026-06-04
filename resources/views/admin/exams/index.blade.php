@@ -121,7 +121,7 @@
                         <a href="{{ route('admin.exams.marks-config', $exam) }}" style="background:#eef2ff;color:#4338ca;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;text-decoration:none;margin-right:6px;">
                             Marks Config
                         </a>
-                        <form method="POST" action="{{ route('admin.exams.destroy', $exam) }}" style="display:inline;" onsubmit="return confirm('Delete this exam? Any marks linked will also be removed.')">
+                        <form method="POST" action="{{ route('admin.exams.destroy', $exam) }}" style="display:inline;" onsubmit="return confirm('Delete this exam?')">
                             @csrf @method('DELETE')
                             <button type="submit" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:12px;font-weight:600;">Delete</button>
                         </form>
