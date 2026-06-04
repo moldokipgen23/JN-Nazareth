@@ -112,18 +112,22 @@ class MarksController extends Controller
                     ->when($section, fn ($q) => $q->where('section', $section))
                     ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
-            // Check per-subject: every enrolled student must have approved marks
-            $enrolledCount = StudentEnrollment::forActiveYear()->active()
-                ->where('class', $class)->where('section', $section)->count();
+            // Check per-subject: all submitted marks must be approved
             $pendingSubjects = [];
             foreach ($allSubjects as $subj) {
+                $submittedCount = Mark::where('academic_year_id', $year->id)
+                    ->where('exam_id', $examId)->where('class', $class)
+                    ->when($section, fn ($q) => $q->where('section', $section))
+                    ->where('subject', $subj)
+                    ->whereNotNull('submitted_at')
+                    ->count();
                 $approvedCount = Mark::where('academic_year_id', $year->id)
                     ->where('exam_id', $examId)->where('class', $class)
                     ->when($section, fn ($q) => $q->where('section', $section))
                     ->where('subject', $subj)
                     ->whereNotNull('approved_at')
                     ->count();
-                $isComplete = $approvedCount >= $enrolledCount && $enrolledCount > 0;
+                $isComplete = $submittedCount > 0 && $approvedCount >= $submittedCount;
                 if (!$isComplete) {
                     $pendingSubjects[] = $subj;
                 }
@@ -241,7 +245,7 @@ class MarksController extends Controller
             $subjectsWithMarks = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $examId)->where('class', $class)->where('section', $section)
                 ->select('subject')
-                ->selectRaw('COUNT(*) as total')
+                ->selectRaw('SUM(CASE WHEN submitted_at IS NOT NULL THEN 1 ELSE 0 END) as total')
                 ->selectRaw('SUM(CASE WHEN approved_at IS NOT NULL THEN 1 ELSE 0 END) as approved_count')
                 ->groupBy('subject')->get()->keyBy('subject');
 
@@ -409,18 +413,21 @@ class MarksController extends Controller
                     ->when($section, fn ($q) => $q->where('section', $section))
                     ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
-            $enrolledCount = StudentEnrollment::forActiveYear()->active()
-                ->where('class', $class)->where('section', $section)->count();
-
             $pendingSubjects = [];
             foreach ($allSubjects as $subj) {
+                $submittedCount = Mark::where('academic_year_id', $year->id)
+                    ->where('exam_id', $examId)->where('class', $class)
+                    ->when($section, fn ($q) => $q->where('section', $section))
+                    ->where('subject', $subj)
+                    ->whereNotNull('submitted_at')
+                    ->count();
                 $approvedCount = Mark::where('academic_year_id', $year->id)
                     ->where('exam_id', $examId)->where('class', $class)
                     ->when($section, fn ($q) => $q->where('section', $section))
                     ->where('subject', $subj)
                     ->whereNotNull('approved_at')
                     ->count();
-                $isComplete = $approvedCount >= $enrolledCount && $enrolledCount > 0;
+                $isComplete = $submittedCount > 0 && $approvedCount >= $submittedCount;
                 if (!$isComplete) {
                     $pendingSubjects[] = $subj;
                 }
@@ -611,16 +618,17 @@ class MarksController extends Controller
                 ->when($section, fn ($q) => $q->where('section', $section))
                 ->select('subject')->distinct()->pluck('subject')->sort()->values();
 
-        $enrolledCount = StudentEnrollment::forActiveYear()->active()
-            ->where('class', $class)->where('section', $section)->count();
-
         $pendingSubjects = [];
         foreach ($allSubjects as $subj) {
+            $submittedCount = Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)->where('class', $class)
+                ->when($section, fn ($q) => $q->where('section', $section))
+                ->where('subject', $subj)->whereNotNull('submitted_at')->count();
             $approvedCount = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $examId)->where('class', $class)
                 ->when($section, fn ($q) => $q->where('section', $section))
                 ->where('subject', $subj)->whereNotNull('approved_at')->count();
-            if ($approvedCount < $enrolledCount) {
+            if ($submittedCount > 0 && $approvedCount < $submittedCount) {
                 $pendingSubjects[] = $subj;
             }
         }
@@ -754,14 +762,15 @@ class MarksController extends Controller
                 ->when($section, fn ($q) => $q->where('section', $section))
                 ->select('subject')->distinct()->pluck('subject');
 
-        $enrolledCount = StudentEnrollment::forActiveYear()->active()
-            ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))->count();
         $pendingSubj = [];
         foreach ($subjList as $subj) {
+            $submittedCount = Mark::where('academic_year_id', $year->id)->where('exam_id', $examId)
+                ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
+                ->where('subject', $subj)->whereNotNull('submitted_at')->count();
             $approvedCount = Mark::where('academic_year_id', $year->id)->where('exam_id', $examId)
                 ->where('class', $class)->when($section, fn ($q) => $q->where('section', $section))
                 ->where('subject', $subj)->whereNotNull('approved_at')->count();
-            $isComplete = $approvedCount >= $enrolledCount && $enrolledCount > 0;
+            $isComplete = $submittedCount > 0 && $approvedCount >= $submittedCount;
             if (!$isComplete) { $pendingSubj[] = $subj; }
         }
         if ($pendingSubj) {

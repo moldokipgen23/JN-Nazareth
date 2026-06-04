@@ -590,11 +590,15 @@ function syncSection(form) {
 
                     $perSubject = [];
                     foreach ($expected as $subj) {
-                        $subCount = \App\Models\Mark::where('academic_year_id', $year->id)
+                        $submittedCount = \App\Models\Mark::where('academic_year_id', $year->id)
+                            ->where('exam_id', $examId)->where('class', $c)
+                            ->where('section', $sec)->where('subject', $subj)
+                            ->whereNotNull('submitted_at')->count();
+                        $approvedCount = \App\Models\Mark::where('academic_year_id', $year->id)
                             ->where('exam_id', $examId)->where('class', $c)
                             ->where('section', $sec)->where('subject', $subj)
                             ->whereNotNull('approved_at')->count();
-                        $perSubject[$subj] = $subCount >= $enrolled;
+                        $perSubject[$subj] = $submittedCount > 0 && $approvedCount >= $submittedCount;
                     }
                     $doneCount = count(array_filter($perSubject));
                     $totalExp = $expected->count();
