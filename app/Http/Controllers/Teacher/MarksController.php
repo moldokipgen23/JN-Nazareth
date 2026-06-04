@@ -137,6 +137,22 @@ class MarksController extends Controller
 
         $isSubmit = $request->input('action') === 'submit';
 
+        if ($isSubmit) {
+            $missing = [];
+            foreach ($enrollmentIds as $eid) {
+                $row = $data['marks'][$eid] ?? null;
+                $total = $row['total'] ?? null;
+                if ($total === null || $total === '') {
+                    $student = StudentEnrollment::find($eid)?->student?->name ?? "ID #{$eid}";
+                    $missing[] = $student;
+                }
+            }
+            if (!empty($missing)) {
+                return back()->with('error', 'Cannot submit: marks missing for: '.implode(', ', $missing))
+                    ->withInput();
+            }
+        }
+
         $saved = 0;
         foreach ($data['marks'] as $enrollmentId => $row) {
             $enrollmentId = (int) $enrollmentId;
