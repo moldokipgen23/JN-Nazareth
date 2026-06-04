@@ -270,11 +270,11 @@ document.addEventListener('DOMContentLoaded', function() {
             <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Submission Status per Subject</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;">
                 @foreach($submissionStatus as $ss)
-                <div style="background:{{ $ss->total === $ss->submitted_count ? '#f0fdf4' : '#fef3c7' }};border-radius:8px;padding:8px 12px;">
+                <div style="background:{{ $ss->total === $ss->approved_count ? '#f0fdf4' : '#fef3c7' }};border-radius:8px;padding:8px 12px;">
                     <div style="font-size:12px;font-weight:600;color:#0f172a;">{{ $ss->subject }}</div>
-                    <div style="font-size:11px;color:#64748b;">{{ $ss->submitted_count }}/{{ $ss->total }} submitted</div>
-                    @if($ss->total === $ss->submitted_count)
-                        <span style="font-size:10px;color:#15803d;font-weight:600;">✅ Complete</span>
+                    <div style="font-size:11px;color:#64748b;">{{ $ss->approved_count }}/{{ $ss->total }} approved</div>
+                    @if($ss->total === $ss->approved_count)
+                        <span style="font-size:10px;color:#15803d;font-weight:600;">✅ Approved</span>
                     @else
                         <span style="font-size:10px;color:#92400e;font-weight:600;">⏳ Pending</span>
                     @endif
@@ -526,7 +526,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         $_sub = \App\Models\Mark::where('academic_year_id', $year->id)
                             ->where('exam_id', $examId)->where('class', $_cls)
                             ->where('section', $_sec)->where('subject', $_subj)
-                            ->whereNotNull('submitted_at')->count();
+                            ->whereNotNull('approved_at')->count();
                         if ($_sub < $_enrolled) {
                             $_pendingSchool[] = $_cls . '-' . $_sec . ' ' . $_subj;
                         }
@@ -589,7 +589,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         $subCount = \App\Models\Mark::where('academic_year_id', $year->id)
                             ->where('exam_id', $examId)->where('class', $c)
                             ->where('section', $sec)->where('subject', $subj)
-                            ->whereNotNull('submitted_at')->count();
+                            ->whereNotNull('approved_at')->count();
                         $perSubject[$subj] = $subCount >= $enrolled;
                     }
                     $doneCount = count(array_filter($perSubject));

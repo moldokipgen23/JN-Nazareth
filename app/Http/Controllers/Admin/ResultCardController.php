@@ -76,13 +76,13 @@ class ResultCardController extends Controller
 
         $pending = [];
         foreach ($subjects as $subj) {
-            $submittedCount = Mark::where('academic_year_id', $year->id)
+            $approvedCount = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $exam->id)->where('class', $class)
                 ->when($section, fn ($q) => $q->where('section', $section))
                 ->where('subject', $subj)
-                ->whereNotNull('submitted_at')
+                ->whereNotNull('approved_at')
                 ->count();
-            $isComplete = $submittedCount >= $enrolledCount && $enrolledCount > 0;
+            $isComplete = $approvedCount >= $enrolledCount && $enrolledCount > 0;
             if (!$isComplete) {
                 $pending[] = $subj;
             }
@@ -107,7 +107,7 @@ class ResultCardController extends Controller
 
         $marks = Mark::where('student_enrollment_id', $enrollment->id)
             ->where('exam_id', $exam->id)
-            ->whereNotNull('submitted_at')
+            ->whereNotNull('approved_at')
             ->get();
 
         $subjects = $marks->map(function ($m) {
@@ -138,7 +138,7 @@ class ResultCardController extends Controller
             $marksByStudent = Mark::whereHas('exam', fn($q) => $q->where('id', $exam->id))
                 ->whereHas('enrollment', fn($q) => $q->where('class', $enrollment->class)
                     ->where('academic_year_id', $exam->academic_year_id))
-                ->whereNotNull('submitted_at')
+                ->whereNotNull('approved_at')
                 ->with('enrollment')
                 ->get()
                 ->groupBy('student_enrollment_id');
@@ -205,7 +205,7 @@ class ResultCardController extends Controller
         // Aggregate all marks for the year — group by subject
         $allMarks = Mark::where('student_enrollment_id', $enrollment->id)
             ->whereIn('exam_id', $exams->pluck('id'))
-            ->whereNotNull('submitted_at')
+            ->whereNotNull('approved_at')
             ->get();
 
         $subjects = $allMarks->groupBy('subject')->map(function ($ms) {
@@ -247,7 +247,7 @@ class ResultCardController extends Controller
                 ->map(function ($e) use ($exams) {
                     $ms = Mark::where('student_enrollment_id', $e->id)
                         ->whereIn('exam_id', $exams->pluck('id'))
-                        ->whereNotNull('submitted_at')
+                        ->whereNotNull('approved_at')
                         ->get()
                         ->groupBy('subject');
                     if ($ms->isEmpty()) return null;

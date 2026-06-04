@@ -6,6 +6,27 @@ Newest entries on top.
 
 ---
 
+## Session: 2026-06-04 (part 2) — Fix completion gates + backfill migration
+
+### What changed
+- All completion gates in controllers/views changed from `whereNotNull('submitted_at')` to `whereNotNull('approved_at')`:
+  - `Admin/MarksController.php`: `examSummary()`, `index()` school-wide check, summary tab query
+  - `resources/views/admin/marks/index.blade.php`: school-wide export check, summary per-subject check, submission status card
+  - `Admin/ResultCardController.php`: `requireAllSubjectsSubmitted()`, `download()`, `fullYear()` — all 5 occurrences
+- Added migration `2026_06_04_121910_backfill_approved_at_for_existing_submitted_marks.php` — sets `approved_at = submitted_at` for any mark that has `submitted_at` but null `approved_at`
+- Ran migration on local, verified OK
+
+### Files most changed
+- `app/Http/Controllers/Admin/MarksController.php`
+- `resources/views/admin/marks/index.blade.php`
+- `app/Http/Controllers/Admin/ResultCardController.php`
+- `database/migrations/2026_06_04_121910_backfill_approved_at_for_existing_submitted_marks.php`
+
+### Known limitations
+- Live server still needs the new migration run via cPanel.
+
+---
+
 ## Session: 2026-06-04 — Marks approval workflow (admin approve/send-back), pending reviews dashboard
 
 ### What changed
