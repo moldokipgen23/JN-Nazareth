@@ -146,8 +146,17 @@ function syncSection(form) {
             </div>
         </div>
         @elseif($_allApproved)
-        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
             <span style="font-size:13px;font-weight:700;color:#15803d;">✅ All marks approved</span>
+            <form method="POST" action="{{ route('admin.marks.send-back-subject') }}">
+                @csrf
+                <input type="hidden" name="exam_id" value="{{ $examId }}">
+                <input type="hidden" name="class" value="{{ $class }}">
+                <input type="hidden" name="section" value="{{ $section }}">
+                <input type="hidden" name="subject" value="{{ $subject }}">
+                <button type="button" onclick="customConfirm('Send back all marks for {{ $subject }}? Teacher will re-edit and resubmit.',()=>this.closest('form').submit())"
+                        style="background:#fef3c7;color:#92400e;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">↩ Send Back All</button>
+            </form>
         </div>
         @endif
 
@@ -224,16 +233,10 @@ function syncSection(form) {
                                     <button type="submit" style="background:#6d28d9;color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Approve</button>
                                 </form>
                                 @endif
-                                <form method="POST" action="{{ route('admin.marks.update', $r) }}" style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
-                                    @csrf @method('PUT')
-                                    <input type="number" step="0.01" min="0" max="{{ $r->full_marks }}" name="total_marks" value="{{ $r->total_marks ?? $r->obtained_marks }}" style="width:58px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;text-align:center;">
-                                    <input type="text" name="grade" value="{{ $r->grade ?: $r->computedGrade() }}" maxlength="5" placeholder="Grd" style="width:38px;padding:4px 4px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;text-align:center;">
-                                    <button type="submit" style="background:#0f766e;color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;">Save</button>
-                                </form>
-                                @if($r->submitted_at && !$r->approved_at)
+                                @if($r->submitted_at)
                                 <form method="POST" action="{{ route('admin.marks.send-back', $r) }}" style="display:inline;flex-shrink:0;">
                                     @csrf
-                                    <button type="button" style="background:#fef3c7;color:#92400e;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;" onclick="customConfirm('Send back for revision? Teacher will be able to re-edit.',()=>this.closest('form').submit())">Edit</button>
+                                    <button type="button" style="background:#fef3c7;color:#92400e;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;" onclick="customConfirm('Send back for revision? Teacher will be able to re-edit.',()=>this.closest('form').submit())">{{ $r->approved_at ? 'Send Back' : 'Edit' }}</button>
                                 </form>
                                 @endif
                             </div>
