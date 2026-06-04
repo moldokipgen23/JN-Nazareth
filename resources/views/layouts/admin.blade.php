@@ -118,9 +118,9 @@
                 $pendingQuestions = $activeYear
                     ? \App\Models\ExamQuestion::where('academic_year_id', $activeYear->id)->where('status', 'pending')->count()
                     : 0;
-                $draftMarks = $activeYear
+                $pendingMarks = $activeYear
                     ? \App\Models\Mark::where('academic_year_id', $activeYear->id)
-                        ->whereNull('submitted_at')->whereNotNull('total_marks')->count()
+                        ->whereNotNull('submitted_at')->whereNull('approved_at')->count()
                     : 0;
 
                 $academicActive = request()->routeIs('admin.academic-years.*','admin.students.*','admin.classes.*','admin.subjects.*','admin.class-subjects.*','admin.folders.*','admin.documents.*');
@@ -202,8 +202,8 @@
                             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
                             Marks
                         </span>
-                        @if($draftMarks > 0)
-                            <span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;">{{ $draftMarks }}</span>
+                        @if($pendingMarks > 0)
+                            <span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;">{{ $pendingMarks }}</span>
                         @endif
                     </a>
                     <a href="{{ route('admin.marks.exam-summary') }}" class="sidebar-link {{ request()->routeIs('admin.marks.exam-summary') ? 'active' : '' }}" style="display:flex;align-items:center;gap:10px;">
