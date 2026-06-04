@@ -265,11 +265,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <button type="button" style="background:#fef3c7;color:#92400e;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;" onclick="customConfirm('Send back for revision? Teacher will be able to re-edit.',()=>this.closest('form').submit())">Edit</button>
                                 </form>
                                 @endif
-                                <form method="POST" action="{{ route('admin.marks.destroy', $r) }}" style="display:inline;flex-shrink:0;">
-                                    @csrf @method('DELETE')
-                                    <button type="button" onclick="customConfirm('Delete mark for {{ $r->enrollment?->student?->name ?? 'this student' }}? This cannot be undone.',()=>this.closest('form').submit())"
-                                            style="background:#fee2e2;color:#b91c1c;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Delete</button>
-                                </form>
                             </div>
                         </td>
                     </tr>
@@ -589,6 +584,21 @@ document.addEventListener('DOMContentLoaded', function() {
     @if(!$examId || !$year)
         <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">Pick an exam above to see submission status across all classes.</div>
     @else
+        <div style="background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+            <span style="font-size:12px;font-weight:700;color:#64748b;">Bulk Delete:</span>
+            <form method="POST" action="{{ route('admin.marks.delete-class') }}" style="display:flex;gap:6px;align-items:center;">
+                @csrf
+                <input type="hidden" name="exam_id" value="{{ $examId }}">
+                <select name="class" required style="border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:12px;">
+                    <option value="">— pick class —</option>
+                    @foreach(\App\Models\Student::classes() as $c)
+                        <option value="{{ $c }}">{{ $c }}</option>
+                    @endforeach
+                </select>
+                <button type="button" onclick="customConfirm('Delete ALL marks for this class across all sections and subjects? This cannot be undone.',()=>this.closest('form').submit())"
+                        style="background:#fee2e2;color:#b91c1c;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🗑 Clear Class</button>
+            </form>
+        </div>
         @php
             $allClasses = \App\Models\Student::classes();
             $classData = collect();

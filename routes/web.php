@@ -167,9 +167,9 @@ Route::prefix('admin')
             Route::post('marks/approve-subject', [AdminMarksController::class, 'approveSubject'])->name('marks.approve-subject');
             Route::post('marks/send-back-subject', [AdminMarksController::class, 'sendBackSubject'])->name('marks.send-back-subject');
             Route::post('marks/delete-subject', [AdminMarksController::class, 'deleteSubject'])->name('marks.delete-subject');
+            Route::post('marks/delete-class', [AdminMarksController::class, 'deleteClass'])->name('marks.delete-class');
             Route::post('marks/{mark}/approve', [AdminMarksController::class, 'approve'])->name('marks.approve');
             Route::post('marks/{mark}/send-back', [AdminMarksController::class, 'sendBack'])->name('marks.send-back');
-            Route::delete('marks/{mark}', [AdminMarksController::class, 'destroy'])->name('marks.destroy');
             Route::get('marks/analytics', [MarksAnalyticsController::class, 'index'])->name('marks.analytics');
             Route::get('exam-summary', [AdminMarksController::class, 'examSummary'])->name('marks.exam-summary');
 
