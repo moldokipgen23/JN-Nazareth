@@ -6,12 +6,16 @@ Newest entries on top.
 
 ---
 
-## Session: 2026-06-04 (part 2) — Fix completion gates + backfill migration + exam delete safeguard
+## Session: 2026-06-04 (part 2) — Fix completion gates + backfill migration + delete marks + exam safeguard
 
 ### What changed (incremental)
-- Added safeguard in `ExamController@destroy()`: blocks exam deletion if marks are linked, with error showing exact count.
+- **New** `deleteSubject()` in `Admin/MarksController.php` — deletes all marks for a subject group (exam, class, section, subject).
+- **New** `destroy()` in `Admin/MarksController.php` — deletes an individual mark.
+- **New route** `DELETE /admin/marks/{mark}` (`marks.destroy`) and `POST /admin/marks/delete-subject` (`marks.delete-subject`).
+- **View** — added Delete button in pending reviews cards, "Delete All" in "Approve All" bar, and per-row Delete button in the marks table. All use `customConfirm()`.
+- **Exam delete safeguard** — `ExamController@destroy()` now blocks deletion if marks are linked, with error showing exact count.
 - Removed misleading confirm text from exams index view.
-- (Everything from part 1 above also applies.)
+- (Everything from part 1 also applies.)
 
 ---
 

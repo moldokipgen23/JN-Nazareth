@@ -162,6 +162,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     <button type="button" onclick="customConfirm('Approve all pending marks for {{ $subject }}?',()=>this.closest('form').submit())"
                             style="background:linear-gradient(135deg,#6d28d9,#7c3aed);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">✅ Approve All</button>
                 </form>
+                <form method="POST" action="{{ route('admin.marks.delete-subject') }}">
+                    @csrf
+                    <input type="hidden" name="exam_id" value="{{ $examId }}">
+                    <input type="hidden" name="class" value="{{ $class }}">
+                    <input type="hidden" name="section" value="{{ $section }}">
+                    <input type="hidden" name="subject" value="{{ $subject }}">
+                    <button type="button" onclick="customConfirm('Delete all pending marks for {{ $subject }}? This cannot be undone.',()=>this.closest('form').submit())"
+                            style="background:#fee2e2;color:#b91c1c;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">🗑 Delete All</button>
+                </form>
                 <form method="POST" action="{{ route('admin.marks.index', ['view' => 'review', 'exam' => $examId, 'class' => $class, 'section' => $section, 'subject' => $subject]) }}" style="display:none;"></form>
             </div>
         </div>
@@ -256,6 +265,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <button type="button" style="background:#fef3c7;color:#92400e;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;" onclick="customConfirm('Send back for revision? Teacher will be able to re-edit.',()=>this.closest('form').submit())">Edit</button>
                                 </form>
                                 @endif
+                                <form method="POST" action="{{ route('admin.marks.destroy', $r) }}" style="display:inline;flex-shrink:0;">
+                                    @csrf @method('DELETE')
+                                    <button type="button" onclick="customConfirm('Delete mark for {{ $r->enrollment?->student?->name ?? 'this student' }}? This cannot be undone.',()=>this.closest('form').submit())"
+                                            style="background:#fee2e2;color:#b91c1c;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Delete</button>
+                                </form>
                             </div>
                         </td>
                     </tr>
@@ -336,6 +350,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <input type="hidden" name="subject" value="{{ $pr->subject }}">
                                 <button type="button" onclick="customConfirm('Approve all {{ $pr->student_count }} mark(s) for {{ $pr->subject }}?',()=>this.closest('form').submit())"
                                         style="background:#6d28d9;color:#fff;border:none;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Approve All</button>
+                            </form>
+                            <form method="POST" action="{{ route('admin.marks.delete-subject') }}" style="flex-shrink:0;">
+                                @csrf
+                                <input type="hidden" name="exam_id" value="{{ $pr->exam_id }}">
+                                <input type="hidden" name="class" value="{{ $pr->class }}">
+                                <input type="hidden" name="section" value="{{ $pr->section }}">
+                                <input type="hidden" name="subject" value="{{ $pr->subject }}">
+                                <button type="button" onclick="customConfirm('Delete all {{ $pr->student_count }} mark(s) for {{ $pr->subject }}? This cannot be undone.',()=>this.closest('form').submit())"
+                                        style="background:#fee2e2;color:#b91c1c;border:none;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Delete</button>
                             </form>
                         </div>
                     </div>

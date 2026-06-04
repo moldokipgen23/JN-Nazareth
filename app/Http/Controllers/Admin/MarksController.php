@@ -909,6 +909,15 @@ class MarksController extends Controller
     }
 
     /**
+     * Delete an individual mark.
+     */
+    public function destroy(Mark $mark)
+    {
+        $mark->delete();
+        return back()->with('success', 'Mark deleted.');
+    }
+
+    /**
      * Send back all marks for a subject (exam, class, section, subject) for teacher revision.
      */
     public function sendBackSubject(Request $request)
@@ -938,6 +947,33 @@ class MarksController extends Controller
             ]);
 
         return back()->with('success', "Sent back {$count} mark(s) for {$data['subject']}. Teacher can now re-edit.");
+    }
+
+    /**
+     * Delete all marks for a subject (exam, class, section, subject).
+     */
+    public function deleteSubject(Request $request)
+    {
+        $data = $request->validate([
+            'exam_id' => 'required|integer|exists:exams,id',
+            'class'   => 'required|string',
+            'section' => 'required|string',
+            'subject' => 'required|string',
+        ]);
+
+        $year = AcademicYear::current();
+        if (!$year) {
+            return back()->with('error', 'No active academic year.');
+        }
+
+        $count = Mark::where('academic_year_id', $year->id)
+            ->where('exam_id', $data['exam_id'])
+            ->where('class', $data['class'])
+            ->where('section', $data['section'])
+            ->where('subject', $data['subject'])
+            ->delete();
+
+        return back()->with('success', "Deleted {$count} mark(s) for {$data['subject']}.");
     }
 
     /**
