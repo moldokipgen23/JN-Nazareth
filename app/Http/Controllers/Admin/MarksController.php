@@ -1222,7 +1222,7 @@ class MarksController extends Controller
             return back()->with('error', "Total marks cannot exceed full marks ({$mark->full_marks}).");
         }
 
-        $mark->update([
+        $updates = [
             'theory_marks'     => $data['theory_marks'] ?? null,
             'assignment_marks' => $data['assignment_marks'] ?? null,
             'total_marks'      => $data['total_marks'] ?? null,
@@ -1230,7 +1230,14 @@ class MarksController extends Controller
             'grade'            => $data['grade'] ?? $mark->computedGrade(),
             'remarks'          => $data['remarks'] ?? null,
             'entered_by'       => auth()->id(),
-        ]);
+        ];
+
+        if ($mark->approved_at) {
+            $updates['approved_at'] = null;
+            $updates['approved_by'] = null;
+        }
+
+        $mark->update($updates);
 
         return back()->with('success', 'Mark updated.');
     }
