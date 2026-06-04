@@ -55,7 +55,6 @@ class MarksController extends Controller
 
         $slotStatuses = [];
         $teacherId = auth()->id();
-        $adminIds = \App\Models\User::where('is_admin', true)->pluck('id')->toArray();
         foreach ($slots as $slot) {
             foreach ($exams as $exam) {
                 $marks = Mark::where('academic_year_id', $year->id)
@@ -66,7 +65,7 @@ class MarksController extends Controller
                     ->whereNotNull('submitted_at')
                     ->get();
                 if ($marks->isEmpty()) continue;
-                $hasRevised = $marks->contains(fn ($m) => $m->entered_by && $m->entered_by !== $teacherId && in_array($m->entered_by, $adminIds));
+                $hasRevised = $marks->contains(fn ($m) => $m->entered_by && $m->entered_by !== $teacherId);
                 $allApproved = $marks->every(fn ($m) => $m->approved_at);
                 $status = $hasRevised ? 'revised' : ($allApproved ? 'approved' : 'pending');
                 $slotStatuses[$slot->class][$slot->section][$slot->subject][$exam->id] = $status;
