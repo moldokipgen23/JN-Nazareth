@@ -62,7 +62,7 @@ class MarksController extends Controller
         }
 
         $records = collect();
-        $stats   = ['total' => 0, 'pass' => 0, 'fail' => 0, 'ungraded' => 0, 'submitted' => 0];
+        $stats   = ['total' => 0, 'pass' => 0, 'fail' => 0, 'ungraded' => 0, 'submitted' => 0, 'approved' => 0];
 
         $rankings   = collect();
         $analyticsSubjects = collect();
@@ -83,6 +83,7 @@ class MarksController extends Controller
                 $stats['total']++;
                 $stats[$r->status()]++;
                 if ($r->submitted_at) $stats['submitted']++;
+                if ($r->approved_at) $stats['approved']++;
             }
         }
 
@@ -273,6 +274,30 @@ class MarksController extends Controller
             }
         }
 
+        // Pending approvals: submitted but not yet approved, grouped by (exam, class, section, subject)
+        $pendingReviews = collect();
+        if ($year) {
+            $pendingMarks = Mark::where('academic_year_id', $year->id)
+                ->whereNotNull('submitted_at')
+                ->whereNull('approved_at')
+                ->with('exam')
+                ->select('exam_id', 'class', 'section', 'subject')
+                ->selectRaw('COUNT(*) as student_count')
+                ->selectRaw('MIN(submitted_at) as first_submitted_at')
+                ->groupBy('exam_id', 'class', 'section', 'subject')
+                ->orderBy('exam_id')
+                ->orderBy('class')
+                ->orderBy('section')
+                ->orderBy('subject')
+                ->get();
+
+            if ($examId) {
+                $pendingMarks = $pendingMarks->where('exam_id', (int) $examId);
+            }
+
+            $pendingReviews = $pendingMarks;
+        }
+
         return view('admin.marks.index', [
             'year'     => $year,
             'exams'    => $exams,
@@ -294,6 +319,7 @@ class MarksController extends Controller
             'pendingSubjects' => $pendingSubjects ?? [],
             'passRankings' => $passRankings ?? collect(),
             'failRankings' => $failRankings ?? collect(),
+            'pendingReviews' => $pendingReviews,
         ]);
     }
 
@@ -821,8 +847,97 @@ class MarksController extends Controller
 
     public function resetSubmission(Request $request, Mark $mark)
     {
-        $mark->update(['submitted_at' => null]);
+        $mark->update(['submitted_at' => null, 'approved_at' => null, 'approved_by' => null]);
         return back()->with('success', 'Submission reset. Teacher can now edit marks.');
+    }
+
+    /**
+     * Approve an individual mark record.
+     */
+    public function approve(Request $request, Mark $mark)
+    {
+        $mark->update([
+            'approved_at' => now(),
+            'approved_by' => auth()->id(),
+        ]);
+        return back()->with('success', 'Mark approved.');
+    }
+
+    /**
+     * Approve all marks for a subject (exam, class, section, subject).
+     */
+    public function approveSubject(Request $request)
+    {
+        $data = $request->validate([
+            'exam_id' => 'required|integer|exists:exams,id',
+            'class'   => 'required|string',
+            'section' => 'required|string',
+            'subject' => 'required|string',
+        ]);
+
+        $year = AcademicYear::current();
+        if (!$year) {
+            return back()->with('error', 'No active academic year.');
+        }
+
+        $count = Mark::where('academic_year_id', $year->id)
+            ->where('exam_id', $data['exam_id'])
+            ->where('class', $data['class'])
+            ->where('section', $data['section'])
+            ->where('subject', $data['subject'])
+            ->whereNotNull('submitted_at')
+            ->whereNull('approved_at')
+            ->update([
+                'approved_at' => now(),
+                'approved_by' => auth()->id(),
+            ]);
+
+        return back()->with('success', "Approved {$count} mark(s) for {$data['subject']}.");
+    }
+
+    /**
+     * Send a mark back for teacher revision (reset submitted_at so teacher can re-edit).
+     */
+    public function sendBack(Request $request, Mark $mark)
+    {
+        $mark->update([
+            'submitted_at' => null,
+            'approved_at' => null,
+            'approved_by' => null,
+        ]);
+        return back()->with('success', 'Mark sent back for revision. Teacher can now edit.');
+    }
+
+    /**
+     * Send back all marks for a subject (exam, class, section, subject) for teacher revision.
+     */
+    public function sendBackSubject(Request $request)
+    {
+        $data = $request->validate([
+            'exam_id' => 'required|integer|exists:exams,id',
+            'class'   => 'required|string',
+            'section' => 'required|string',
+            'subject' => 'required|string',
+        ]);
+
+        $year = AcademicYear::current();
+        if (!$year) {
+            return back()->with('error', 'No active academic year.');
+        }
+
+        $count = Mark::where('academic_year_id', $year->id)
+            ->where('exam_id', $data['exam_id'])
+            ->where('class', $data['class'])
+            ->where('section', $data['section'])
+            ->where('subject', $data['subject'])
+            ->whereNotNull('submitted_at')
+            ->update([
+                'submitted_at' => null,
+                'approved_at' => null,
+                'approved_by' => null,
+            ]);
+
+        return back()->with('success', "Sent back {$count} mark(s) for {$data['subject']}. Teacher can now re-edit.");
     }
 
     /**

@@ -24,6 +24,8 @@ class Mark extends Model
         'grade',
         'remarks',
         'submitted_at',
+        'approved_at',
+        'approved_by',
         'entered_by',
     ];
 
@@ -35,6 +37,7 @@ class Mark extends Model
         'total_marks'      => 'decimal:2',
         'obtained_marks'   => 'decimal:2',
         'submitted_at'     => 'datetime',
+        'approved_at'      => 'datetime',
     ];
 
     public function exam(): BelongsTo
@@ -55,6 +58,11 @@ class Mark extends Model
     public function enteredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'entered_by');
+    }
+
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     public function scopeForActiveYear(Builder $query): Builder

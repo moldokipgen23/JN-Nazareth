@@ -6,6 +6,38 @@ Newest entries on top.
 
 ---
 
+## Session: 2026-06-04 — Marks approval workflow (admin approve/send-back), pending reviews dashboard
+
+### What changed
+
+#### 🆕 New features
+- **Marks approval workflow** — teachers submit marks (`submitted_at`), admin then reviews and explicitly approves (`approved_at`/`approved_by`). Three-state lifecycle: draft → submitted/pending → approved.
+- **Pending Approvals dashboard** — when admin opens the Marks page, all submitted-but-not-approved subjects auto-populate as review cards (no filters needed). Shows exam name, class, section, subject, student count, and submission time.
+- **Per-subject "Approve All" button** — in the detailed review view, an "Approve All" button approves every pending student in the subject at once.
+- **Individual approve/send-back** — each student row in the review table has Approve and Edit (send back) buttons.
+- **Bulk send-back on pending cards** — pending review cards have "Send Back" to reset the entire subject for teacher re-editing.
+- **Approved stat card** — review stats now include an "Approved" count.
+- **Approved column** — student review table shows approval status (Pending/Approved with date).
+
+#### 🧹 UX improvements
+- **Empty state replaced** — "Pick exam + class + subject above" is now replaced with the pending approvals list and a helpful filter hint.
+- **Visual cues** — approved rows get a faint purple background; pending subjects show amber cards; approval badge in purple.
+
+#### Schema changes
+- Added `approved_at` (timestamp, nullable) and `approved_by` (FK → users, nullable) to `marks` table.
+
+#### Files changed
+- `database/migrations/2026_06_04_000001_add_approved_at_to_marks_table.php` — new migration
+- `app/Models/Mark.php` — fillable, casts, `approvedBy()` relationship
+- `routes/web.php` — 3 new admin routes: `marks.approve-subject`, `marks.send-back-subject`, `marks.approve`, `marks.send-back`
+- `app/Http/Controllers/Admin/MarksController.php` — `index()` now builds `$pendingReviews`; new methods: `approve()`, `approveSubject()`, `sendBack()`, `sendBackSubject()`; `resetSubmission()` also clears approval
+- `resources/views/admin/marks/index.blade.php` — pending approvals cards, approve/send-back buttons in table, "Approve All" bar, approved stat
+
+#### Known limitations
+- Results/rankings/exports still gate on submission (`submitted_at`) not approval. Admins should approve before declaring results official.
+
+---
+
 ## Session: 2026-06-03 — Export rewrites, student profile Marks tab rebuild, misc fixes
 
 ### What changed

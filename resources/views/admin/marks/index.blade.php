@@ -99,6 +99,7 @@ function syncSection(form) {
                     'fail'      => ['#fee2e2', '#b91c1c'],
                     'ungraded'  => ['#fef3c7', '#92400e'],
                     'submitted' => ['#dbeafe', '#1d4ed8'],
+                    'approved'  => ['#ede9fe', '#6d28d9'],
                 ];
             @endphp
             @foreach($statCards as $key => $col)
@@ -108,6 +109,37 @@ function syncSection(form) {
                 </div>
             @endforeach
         </div>
+
+        @php
+            $_anyPending = $records->contains(fn($r) => $r->submitted_at && !$r->approved_at);
+            $_allApproved = $records->isNotEmpty() && $records->every(fn($r) => $r->approved_at);
+            $_anySubmitted = $records->contains(fn($r) => $r->submitted_at);
+        @endphp
+
+        @if($_anyPending)
+        <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:13px;font-weight:700;color:#6d28d9;">⏳ Pending Approval</span>
+                <span style="font-size:11px;color:#6d28d9;">{{ $records->filter(fn($r) => $r->submitted_at && !$r->approved_at)->count() }} student(s) awaiting approval</span>
+            </div>
+            <div style="display:flex;gap:6px;">
+                <form method="POST" action="{{ route('admin.marks.approve-subject') }}">
+                    @csrf
+                    <input type="hidden" name="exam_id" value="{{ $examId }}">
+                    <input type="hidden" name="class" value="{{ $class }}">
+                    <input type="hidden" name="section" value="{{ $section }}">
+                    <input type="hidden" name="subject" value="{{ $subject }}">
+                    <button type="submit" onclick="return confirm('Approve all pending marks for {{ $subject }}?')"
+                            style="background:linear-gradient(135deg,#6d28d9,#7c3aed);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">✅ Approve All</button>
+                </form>
+                <form method="POST" action="{{ route('admin.marks.index', ['view' => 'review', 'exam' => $examId, 'class' => $class, 'section' => $section, 'subject' => $subject]) }}" style="display:none;"></form>
+            </div>
+        </div>
+        @elseif($_allApproved)
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:13px;font-weight:700;color:#15803d;">✅ All marks approved</span>
+        </div>
+        @endif
 
         @if($records->isEmpty())
             <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">No marks entered yet.</div>
@@ -125,14 +157,15 @@ function syncSection(form) {
                         <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Grade</th>
                         <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Status</th>
                         <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Submitted</th>
+                        <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Approved</th>
                         <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Entered By</th>
-                        <th style="text-align:right;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Override</th>
+                        <th style="text-align:right;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                 @foreach($records as $r)
                     @continue(!$r->enrollment)
-                    <tr style="border-top:1px solid #f1f5f9;">
+                    <tr style="border-top:1px solid #f1f5f9;{{ $r->approved_at ? 'background:#f5f3ff;' : '' }}">
                         <td style="padding:10px 14px;color:#475569;">{{ $r->enrollment?->roll_number ?: '—' }}</td>
                         <td style="padding:10px 14px;color:#0f172a;font-weight:600;">{{ $r->enrollment?->student?->name ?? '—' }}</td>
                         <td style="padding:10px 14px;color:#475569;">{{ $r->theory_marks ?? '—' }}</td>
@@ -163,19 +196,34 @@ function syncSection(form) {
                                 <span style="color:#94a3b8;font-size:11px;">—</span>
                             @endif
                         </td>
+                        <td style="padding:10px 14px;">
+                            @if($r->approved_at)
+                                <span style="color:#6d28d9;font-size:11px;font-weight:600;">✅ {{ $r->approved_at->format('d M') }}</span>
+                            @elseif($r->submitted_at)
+                                <span style="color:#92400e;font-size:11px;font-weight:600;">⏳ Pending</span>
+                            @else
+                                <span style="color:#94a3b8;font-size:11px;">—</span>
+                            @endif
+                        </td>
                         <td style="padding:10px 14px;color:#64748b;font-size:12px;">{{ $r->enteredBy?->name ?? '—' }}</td>
                         <td style="padding:10px 14px;text-align:right;white-space:nowrap;">
-                            <div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;flex-wrap:nowrap;">
+                            <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center;flex-wrap:nowrap;">
+                                @if($r->submitted_at && !$r->approved_at)
+                                <form method="POST" action="{{ route('admin.marks.approve', $r) }}" style="display:inline;flex-shrink:0;">
+                                    @csrf
+                                    <button type="submit" style="background:#6d28d9;color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Approve</button>
+                                </form>
+                                @endif
                                 <form method="POST" action="{{ route('admin.marks.update', $r) }}" style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
                                     @csrf @method('PUT')
                                     <input type="number" step="0.01" min="0" max="{{ $r->full_marks }}" name="total_marks" value="{{ $r->total_marks ?? $r->obtained_marks }}" style="width:58px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;text-align:center;">
                                     <input type="text" name="grade" value="{{ $r->grade ?: $r->computedGrade() }}" maxlength="5" placeholder="Grd" style="width:38px;padding:4px 4px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;text-align:center;">
                                     <button type="submit" style="background:#0f766e;color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;">Save</button>
                                 </form>
-                                @if($r->submitted_at)
-                                <form method="POST" action="{{ route('admin.marks.reset-submission', $r) }}" style="display:inline;flex-shrink:0;">
+                                @if($r->submitted_at && !$r->approved_at)
+                                <form method="POST" action="{{ route('admin.marks.send-back', $r) }}" style="display:inline;flex-shrink:0;">
                                     @csrf
-                                    <button type="submit" style="background:#fef3c7;color:#92400e;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;" onclick="return confirm('Reset submission for this student?')">Reset</button>
+                                    <button type="submit" style="background:#fef3c7;color:#92400e;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;" onclick="return confirm('Send back for revision? Teacher will be able to re-edit.')">Edit</button>
                                 </form>
                                 @endif
                             </div>
@@ -207,7 +255,75 @@ function syncSection(form) {
         @endif
         @endif
     @else
-        <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">Pick exam + class + subject above.</div>
+        {{-- Pending Approvals — show when no specific subject is selected --}}
+        <div style="background:#fff;border-radius:12px;padding:16px 18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:14px;font-weight:700;color:#0f172a;">
+                    Pending Approvals
+                    @if($pendingReviews->isNotEmpty())
+                        <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;margin-left:8px;">{{ $pendingReviews->count() }}</span>
+                    @endif
+                </div>
+                <div style="font-size:11px;color:#64748b;">Submitted marks awaiting admin approval</div>
+            </div>
+            @if($pendingReviews->isEmpty())
+                <div style="text-align:center;padding:24px 12px;color:#94a3b8;">
+                    <div style="font-size:28px;opacity:.4;margin-bottom:6px;">✅</div>
+                    <div style="font-weight:600;font-size:13px;">No pending approvals</div>
+                    <div style="font-size:11px;margin-top:4px;">All submitted marks have been reviewed.</div>
+                </div>
+            @else
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">
+                    @foreach($pendingReviews as $pr)
+                    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 16px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                            <span style="font-size:13px;font-weight:700;color:#0f172a;">{{ $pr->subject }}</span>
+                            <span style="font-size:10px;background:#fef3c7;color:#92400e;font-weight:700;padding:2px 8px;border-radius:99px;">{{ $pr->student_count }} student{{ $pr->student_count !== 1 ? 's' : '' }}</span>
+                        </div>
+                        <div style="font-size:11px;color:#64748b;">
+                            {{ $pr->exam?->name ?? 'Exam #'.$pr->exam_id }} · {{ $pr->class }} — Sec {{ $pr->section }}
+                        </div>
+                        <div style="font-size:10px;color:#94a3b8;margin:4px 0 8px;">
+                            Submitted {{ $pr->first_submitted_at ? \Carbon\Carbon::parse($pr->first_submitted_at)->diffForHumans() : '' }}
+                        </div>
+                        <div style="display:flex;gap:6px;">
+                            <a href="{{ route('admin.marks.index', ['view' => 'review', 'exam' => $pr->exam_id, 'class' => $pr->class, 'section' => $pr->section, 'subject' => $pr->subject]) }}"
+                               style="flex:1;background:#0f766e;color:#fff;text-align:center;padding:7px 0;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;">Review & Approve</a>
+                            <form method="POST" action="{{ route('admin.marks.send-back-subject') }}" style="flex-shrink:0;">
+                                @csrf
+                                <input type="hidden" name="exam_id" value="{{ $pr->exam_id }}">
+                                <input type="hidden" name="class" value="{{ $pr->class }}">
+                                <input type="hidden" name="section" value="{{ $pr->section }}">
+                                <input type="hidden" name="subject" value="{{ $pr->subject }}">
+                                <button type="submit" onclick="return confirm('Send back all marks for {{ $pr->subject }} for revision? Teacher can re-edit.')"
+                                        style="background:#fef3c7;color:#92400e;border:none;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Send Back</button>
+                            </form>
+                            <form method="POST" action="{{ route('admin.marks.approve-subject') }}" style="flex-shrink:0;">
+                                @csrf
+                                <input type="hidden" name="exam_id" value="{{ $pr->exam_id }}">
+                                <input type="hidden" name="class" value="{{ $pr->class }}">
+                                <input type="hidden" name="section" value="{{ $pr->section }}">
+                                <input type="hidden" name="subject" value="{{ $pr->subject }}">
+                                <button type="submit" onclick="return confirm('Approve all {{ $pr->student_count }} mark(s) for {{ $pr->subject }}?')"
+                                        style="background:#6d28d9;color:#fff;border:none;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Approve All</button>
+                            </form>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
+        @if($examId && $class && $section)
+        {{-- Also show filter hint if filters are partially set --}}
+        <div style="background:#f1f5f9;border-radius:12px;padding:20px 24px;text-align:center;color:#64748b;font-size:13px;">
+            Select a subject above to view individual marks for this class.
+        </div>
+        @else
+        <div style="background:#f1f5f9;border-radius:12px;padding:20px 24px;text-align:center;color:#64748b;font-size:13px;">
+            Select exam + class above to filter, or review pending submissions listed here.
+        </div>
+        @endif
     @endif
 @elseif($view === 'results')
     {{-- Results View --}}
