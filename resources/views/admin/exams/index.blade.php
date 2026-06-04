@@ -123,7 +123,7 @@
                         </a>
                         <form method="POST" action="{{ route('admin.exams.destroy', $exam) }}" style="display:inline;">
                             @csrf @method('DELETE')
-                            <button type="button" onclick="customConfirm('Delete this exam? Any marks linked will also be removed.',()=>this.closest('form').submit(),'Delete')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:12px;font-weight:600;">Delete</button>
+                            <button type="button" onclick="customConfirm('Delete this exam? Only possible if no marks are linked.',()=>this.closest('form').submit(),'Delete')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:12px;font-weight:600;">Delete</button>
                         </form>
                     </td>
                 </tr>

@@ -69,7 +69,8 @@ class MarksController extends Controller
         $subjectStats = [];
 
         if ($year && $examId && $class && $section && $subject) {
-            $records = Mark::where('exam_id', $examId)
+            $records = Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)
                 ->where('class', $class)
                 ->where('section', $section)
                 ->where('subject', $subject)
@@ -1217,20 +1218,30 @@ class MarksController extends Controller
             'remarks'          => 'nullable|string|max:500',
         ]);
 
-        if (isset($data['total_marks']) && $data['total_marks'] !== null
-            && (float) $data['total_marks'] > (float) $mark->full_marks) {
-            return back()->with('error', "Total marks cannot exceed full marks ({$mark->full_marks}).");
-        }
+        $updates = ['entered_by' => auth()->id()];
 
-        $updates = [
-            'theory_marks'     => $data['theory_marks'] ?? null,
-            'assignment_marks' => $data['assignment_marks'] ?? null,
-            'total_marks'      => $data['total_marks'] ?? null,
-            'obtained_marks'   => $data['total_marks'] ?? $data['obtained_marks'] ?? null,
-            'grade'            => $data['grade'] ?? $mark->computedGrade(),
-            'remarks'          => $data['remarks'] ?? null,
-            'entered_by'       => auth()->id(),
-        ];
+        if ($request->has('theory_marks')) {
+            $updates['theory_marks'] = $data['theory_marks'];
+        }
+        if ($request->has('assignment_marks')) {
+            $updates['assignment_marks'] = $data['assignment_marks'];
+        }
+        if ($request->has('total_marks')) {
+            if ($data['total_marks'] !== null && (float) $data['total_marks'] > (float) $mark->full_marks) {
+                return back()->with('error', "Total marks cannot exceed full marks ({$mark->full_marks}).");
+            }
+            $updates['total_marks'] = $data['total_marks'];
+            $updates['obtained_marks'] = $data['total_marks'];
+        }
+        if ($request->has('obtained_marks')) {
+            $updates['obtained_marks'] = $data['obtained_marks'];
+        }
+        if ($request->has('grade')) {
+            $updates['grade'] = $data['grade'];
+        }
+        if ($request->has('remarks')) {
+            $updates['remarks'] = $data['remarks'];
+        }
 
         if ($mark->approved_at) {
             $updates['approved_at'] = null;
