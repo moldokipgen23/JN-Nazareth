@@ -1156,7 +1156,7 @@ class MarksController extends Controller
             $rows[] = $row;
         }
 
-        $ranked = collect($rows)->sortByDesc(fn ($r) => $r['cgpa'] ?? 0)
+        $ranked = collect($rows)->sortByDesc(fn ($r) => $r['avgPct'] ?? 0)
             ->values()->map(fn ($r, $i) => array_merge($r, ['rank' => $i + 1]))->toArray();
 
         return [

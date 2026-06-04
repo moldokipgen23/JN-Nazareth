@@ -40,6 +40,8 @@
                             <span style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">✅</span>
                         @elseif($slotStatus === 'pending')
                             <span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">⏳</span>
+                        @elseif($slotStatus === 'draft')
+                            <span style="background:#f1f5f9;color:#475569;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;border:1px dashed #cbd5e1;">📝 Draft</span>
                         @endif
                     </div>
                 @endforeach

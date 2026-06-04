@@ -6,6 +6,21 @@ Newest entries on top.
 
 ---
 
+## Session: 2026-06-04 (part 3) — Sync rankings sorting + entered_by fix + draft badge
+
+### What changed
+- **Rankings sync** — `buildClassResultData()` changed from `sortByDesc('cgpa')` to `sortByDesc('avgPct')`, matching all other ranking methods (`exportCsvResults`, `exportAllResultCards`, class-level ranking).
+- **`entered_by` only on submit** — teacher draft saves no longer overwrite `entered_by`. Prevents the "Revised" badge from disappearing when teacher re-saves a draft after admin edited.
+- **Draft status badge** — added `📝 Draft` badge on teacher marks index when marks exist but none are submitted (vs no badge before).
+- Status logic now checks for any submitted marks (`$anySubmitted`) before evaluating pending vs draft — a markset with some drafts and some submitted shows `pending`, not `draft`.
+
+### Files changed
+- `app/Http/Controllers/Admin/MarksController.php` — line 1159 sort key
+- `app/Http/Controllers/Teacher/MarksController.php` — removed `whereNotNull('submitted_at')` filter, `entered_by` gated on `$isSubmit`, added `$anySubmitted` / `draft` status
+- `resources/views/teacher/marks/index.blade.php` — draft badge rendering
+
+---
+
 ## Session: 2026-06-04 (part 2) — Fix completion gates + backfill migration + delete marks + exam safeguard
 
 ### What changed (incremental)

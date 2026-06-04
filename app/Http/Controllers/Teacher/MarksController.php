@@ -62,12 +62,12 @@ class MarksController extends Controller
                     ->where('class', $slot->class)
                     ->where('section', $slot->section)
                     ->where('subject', $slot->subject)
-                    ->whereNotNull('submitted_at')
                     ->get();
                 if ($marks->isEmpty()) continue;
                 $hasRevised = $marks->contains(fn ($m) => $m->entered_by && $m->entered_by !== $teacherId);
-                $allApproved = $marks->every(fn ($m) => $m->approved_at);
-                $status = $hasRevised ? 'revised' : ($allApproved ? 'approved' : 'pending');
+                $anySubmitted = $marks->contains(fn ($m) => $m->submitted_at);
+                $allApproved = $anySubmitted && $marks->every(fn ($m) => $m->approved_at);
+                $status = $hasRevised ? 'revised' : ($allApproved ? 'approved' : ($anySubmitted ? 'pending' : 'draft'));
                 $slotStatuses[$slot->class][$slot->section][$slot->subject][$exam->id] = $status;
             }
         }
@@ -202,23 +202,26 @@ class MarksController extends Controller
                 $grade = $gs?->name;
             }
 
+            $markData = [
+                'academic_year_id' => $year->id,
+                'class'            => $class,
+                'section'          => $section,
+                'full_marks'       => $data['full_marks'],
+                'pass_marks'       => $data['pass_marks'],
+                'theory_marks'     => ($theory === '' ? null : $theory),
+                'assignment_marks' => ($assignment === '' ? null : $assignment),
+                'total_marks'      => ($total === '' ? null : $total),
+                'obtained_marks'   => ($total === '' ? null : $total),
+                'grade'            => $grade,
+                'remarks'          => $row['remarks'] ?? null,
+                'submitted_at'     => $isSubmit ? now() : null,
+            ];
+            if ($isSubmit) {
+                $markData['entered_by'] = auth()->id();
+            }
             Mark::updateOrCreate(
                 ['exam_id' => $exam->id, 'student_enrollment_id' => $enrollmentId, 'subject' => $subject],
-                [
-                    'academic_year_id' => $year->id,
-                    'class'            => $class,
-                    'section'          => $section,
-                    'full_marks'       => $data['full_marks'],
-                    'pass_marks'       => $data['pass_marks'],
-                    'theory_marks'     => ($theory === '' ? null : $theory),
-                    'assignment_marks' => ($assignment === '' ? null : $assignment),
-                    'total_marks'      => ($total === '' ? null : $total),
-                    'obtained_marks'   => ($total === '' ? null : $total),
-                    'grade'            => $grade,
-                    'remarks'          => $row['remarks'] ?? null,
-                    'submitted_at'     => $isSubmit ? now() : null,
-                    'entered_by'       => auth()->id(),
-                ]
+                $markData
             );
             $saved++;
         }
