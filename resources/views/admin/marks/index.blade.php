@@ -87,7 +87,37 @@ function syncSection(form) {
     const opt = sel.options[sel.selectedIndex];
     form.querySelector('input[name="section"]').value = opt?.dataset.section || '';
 }
+
+var _confirmCallback = null;
+function customConfirm(message, cb) {
+    document.getElementById('confirmMessage').textContent = message;
+    _confirmCallback = cb;
+    document.getElementById('confirmModal').style.display = 'flex';
+}
+function closeConfirm() {
+    document.getElementById('confirmModal').style.display = 'none';
+    _confirmCallback = null;
+}
+document.addEventListener('DOMContentLoaded', function() {
+    var okBtn = document.getElementById('confirmOkBtn');
+    if (okBtn) okBtn.addEventListener('click', function() {
+        if (_confirmCallback) _confirmCallback();
+        closeConfirm();
+    });
+});
 </script>
+
+{{-- Custom confirmation modal --}}
+<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target===this)closeConfirm()">
+    <div style="background:#fff;border-radius:16px;max-width:400px;width:90%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+        <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:8px;">Confirm</div>
+        <div id="confirmMessage" style="font-size:13px;color:#475569;margin-bottom:20px;"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button type="button" onclick="closeConfirm()" style="padding:8px 20px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#475569;">Cancel</button>
+            <button type="button" id="confirmOkBtn" style="padding:8px 20px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:#0f766e;color:#fff;">Confirm</button>
+        </div>
+    </div>
+</div>
 
 @if($view === 'review')
     @if($examId && $class && $section && $subject)
@@ -129,7 +159,7 @@ function syncSection(form) {
                     <input type="hidden" name="class" value="{{ $class }}">
                     <input type="hidden" name="section" value="{{ $section }}">
                     <input type="hidden" name="subject" value="{{ $subject }}">
-                    <button type="submit" onclick="return confirm('Approve all pending marks for {{ $subject }}?')"
+                    <button type="button" onclick="customConfirm('Approve all pending marks for {{ $subject }}?',()=>this.closest('form').submit())"
                             style="background:linear-gradient(135deg,#6d28d9,#7c3aed);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">✅ Approve All</button>
                 </form>
                 <form method="POST" action="{{ route('admin.marks.index', ['view' => 'review', 'exam' => $examId, 'class' => $class, 'section' => $section, 'subject' => $subject]) }}" style="display:none;"></form>
@@ -223,7 +253,7 @@ function syncSection(form) {
                                 @if($r->submitted_at && !$r->approved_at)
                                 <form method="POST" action="{{ route('admin.marks.send-back', $r) }}" style="display:inline;flex-shrink:0;">
                                     @csrf
-                                    <button type="submit" style="background:#fef3c7;color:#92400e;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;" onclick="return confirm('Send back for revision? Teacher will be able to re-edit.')">Edit</button>
+                                    <button type="button" style="background:#fef3c7;color:#92400e;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;" onclick="customConfirm('Send back for revision? Teacher will be able to re-edit.',()=>this.closest('form').submit())">Edit</button>
                                 </form>
                                 @endif
                             </div>
@@ -295,7 +325,7 @@ function syncSection(form) {
                                 <input type="hidden" name="class" value="{{ $pr->class }}">
                                 <input type="hidden" name="section" value="{{ $pr->section }}">
                                 <input type="hidden" name="subject" value="{{ $pr->subject }}">
-                                <button type="submit" onclick="return confirm('Send back all marks for {{ $pr->subject }} for revision? Teacher can re-edit.')"
+                                <button type="button" onclick="customConfirm('Send back all marks for {{ $pr->subject }} for revision? Teacher can re-edit.',()=>this.closest('form').submit())"
                                         style="background:#fef3c7;color:#92400e;border:none;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Send Back</button>
                             </form>
                             <form method="POST" action="{{ route('admin.marks.approve-subject') }}" style="flex-shrink:0;">
@@ -304,7 +334,7 @@ function syncSection(form) {
                                 <input type="hidden" name="class" value="{{ $pr->class }}">
                                 <input type="hidden" name="section" value="{{ $pr->section }}">
                                 <input type="hidden" name="subject" value="{{ $pr->subject }}">
-                                <button type="submit" onclick="return confirm('Approve all {{ $pr->student_count }} mark(s) for {{ $pr->subject }}?')"
+                                <button type="button" onclick="customConfirm('Approve all {{ $pr->student_count }} mark(s) for {{ $pr->subject }}?',()=>this.closest('form').submit())"
                                         style="background:#6d28d9;color:#fff;border:none;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Approve All</button>
                             </form>
                         </div>
