@@ -29,7 +29,19 @@
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:6px;">
                 @foreach($exams as $exam)
-                    <a href="{{ route('teacher.marks.sheet',['exam'=>$exam->id,'class'=>$slot->class,'section'=>$slot->section,'subject'=>$slot->subject]) }}" style="font-size:12px;font-weight:600;color:#0f766e;background:#f0fdf4;border:1px solid #bbf7d0;padding:7px 14px;border-radius:8px;text-decoration:none;display:inline-flex;align-items:center;">{{ $exam->name }}{{ $exam->code?' ('.$exam->code.')':'' }}</a>
+                    @php
+                        $slotStatus = $slotStatuses[$slot->class][$slot->section][$slot->subject][$exam->id] ?? null;
+                    @endphp
+                    <div style="display:flex;align-items:center;gap:4px;">
+                        <a href="{{ route('teacher.marks.sheet',['exam'=>$exam->id,'class'=>$slot->class,'section'=>$slot->section,'subject'=>$slot->subject]) }}" style="font-size:12px;font-weight:600;color:#0f766e;background:#f0fdf4;border:1px solid #bbf7d0;padding:7px 14px;border-radius:8px;text-decoration:none;display:inline-flex;align-items:center;">{{ $exam->name }}{{ $exam->code?' ('.$exam->code.')':'' }}</a>
+                        @if($slotStatus === 'revised')
+                            <span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">⚠️ Revised</span>
+                        @elseif($slotStatus === 'approved')
+                            <span style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">✅</span>
+                        @elseif($slotStatus === 'pending')
+                            <span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">⏳</span>
+                        @endif
+                    </div>
                 @endforeach
             </div>
         </div>

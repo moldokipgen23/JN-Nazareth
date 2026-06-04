@@ -53,10 +53,31 @@ class MarksController extends Controller
         $order = array_flip(Student::classes());
         $slots = $slots->sortBy(fn ($s) => [$order[$s->class] ?? 999, $s->section, $s->subject])->values();
 
+        $slotStatuses = [];
+        $teacherId = auth()->id();
+        $adminIds = \App\Models\User::where('is_admin', true)->pluck('id')->toArray();
+        foreach ($slots as $slot) {
+            foreach ($exams as $exam) {
+                $marks = Mark::where('academic_year_id', $year->id)
+                    ->where('exam_id', $exam->id)
+                    ->where('class', $slot->class)
+                    ->where('section', $slot->section)
+                    ->where('subject', $slot->subject)
+                    ->whereNotNull('submitted_at')
+                    ->get();
+                if ($marks->isEmpty()) continue;
+                $hasRevised = $marks->contains(fn ($m) => $m->entered_by && $m->entered_by !== $teacherId && in_array($m->entered_by, $adminIds));
+                $allApproved = $marks->every(fn ($m) => $m->approved_at);
+                $status = $hasRevised ? 'revised' : ($allApproved ? 'approved' : 'pending');
+                $slotStatuses[$slot->class][$slot->section][$slot->subject][$exam->id] = $status;
+            }
+        }
+
         return view('teacher.marks.index', [
             'year'  => $year,
             'slots' => $slots,
             'exams' => $exams,
+            'slotStatuses' => $slotStatuses,
         ]);
     }
 
