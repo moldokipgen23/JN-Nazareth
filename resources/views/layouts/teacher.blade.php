@@ -17,12 +17,10 @@
     @endphp
     <link rel="icon" href="{{ $favicon }}">
     <link rel="apple-touch-icon" href="{{ asset('icon-192.png') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         *,*::before,*::after{box-sizing:border-box}
-        body{margin:0;font-family:'Inter',sans-serif;background:#f0f4f8;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+        body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;background:#f0f4f8;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
         ::-webkit-scrollbar{width:4px;height:4px}
         ::-webkit-scrollbar-track{background:#f1f5f9}
         ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
