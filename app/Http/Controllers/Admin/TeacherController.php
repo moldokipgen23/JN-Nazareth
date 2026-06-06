@@ -332,7 +332,7 @@ class TeacherController extends Controller
         // Only process if subject data was actually sent (Tab 2 or legacy form).
         // Tab 1 (profile update) does NOT send subject data — skip to avoid
         // silently deleting all subject assignments.
-        $hasSubjectData = !empty($subjectsByClass) || !empty($legacyRows);
+        $hasSubjectData = (is_array($subjectsByClass) && !empty($subjectsByClass)) || !empty($legacyRows);
 
         if (! $hasSubjectData) {
             return;
@@ -348,7 +348,7 @@ class TeacherController extends Controller
                 $section = strtoupper(trim($sections[$class] ?? 'A'));
                 if (!$section) continue;
 
-                foreach ($subjectList as $subject) {
+                foreach ((array) $subjectList as $subject) {
                     $subject = trim($subject);
                     if (!in_array($subject, $validSubjects, true)) continue;
 

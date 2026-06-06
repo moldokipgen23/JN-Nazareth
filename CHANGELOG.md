@@ -410,6 +410,15 @@ git pull origin main && php artisan migrate && php artisan view:clear && php art
 - `app/Http/Controllers/Admin/MarksController.php` — removed `submitted_at => null` from admin update; merged pass+fail students into subject stats
 - `resources/views/admin/marks/index.blade.php` — removed Rankings tab, added subject stats to Results tab
 
+## Session: 2026-06-06 (part 3) — Fix 500 on teacher save (string vs array subjects + UNIQUE constraint)
+
+**Bug** — Saving teacher profile (Tab 1) caused 500 with `foreach() argument must be of type array|object, string given`. Root cause: `_form.blade.php` has a plain text input `name="subjects"` that sends a comma-separated string. The `syncSubjectAssignments` method checked `!empty($subjectsByClass)` which was truthy for a non-empty string, then tried `foreach` on it — illegal in PHP 8.
+
+**Fix** — Changed the guard to `is_array($subjectsByClass) && !empty($subjectsByClass)`, so Tab 1's string `subjects` field correctly skips the sync code. Added `(array)` cast on the inner `$subjectList` foreach as a defensive measure.
+
+**Files changed:**
+- `app/Http/Controllers/Admin/TeacherController.php` — lines 335, 351
+
 ---
 
 ## Earlier history
