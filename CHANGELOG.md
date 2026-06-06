@@ -6,6 +6,30 @@ Newest entries on top.
 
 ---
 
+## Session: 2026-06-06 — Teacher portal bug fixes (subject 500, login "no access", session collision)
+
+### Bugs fixed
+
+1. **500 error when saving subject assignments (Tab 2)** — `syncSubjectAssignments()` in `TeacherController` included `teacher_id` in the `updateOrCreate` lookup criteria, but the DB UNIQUE constraint is on `(academic_year_id, class, section, subject)` only (without teacher_id). When saving a subject already assigned to another teacher, `updateOrCreate` found no match (teacher_id differed), tried to INSERT, and hit the UNIQUE constraint → **500 error**. Fixed by moving `teacher_id` to the `values` parameter, matching the pattern used in `TeacherAssignmentController::storeSubjectTeacher`.
+
+2. **Profile save silently deleted all subject assignments** — Tab 1 (profile update) does NOT send subject fields (`hideSubjects = true`). But `syncSubjectAssignments()` ran unconditionally and DELETED all existing assignments because `$keep` was empty. Fixed by adding an early return when no subject data was sent (`!empty($subjectsByClass) || !empty($legacyRows)`).
+
+3. **Teacher login "No teacher account" / 403 "no access"** — Teachers whose User record had no `teacher_id` (admin created User manually instead of using "Create Login") could authenticate but received `abort(403)` from `PortalController::teacher()`. Fixed by auto-linking at login: if the User has role `teacher` but no `teacher_id`, we find a Teacher with matching email and link them.
+
+4. **Clarified error messages** — Login error now says *"Ask the school admin to use 'Create Login' on your teacher profile"* instead of the generic "Contact school administration". Portal 403 message now mentions *"Ask admin to use 'Create Login'"*.
+
+### Files changed
+- `app/Http/Controllers/Admin/TeacherController.php` — `syncSubjectAssignments()`: early return when no subject data sent; `teacher_id` moved from lookup to values
+- `app/Http/Controllers/Auth/AuthenticatedSessionController.php` — auto-link Teacher by email on login; improved error message
+- `app/Http/Controllers/Teacher/PortalController.php` — improved 403 message
+- `resources/views/auth/teacher-login.blade.php` — (none)
+
+### Known limitations carried forward
+- Teachers without a matching email in the `teachers` table still cannot log in until admin uses "Create Login".
+- Legacy dropdown subject assignment format (used on the create page) still works but is deprecated in favor of the Tab 2 checkbox grid.
+
+---
+
 ## Session: 2026-06-04 (part 3) — Sync rankings sorting + entered_by fix + draft badge
 
 ### What changed

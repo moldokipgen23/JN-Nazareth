@@ -327,11 +327,21 @@ class TeacherController extends Controller
         // Handle checkbox format: section[Class] + subjects[Class][]
         $sections = $request->input('section', []);
         $subjectsByClass = $request->input('subjects', []);
+        $legacyRows = $request->input('subject_assignments', []);
+
+        // Only process if subject data was actually sent (Tab 2 or legacy form).
+        // Tab 1 (profile update) does NOT send subject data — skip to avoid
+        // silently deleting all subject assignments.
+        $hasSubjectData = !empty($subjectsByClass) || !empty($legacyRows);
+
+        if (! $hasSubjectData) {
+            return;
+        }
 
         $keep = [];
 
         if (!empty($subjectsByClass)) {
-            // New checkbox format
+            // New checkbox format (Tab 2)
             foreach ($subjectsByClass as $class => $subjectList) {
                 $class = trim($class);
                 if (!in_array($class, $validClasses, true)) continue;
@@ -345,20 +355,18 @@ class TeacherController extends Controller
                     SubjectTeacherAssignment::updateOrCreate(
                         [
                             'academic_year_id' => $year->id,
-                            'teacher_id'       => $teacher->id,
                             'class'            => $class,
                             'section'          => $section,
                             'subject'          => $subject,
                         ],
-                        []
+                        ['teacher_id' => $teacher->id]
                     );
                     $keep[] = "{$class}|{$section}|{$subject}";
                 }
             }
         } else {
             // Legacy dropdown format: subject_assignments[$i][class/section/subject]
-            $rows = $request->input('subject_assignments', []);
-            foreach ($rows as $row) {
+            foreach ($legacyRows as $row) {
                 $class   = trim($row['class'] ?? '');
                 $section = strtoupper(trim($row['section'] ?? ''));
                 $subject = trim($row['subject'] ?? '');
@@ -369,12 +377,11 @@ class TeacherController extends Controller
                 SubjectTeacherAssignment::updateOrCreate(
                     [
                         'academic_year_id' => $year->id,
-                        'teacher_id'       => $teacher->id,
                         'class'            => $class,
                         'section'          => $section,
                         'subject'          => $subject,
                     ],
-                    []
+                    ['teacher_id' => $teacher->id]
                 );
                 $keep[] = "{$class}|{$section}|{$subject}";
             }

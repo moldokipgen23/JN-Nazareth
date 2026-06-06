@@ -22,7 +22,8 @@ class RoleMiddleware
 
         foreach ($roles as $role) {
             if ($user->hasRole($role)) {
-                // Set on the default guard for convenience in views
+                // Make the teacher user available on the default web guard
+                // for views that call Auth::user() / auth()->user().
                 if ($guard !== 'web') {
                     auth()->setUser($user);
                 }

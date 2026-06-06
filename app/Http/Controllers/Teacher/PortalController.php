@@ -16,9 +16,9 @@ class PortalController extends Controller
 {
     protected function teacher(): Teacher
     {
-        $teacher = auth()->user()->teacher;
+        $teacher = auth()->user()?->teacher;
 
-        abort_unless($teacher, 403, 'No teacher profile linked to your account.');
+        abort_unless($teacher, 403, 'No teacher profile linked to your account. Ask admin to use "Create Login" on your teacher profile.');
 
         return $teacher;
     }

@@ -43,13 +43,24 @@ class AuthenticatedSessionController extends Controller
 
         // Logging in via the teacher login URL — must have a linked teacher profile.
         if ($isTeacher) {
-            if ($user && $user->teacher) {
-                return redirect()->route('teacher.dashboard');
+            if ($user) {
+                // If the User has the teacher role but no linked Teacher record,
+                // try to auto-link by matching email.
+                if (! $user->teacher && $user->hasRole('teacher')) {
+                    $teacher = \App\Models\Teacher::where('email', $user->email)->first();
+                    if ($teacher) {
+                        $user->teacher_id = $teacher->id;
+                        $user->save();
+                    }
+                }
+                if ($user->teacher) {
+                    return redirect()->route('teacher.dashboard');
+                }
             }
             Auth::guard($guard)->logout();
             $request->session()->invalidate();
             return back()->withErrors([
-                'email' => 'No teacher account found. Contact your school administration.',
+                'email' => 'No teacher account linked to this login. Ask the school admin to use "Create Login" on your teacher profile.',
             ]);
         }
 
