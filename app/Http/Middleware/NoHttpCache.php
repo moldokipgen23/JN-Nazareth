@@ -12,11 +12,7 @@ class NoHttpCache
     {
         $response = $next($request);
 
-        if (! $response->isSuccessful()) {
-            return $response;
-        }
-
-        $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate, private');
+        $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate, private, max-age=0');
         $response->headers->set('Pragma', 'no-cache');
         $response->headers->set('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT');
 

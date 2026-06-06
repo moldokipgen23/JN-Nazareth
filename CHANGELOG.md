@@ -6,16 +6,18 @@ Newest entries on top.
 
 ---
 
-## Session: 2026-06-06 (part 2) — Performance: remove Google Fonts external dependency, add missing manifest.json
+## Session: 2026-06-06 (part 2) — Performance: remove Google Fonts + fix stale-page-after-save cache issue
 
 ### What changed
 - **Google Fonts removed from admin & teacher layouts.** Both layouts were loading Inter from `fonts.googleapis.com` — an external CDN that sometimes responds slowly, causing the browser loading bar to spin indefinitely. Replaced with native system font stack (`-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ...`) which loads instantly.
 - **Missing `manifest.json` created.** The teacher layout references `<link rel="manifest" href="/manifest.json">` but the file didn't exist — every page load got a 404. Created a basic PWA manifest so the browser stops hanging on a missing resource.
+- **NoHttpCache middleware now applies to ALL responses** (was only 2xx). Also added HTML `<meta http-equiv>` cache-prevention tags to both admin & teacher layouts so the browser never shows a stale cached page after a form save.
 
 ### Files changed
 - `public/manifest.json` — created
-- `resources/views/layouts/teacher.blade.php` — removed Google Fonts, switched to system fonts
-- `resources/views/layouts/admin.blade.php` — removed Google Fonts, switched to system fonts
+- `app/Http/Middleware/NoHttpCache.php` — removed `isSuccessful()` gate, applies to all responses
+- `resources/views/layouts/teacher.blade.php` — removed Google Fonts, switched to system fonts, added no-cache meta tags
+- `resources/views/layouts/admin.blade.php` — removed Google Fonts, switched to system fonts, added no-cache meta tags
 
 ---
 
