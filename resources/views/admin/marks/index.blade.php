@@ -327,23 +327,34 @@ function syncSection(form) {
                     <div style="font-size:11px;margin-top:4px;">All submitted marks have been reviewed.</div>
                 </div>
             @else
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;">
                     @foreach($pendingReviews as $pr)
-                    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 16px;">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-                            <span style="font-size:13px;font-weight:700;color:#0f172a;">{{ $pr->subject }}</span>
-                            <span style="font-size:10px;background:#fef3c7;color:#92400e;font-weight:700;padding:2px 8px;border-radius:99px;">{{ $pr->student_count }} student{{ $pr->student_count !== 1 ? 's' : '' }}</span>
+                    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                            <span style="font-size:14px;font-weight:700;color:#0f172a;line-height:1.2;">{{ $pr->subject }}</span>
+                            <span style="font-size:10px;background:#fef3c7;color:#92400e;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;">{{ $pr->student_count }} student{{ $pr->student_count !== 1 ? 's' : '' }}</span>
                         </div>
-                        <div style="font-size:11px;color:#64748b;">
-                            {{ $pr->exam?->name ?? 'Exam #'.$pr->exam_id }} · {{ $pr->class }} — Sec {{ $pr->section }}
+                        <div style="font-size:11px;color:#64748b;line-height:1.4;">
+                            {{ $pr->exam?->name ?? 'Exam #'.$pr->exam_id }}<br>
+                            {{ $pr->class }} — Sec {{ $pr->section }} · submitted {{ $pr->first_submitted_at ? \Carbon\Carbon::parse($pr->first_submitted_at)->diffForHumans() : '' }}
                         </div>
-                        <div style="font-size:10px;color:#94a3b8;margin:4px 0 8px;">
-                            Submitted {{ $pr->first_submitted_at ? \Carbon\Carbon::parse($pr->first_submitted_at)->diffForHumans() : '' }}
-                        </div>
-                        <div style="display:flex;gap:6px;">
-                            <a href="{{ route('admin.marks.index', ['view' => 'review', 'exam' => $pr->exam_id, 'class' => $pr->class, 'section' => $pr->section, 'subject' => $pr->subject]) }}"
-                               style="flex:1;background:#0f766e;color:#fff;text-align:center;padding:7px 0;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;">Review & Approve</a>
-                            <form method="POST" action="{{ route('admin.marks.send-back-subject') }}" style="flex-shrink:0;">
+
+                        {{-- Primary action — full width --}}
+                        <a href="{{ route('admin.marks.index', ['view' => 'review', 'exam' => $pr->exam_id, 'class' => $pr->class, 'section' => $pr->section, 'subject' => $pr->subject]) }}"
+                           style="display:block;background:#0f766e;color:#fff;text-align:center;padding:8px 0;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;">Review &amp; Approve</a>
+
+                        {{-- Secondary actions — equal width row --}}
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+                            <form method="POST" action="{{ route('admin.marks.approve-subject') }}" style="margin:0;">
+                                @csrf
+                                <input type="hidden" name="exam_id" value="{{ $pr->exam_id }}">
+                                <input type="hidden" name="class" value="{{ $pr->class }}">
+                                <input type="hidden" name="section" value="{{ $pr->section }}">
+                                <input type="hidden" name="subject" value="{{ $pr->subject }}">
+                                <button type="button" onclick="customConfirm('Approve all {{ $pr->student_count }} mark(s) for {{ $pr->subject }}?',()=>this.closest('form').submit())"
+                                        style="width:100%;background:#6d28d9;color:#fff;border:none;padding:7px 0;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Approve</button>
+                            </form>
+                            <form method="POST" action="{{ route('admin.marks.send-back-subject') }}" style="margin:0;">
                                 @csrf
                                 <input type="hidden" name="exam_id" value="{{ $pr->exam_id }}">
                                 <input type="hidden" name="class" value="{{ $pr->class }}">
@@ -351,25 +362,16 @@ function syncSection(form) {
                                 <input type="hidden" name="subject" value="{{ $pr->subject }}">
                                 <input type="hidden" name="rejection_note" value="">
                                 <button type="button" onclick="var n=prompt('Reason for sending back {{ $pr->subject }} marks? (visible to teacher)');if(n&&n.trim().length>=3){this.previousElementSibling.value=n.trim();this.closest('form').submit();}else if(n!==null){alert('Note must be at least 3 characters.');}"
-                                        style="background:#fef3c7;color:#92400e;border:none;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Send Back</button>
+                                        style="width:100%;background:#fef3c7;color:#92400e;border:none;padding:7px 0;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Send Back</button>
                             </form>
-                            <form method="POST" action="{{ route('admin.marks.approve-subject') }}" style="flex-shrink:0;">
-                                @csrf
-                                <input type="hidden" name="exam_id" value="{{ $pr->exam_id }}">
-                                <input type="hidden" name="class" value="{{ $pr->class }}">
-                                <input type="hidden" name="section" value="{{ $pr->section }}">
-                                <input type="hidden" name="subject" value="{{ $pr->subject }}">
-                                <button type="button" onclick="customConfirm('Approve all {{ $pr->student_count }} mark(s) for {{ $pr->subject }}?',()=>this.closest('form').submit())"
-                                        style="background:#6d28d9;color:#fff;border:none;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Approve All</button>
-                            </form>
-                            <form method="POST" action="{{ route('admin.marks.delete-subject') }}" style="flex-shrink:0;">
+                            <form method="POST" action="{{ route('admin.marks.delete-subject') }}" style="margin:0;">
                                 @csrf
                                 <input type="hidden" name="exam_id" value="{{ $pr->exam_id }}">
                                 <input type="hidden" name="class" value="{{ $pr->class }}">
                                 <input type="hidden" name="section" value="{{ $pr->section }}">
                                 <input type="hidden" name="subject" value="{{ $pr->subject }}">
                                 <button type="button" onclick="customConfirm('Delete all {{ $pr->student_count }} mark(s) for {{ $pr->subject }}? This cannot be undone.',()=>this.closest('form').submit(),'Delete')"
-                                        style="background:#fee2e2;color:#b91c1c;border:none;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Delete</button>
+                                        style="width:100%;background:#fee2e2;color:#b91c1c;border:none;padding:7px 0;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Delete</button>
                             </form>
                         </div>
                     </div>

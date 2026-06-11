@@ -286,11 +286,16 @@ class MarksController extends Controller
         }
 
         // Pending approvals: submitted but not yet approved, grouped by (exam, class, section, subject)
+        // Honours active filters (exam/class/section/subject) so the panel narrows as admin filters.
         $pendingReviews = collect();
         if ($year) {
-            $pendingMarks = Mark::where('academic_year_id', $year->id)
+            $pendingReviews = Mark::where('academic_year_id', $year->id)
                 ->whereNotNull('submitted_at')
                 ->whereNull('approved_at')
+                ->when($examId, fn ($q) => $q->where('exam_id', (int) $examId))
+                ->when($class,  fn ($q) => $q->where('class', $class))
+                ->when($section, fn ($q) => $q->where('section', $section))
+                ->when($subject, fn ($q) => $q->where('subject', $subject))
                 ->with('exam')
                 ->select('exam_id', 'class', 'section', 'subject')
                 ->selectRaw('COUNT(*) as student_count')
@@ -301,12 +306,6 @@ class MarksController extends Controller
                 ->orderBy('section')
                 ->orderBy('subject')
                 ->get();
-
-            if ($examId) {
-                $pendingMarks = $pendingMarks->where('exam_id', (int) $examId);
-            }
-
-            $pendingReviews = $pendingMarks;
         }
 
         return view('admin.marks.index', [
