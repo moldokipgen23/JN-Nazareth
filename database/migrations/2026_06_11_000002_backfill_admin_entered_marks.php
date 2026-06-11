@@ -5,9 +5,10 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * One-time backfill: marks that were entered directly by admin (via the
- * admin per-row Save UI) never had submitted_at / approved_at set, so they
- * stayed invisible to the summary and pending lists. Mark them as
- * admin-approved retroactively so the existing data surfaces correctly.
+ * admin per-row Save UI) never had submitted_at set, so they stayed
+ * invisible to the summary and pending lists. Mark them as SUBMITTED
+ * (pending admin approval) so they appear in the Pending Approvals panel
+ * and admin can explicitly approve each subject.
  *
  * Safety conditions:
  *   - Only rows where entered_by belongs to an admin user (role 'admin')
@@ -15,6 +16,9 @@ use Illuminate\Support\Facades\DB;
  *   - Only rows where submitted_at IS NULL AND approved_at IS NULL
  *     (so teacher drafts, pending submissions, and existing approvals
  *      are all left untouched)
+ *
+ * Note: approved_at is NOT set — admin must review and approve each
+ * subject through /admin/marks before they flow to summary/results.
  */
 return new class extends Migration
 {
@@ -40,8 +44,6 @@ return new class extends Migration
             ->whereNull('approved_at')
             ->update([
                 'submitted_at' => $now,
-                'approved_at'  => $now,
-                'approved_by'  => DB::raw('entered_by'),
             ]);
     }
 
