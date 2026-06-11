@@ -36,6 +36,8 @@ class AttendanceController extends Controller
         $summary    = ['present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0];
 
         // Daily view data
+        $backfillEnrollments = collect();
+        $canBackfill = false;
         if ($view === 'daily' && $year && $class) {
             $query = AttendanceRecord::forActiveYear()
                 ->where('class', $class)
@@ -50,6 +52,21 @@ class AttendanceController extends Controller
 
             foreach ($records as $r) {
                 $summary[$r->status] = ($summary[$r->status] ?? 0) + 1;
+            }
+
+            // If no records exist for this date AND the date is not a holiday,
+            // load enrollments so admin can backfill via the in-page form.
+            if ($records->isEmpty() && $section) {
+                $isHoliday = \App\Models\SchoolHoliday::whereDate('date', $date)->exists();
+                if (!$isHoliday) {
+                    $backfillEnrollments = StudentEnrollment::forActiveYear()->active()
+                        ->where('class', $class)
+                        ->where('section', $section)
+                        ->with('student')
+                        ->orderBy('roll_number')
+                        ->get();
+                    $canBackfill = $backfillEnrollments->isNotEmpty();
+                }
             }
         }
 
@@ -145,6 +162,7 @@ class AttendanceController extends Controller
             'year', 'class', 'section', 'date', 'view', 'slots', 'month',
             'records', 'summary', 'approvalStatus', 'pendingCount', 'pendingInbox',
             'studentStats', 'monthlyTrend', 'classAvgPct', 'monthStart', 'monthEnd', 'totalDays',
+            'backfillEnrollments', 'canBackfill',
         ));
     }
 
@@ -265,6 +283,67 @@ class AttendanceController extends Controller
             ]);
 
         return back()->with('success', "{$count} pending attendance records approved.");
+    }
+
+    /**
+     * Admin backfill: mark attendance for a past date when the class teacher
+     * forgot. Per-student status, marked as approved immediately because the
+     * admin is the authority.
+     */
+    public function backfillDay(Request $request)
+    {
+        $year = AcademicYear::current();
+        abort_unless($year, 409);
+
+        $data = $request->validate([
+            'class'           => 'required|string',
+            'section'         => 'required|string',
+            'date'            => 'required|date|before_or_equal:today',
+            'marks'           => 'required|array',
+            'marks.*.status'  => 'required|in:'.implode(',', AttendanceRecord::STATUSES),
+            'marks.*.remarks' => 'nullable|string|max:500',
+        ]);
+
+        // Block holiday backfill — protects against accidentally recording on
+        // a declared off day.
+        if (\App\Models\SchoolHoliday::whereDate('date', $data['date'])->exists()) {
+            return redirect()->backFresh()->with('error', 'That date is a school holiday — attendance cannot be backfilled.');
+        }
+
+        $enrollmentIds = StudentEnrollment::forActiveYear()->active()
+            ->where('class', $data['class'])
+            ->where('section', $data['section'])
+            ->pluck('id')
+            ->all();
+
+        $saved = 0;
+        $skipped = 0;
+        foreach ($data['marks'] as $enrollmentId => $row) {
+            $enrollmentId = (int) $enrollmentId;
+            if (!in_array($enrollmentId, $enrollmentIds, true)) continue;
+
+            // firstOrCreate guards against duplicate inserts if admin races with
+            // a teacher submission on the same day.
+            $rec = AttendanceRecord::firstOrCreate(
+                ['student_enrollment_id' => $enrollmentId, 'date' => $data['date']],
+                [
+                    'academic_year_id' => $year->id,
+                    'class'            => $data['class'],
+                    'section'          => $data['section'],
+                    'status'           => $row['status'],
+                    'remarks'          => $row['remarks'] ?? null,
+                    'marked_by'        => auth()->id(),
+                    'approval_status'  => 'approved',
+                    'approved_by'      => auth()->id(),
+                    'approved_at'      => now(),
+                ]
+            );
+            $rec->wasRecentlyCreated ? $saved++ : $skipped++;
+        }
+
+        $msg = "Backfilled attendance for {$saved} student".($saved === 1 ? '' : 's')." on ".Carbon::parse($data['date'])->format('d M Y').'.';
+        if ($skipped > 0) $msg .= " ({$skipped} already had records and were left untouched.)";
+        return redirect()->backFresh()->with('success', $msg);
     }
 
     public function bulkStore(Request $request)

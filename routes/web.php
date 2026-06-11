@@ -146,6 +146,8 @@ Route::prefix('admin')
                  ->name('attendance.reject-day');
             Route::post('attendance/approve-all', [AdminAttendanceController::class, 'approveAllPending'])
                  ->name('attendance.approve-all');
+            Route::post('attendance/backfill-day', [AdminAttendanceController::class, 'backfillDay'])
+                 ->name('attendance.backfill-day');
 
             // Exams & Marks
             Route::get('exams', [ExamController::class, 'index'])->name('exams.index');

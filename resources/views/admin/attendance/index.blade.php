@@ -155,9 +155,77 @@
     @endif
 
     @if($records->isEmpty())
-        <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">
-            No records for {{ \Carbon\Carbon::parse($date)->format('d M Y') }}.
-        </div>
+        @if($canBackfill)
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:12px;">
+                <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:4px;">
+                    ↩ No attendance recorded for {{ \Carbon\Carbon::parse($date)->format('l, d M Y') }}
+                </div>
+                <div style="font-size:11px;color:#78350f;">
+                    Class teacher missed marking this day. Backfill it below — entries will be marked approved immediately since you are the authority.
+                </div>
+            </div>
+
+            <form method="POST" action="{{ route('admin.attendance.backfill-day') }}" style="background:#fff;border-radius:12px;padding:0;overflow:hidden;">
+                @csrf
+                <input type="hidden" name="class" value="{{ $class }}">
+                <input type="hidden" name="section" value="{{ $section }}">
+                <input type="hidden" name="date" value="{{ $date }}">
+
+                <div style="background:#f8fafc;padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #e2e8f0;">
+                    <span style="font-size:11px;color:#64748b;font-weight:600;">Bulk set all to:</span>
+                    @foreach(\App\Models\AttendanceRecord::STATUSES as $st)
+                        <button type="button" onclick="bulkSet('{{ $st }}')" style="font-size:11px;padding:4px 10px;border:1px solid #e2e8f0;background:#fff;border-radius:6px;font-weight:600;cursor:pointer;color:#475569;text-transform:capitalize;">{{ $st }}</button>
+                    @endforeach
+                    <span style="flex:1;min-width:120px;font-size:11px;color:#94a3b8;">{{ $backfillEnrollments->count() }} active students</span>
+                </div>
+
+                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                    <thead style="background:#f8fafc;">
+                        <tr>
+                            <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Roll</th>
+                            <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Student</th>
+                            <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Status</th>
+                            <th style="text-align:left;padding:10px 14px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Remarks (optional)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($backfillEnrollments as $e)
+                            <tr style="border-top:1px solid #f1f5f9;">
+                                <td style="padding:8px 14px;color:#475569;">{{ $e->roll_number ?: '—' }}</td>
+                                <td style="padding:8px 14px;color:#0f172a;font-weight:600;">{{ $e->student?->name ?? '—' }}</td>
+                                <td style="padding:8px 14px;">
+                                    <select name="marks[{{ $e->id }}][status]" class="bf-status" style="font-size:12px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;min-width:110px;">
+                                        @foreach(\App\Models\AttendanceRecord::STATUSES as $st)
+                                            <option value="{{ $st }}" {{ $st === 'present' ? 'selected' : '' }}>{{ ucfirst($st) }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td style="padding:8px 14px;">
+                                    <input type="text" name="marks[{{ $e->id }}][remarks]" maxlength="500" placeholder="—" style="width:100%;font-size:12px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;">
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+
+                <div style="padding:14px;border-top:1px solid #e2e8f0;background:#f8fafc;display:flex;justify-content:flex-end;">
+                    <button type="submit" style="background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;border:none;padding:9px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(13,148,136,.3);">Save Backfill</button>
+                </div>
+            </form>
+
+            <script>
+                function bulkSet(status) {
+                    document.querySelectorAll('.bf-status').forEach(function(s) { s.value = status; });
+                }
+            </script>
+        @else
+            <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#64748b;">
+                No records for {{ \Carbon\Carbon::parse($date)->format('d M Y') }}.
+                @if(!$section)
+                    <div style="font-size:11px;margin-top:6px;">Pick a class+section above to backfill.</div>
+                @endif
+            </div>
+        @endif
     @else
         <div style="background:#fff;border-radius:12px;overflow:hidden;">
             <table style="width:100%;border-collapse:collapse;font-size:13px;">
