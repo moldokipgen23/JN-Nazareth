@@ -246,8 +246,10 @@ class MarksController extends Controller
             $subjectsWithMarks = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $examId)->where('class', $class)->where('section', $section)
                 ->select('subject')
+                ->selectRaw('SUM(CASE WHEN total_marks IS NOT NULL THEN 1 ELSE 0 END) as entered_count')
                 ->selectRaw('SUM(CASE WHEN submitted_at IS NOT NULL THEN 1 ELSE 0 END) as total')
                 ->selectRaw('SUM(CASE WHEN approved_at IS NOT NULL THEN 1 ELSE 0 END) as approved_count')
+                ->selectRaw('SUM(CASE WHEN rejected_at IS NOT NULL AND submitted_at IS NULL THEN 1 ELSE 0 END) as rejected_count')
                 ->groupBy('subject')->get()->keyBy('subject');
 
             // Get expected subjects from class_subjects
@@ -262,19 +264,23 @@ class MarksController extends Controller
                 foreach ($classSubjectNames as $s) {
                     $subjStats = $subjectsWithMarks->get($s);
                     $submissionStatus->push((object) [
-                        'subject' => $s,
-                        'total' => $subjStats ? (int) $subjStats->total : 0,
+                        'subject'        => $s,
+                        'entered_count'  => $subjStats ? (int) $subjStats->entered_count : 0,
+                        'total'          => $subjStats ? (int) $subjStats->total : 0,
                         'approved_count' => $subjStats ? (int) $subjStats->approved_count : 0,
-                        'expected' => $totalStudents,
+                        'rejected_count' => $subjStats ? (int) $subjStats->rejected_count : 0,
+                        'expected'       => $totalStudents,
                     ]);
                 }
             } else {
                 // Fallback: use whatever marks exist
                 $submissionStatus = $subjectsWithMarks->map(fn ($s) => (object) [
-                    'subject' => $s->subject,
-                    'total' => (int) $s->total,
+                    'subject'        => $s->subject,
+                    'entered_count'  => (int) $s->entered_count,
+                    'total'          => (int) $s->total,
                     'approved_count' => (int) $s->approved_count,
-                    'expected' => $totalStudents,
+                    'rejected_count' => (int) $s->rejected_count,
+                    'expected'       => $totalStudents,
                 ])->values();
             }
         }

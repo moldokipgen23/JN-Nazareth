@@ -271,16 +271,37 @@ function syncSection(form) {
         @if($submissionStatus->isNotEmpty())
         <div style="background:#fff;border-radius:12px;padding:14px 16px;margin-top:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
             <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Submission Status per Subject</div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">
                 @foreach($submissionStatus as $ss)
-                <div style="background:{{ $ss->total === $ss->approved_count ? '#f0fdf4' : '#fef3c7' }};border-radius:8px;padding:8px 12px;">
+                @php
+                    $_entered  = $ss->entered_count ?? 0;
+                    $_submitted = $ss->total;
+                    $_approved = $ss->approved_count;
+                    $_rejected = $ss->rejected_count ?? 0;
+                    $_expected = $ss->expected;
+                    $_pending  = $_submitted - $_approved;
+
+                    if ($_entered === 0 && $_rejected === 0) {
+                        $_bg = '#f1f5f9'; $_fg = '#64748b'; $_icon = '⚪'; $_label = 'Not started';
+                    } elseif ($_approved > 0 && $_approved === $_expected) {
+                        $_bg = '#f0fdf4'; $_fg = '#15803d'; $_icon = '✅'; $_label = 'Fully approved';
+                    } elseif ($_pending > 0) {
+                        $_bg = '#fef3c7'; $_fg = '#92400e'; $_icon = '⏳'; $_label = $_pending.' pending approval';
+                    } elseif ($_rejected > 0) {
+                        $_bg = '#fee2e2'; $_fg = '#b91c1c'; $_icon = '↩'; $_label = $_rejected.' sent back';
+                    } elseif ($_entered > $_submitted) {
+                        $_bg = '#ffedd5'; $_fg = '#9a3412'; $_icon = '📝'; $_label = ($_entered - $_submitted).' draft(s) — not submitted';
+                    } else {
+                        $_bg = '#f1f5f9'; $_fg = '#64748b'; $_icon = '⚪'; $_label = 'Not started';
+                    }
+                @endphp
+                <div style="background:{{ $_bg }};border-radius:8px;padding:8px 12px;">
                     <div style="font-size:12px;font-weight:600;color:#0f172a;">{{ $ss->subject }}</div>
-                    <div style="font-size:11px;color:#64748b;">{{ $ss->approved_count }}/{{ $ss->total }} approved</div>
-                    @if($ss->total === $ss->approved_count)
-                        <span style="font-size:10px;color:#15803d;font-weight:600;">✅ Approved</span>
-                    @else
-                        <span style="font-size:10px;color:#92400e;font-weight:600;">⏳ Pending</span>
-                    @endif
+                    <div style="font-size:11px;color:#64748b;">
+                        Entered: {{ $_entered }}/{{ $_expected }} ·
+                        Approved: {{ $_approved }}/{{ $_expected }}
+                    </div>
+                    <span style="font-size:10px;color:{{ $_fg }};font-weight:700;">{{ $_icon }} {{ $_label }}</span>
                 </div>
                 @endforeach
             </div>
