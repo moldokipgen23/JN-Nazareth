@@ -518,10 +518,14 @@ function closeConfirm() {
     _confirmCb = null;
 }
 
-// Only force a fresh fetch when the browser actually restored the page from
-// the back-forward cache (e.g. iOS Safari ignoring Cache-Control: no-store).
-// Do NOT reload on every back/forward navigation — that turns normal navigation
-// into a flicker and surfaces stale flash messages.
+// Belt-and-braces bfcache defeat. Cache-Control: no-store already tells browsers
+// not to bfcache this page, but Chrome and iOS Safari ignore it in some cases.
+// Registering an unload listener makes the page bfcache-ineligible per spec
+// (browsers won't store a page that has unload handlers).
+window.addEventListener('unload', function () { /* noop */ });
+
+// As a final safety net: if pageshow fires with persisted=true, the page DID
+// come from bfcache despite everything — force a fresh server fetch.
 window.addEventListener('pageshow', function (e) {
     if (e.persisted) window.location.reload();
 });
