@@ -182,6 +182,34 @@
 </div>
 @endif
 
+{{-- Backlog: classes that missed attendance on past school days --}}
+@if($missedBacklog->isNotEmpty())
+<div style="background:#fff;border:1px solid #fecaca;border-left:4px solid #dc2626;border-radius:12px;padding:16px 20px;margin-bottom:24px;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+        <div>
+            <div style="font-size:14px;font-weight:700;color:#991b1b;">🚨 Past attendance not marked</div>
+            <div style="font-size:11px;color:#7f1d1d;margin-top:2px;">Last 7 school days · {{ $missedBacklog->count() }} class{{ $missedBacklog->count() === 1 ? '' : 'es' }} with gaps · click a date to backfill</div>
+        </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+        @foreach($missedBacklog as $b)
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;flex-wrap:wrap;">
+            <span style="font-size:12px;font-weight:700;color:#0f172a;min-width:140px;">{{ $b->class }} — Sec {{ $b->section }}</span>
+            <span style="font-size:10px;background:#fee2e2;color:#b91c1c;font-weight:700;padding:2px 8px;border-radius:99px;">{{ $b->count }} missed</span>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;flex:1;">
+                @foreach($b->missed as $ds)
+                    <a href="{{ route('admin.attendance.index', ['view' => 'daily', 'class' => $b->class, 'section' => $b->section, 'date' => $ds]) }}"
+                       style="font-size:11px;background:#fff;color:#b91c1c;border:1px solid #fecaca;padding:3px 9px;border-radius:6px;text-decoration:none;font-weight:600;">
+                        {{ \Carbon\Carbon::parse($ds)->format('D d M') }}
+                    </a>
+                @endforeach
+            </div>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
 {{-- Students by class + Upcoming events --}}
 <div class="dash-event-side" style="display:grid; grid-template-columns:1fr 360px; gap:20px; margin-bottom:24px;">
 

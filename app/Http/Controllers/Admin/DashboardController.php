@@ -102,22 +102,25 @@ class DashboardController extends Controller
         // Only shown on school days (skip weekends + scheduled holidays).
         $missingAttendanceClasses = collect();
         $isSchoolDayToday = false;
+        $missedBacklog = collect();
         if ($year) {
             $todayCarbon = Carbon::today();
             $isWeekend   = $todayCarbon->isSaturday() || $todayCarbon->isSunday();
             $isHoliday   = SchoolHoliday::whereDate('date', $today)->exists();
             $isSchoolDayToday = !$isWeekend && !$isHoliday;
 
-            if ($isSchoolDayToday) {
-                // All active class+section combos for this year
-                $allSlots = StudentEnrollment::forActiveYear()->active()
-                    ->select('class', 'section')
-                    ->groupBy('class', 'section')
-                    ->selectRaw('COUNT(*) as student_count')
-                    ->get();
+            // All active class+section combos for this year
+            $allSlots = StudentEnrollment::forActiveYear()->active()
+                ->select('class', 'section')
+                ->groupBy('class', 'section')
+                ->selectRaw('COUNT(*) as student_count')
+                ->get();
 
-                // Slots that DO have at least one attendance record today
-                $markedSlots = AttendanceRecord::forActiveYear()
+            $classOrder = array_flip(Student::classes());
+
+            if ($isSchoolDayToday) {
+                // Today's gap (shown as the primary nag)
+                $markedSlotsToday = AttendanceRecord::forActiveYear()
                     ->whereDate('date', $today)
                     ->select('class', 'section')
                     ->distinct()
@@ -125,10 +128,57 @@ class DashboardController extends Controller
                     ->map(fn ($r) => $r->class.'|'.$r->section)
                     ->all();
 
-                $classOrder = array_flip(Student::classes());
                 $missingAttendanceClasses = $allSlots
-                    ->filter(fn ($s) => ! in_array($s->class.'|'.$s->section, $markedSlots, true))
+                    ->filter(fn ($s) => ! in_array($s->class.'|'.$s->section, $markedSlotsToday, true))
                     ->sortBy(fn ($s) => [$classOrder[$s->class] ?? 999, $s->section])
+                    ->values();
+            }
+
+            // Backlog: scan the last 7 school days (excluding today + weekends
+            // + holidays). Surfaces past misses so admin can backfill them.
+            $holidaySet = SchoolHoliday::whereBetween('date', [$todayCarbon->copy()->subDays(14), $todayCarbon])
+                ->pluck('date')->map(fn ($d) => Carbon::parse($d)->toDateString())->all();
+
+            $schoolDays = [];
+            $cursor = $todayCarbon->copy()->subDay();
+            while (count($schoolDays) < 7 && $cursor->gte($todayCarbon->copy()->subDays(14))) {
+                $ds = $cursor->toDateString();
+                if (!$cursor->isSaturday() && !$cursor->isSunday() && !in_array($ds, $holidaySet, true)) {
+                    $schoolDays[] = $ds;
+                }
+                $cursor->subDay();
+            }
+
+            if (!empty($schoolDays)) {
+                $markedByDate = AttendanceRecord::forActiveYear()
+                    ->whereIn('date', $schoolDays)
+                    ->select('class', 'section', 'date')
+                    ->distinct()
+                    ->get()
+                    ->groupBy(fn ($r) => Carbon::parse($r->date)->toDateString())
+                    ->map(fn ($rows) => $rows->map(fn ($r) => $r->class.'|'.$r->section)->all())
+                    ->all();
+
+                $backlogRows = [];
+                foreach ($allSlots as $s) {
+                    $key = $s->class.'|'.$s->section;
+                    $missed = [];
+                    foreach ($schoolDays as $ds) {
+                        if (!in_array($key, $markedByDate[$ds] ?? [], true)) {
+                            $missed[] = $ds;
+                        }
+                    }
+                    if (!empty($missed)) {
+                        $backlogRows[] = (object) [
+                            'class'     => $s->class,
+                            'section'   => $s->section,
+                            'missed'    => $missed,
+                            'count'     => count($missed),
+                        ];
+                    }
+                }
+                $missedBacklog = collect($backlogRows)
+                    ->sortBy(fn ($r) => [$classOrder[$r->class] ?? 999, $r->section])
                     ->values();
             }
         }
@@ -138,7 +188,7 @@ class DashboardController extends Controller
             'todayMarked', 'todayExpected', 'todayPct',
             'pendingQuestions', 'pendingNotes', 'pendingMarks', 'pendingAttendance',
             'totalMarked', 'passMarked', 'marksPassPct',
-            'missingAttendanceClasses', 'isSchoolDayToday'
+            'missingAttendanceClasses', 'isSchoolDayToday', 'missedBacklog'
         ));
     }
 }
