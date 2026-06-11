@@ -1,3 +1,14 @@
+# Disable LiteSpeed cache for the entire application. cPanel hosts ship
+# LiteSpeed which caches HTML responses aggressively and ignores
+# Cache-Control: no-store on dynamic pages. Without this directive the
+# sidebar pending count and any post-action page stay stale until manual
+# refresh.
+<IfModule LiteSpeed>
+    CacheDisable public /
+    RewriteEngine On
+    RewriteRule .* - [E=Cache-Control:no-cache]
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
