@@ -1254,14 +1254,25 @@ class MarksController extends Controller
             $updates['remarks'] = $data['remarks'];
         }
 
-        if ($mark->approved_at) {
-            $updates['approved_at'] = null;
-            $updates['approved_by'] = null;
+        // Admin entry = implicit approval. If the resulting row has a final score,
+        // mark it as submitted + approved by admin so it surfaces in summary/results.
+        $finalTotal = $updates['total_marks']
+            ?? $updates['obtained_marks']
+            ?? $mark->total_marks
+            ?? $mark->obtained_marks;
+
+        if ($finalTotal !== null && $finalTotal !== '') {
+            $updates['submitted_at']   = $mark->submitted_at ?? now();
+            $updates['approved_at']    = $mark->approved_at ?? now();
+            $updates['approved_by']    = $mark->approved_by ?? auth()->id();
+            $updates['rejection_note'] = null;
+            $updates['rejected_at']    = null;
+            $updates['rejected_by']    = null;
         }
 
         $mark->update($updates);
 
-        return back()->with('success', 'Mark updated.');
+        return back()->with('success', 'Mark updated and approved.');
     }
 
     public function examSummary(Request $request)
