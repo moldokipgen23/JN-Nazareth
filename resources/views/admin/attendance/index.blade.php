@@ -26,15 +26,27 @@
     <input type="hidden" name="view" value="{{ $view }}">
     <div>
         <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Class</label>
-        <select name="class" onchange="this.form.submit()" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;min-width:160px;">
+        <select onchange="pickClassSection(this)" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;min-width:180px;">
             <option value="">— pick —</option>
             @foreach($slots as $s)
-                <option value="{{ $s->class }}" {{ $class === $s->class && $section === $s->section ? 'selected' : '' }}>
+                <option value="{{ $s->class }}|{{ $s->section }}" {{ $class === $s->class && $section === $s->section ? 'selected' : '' }}>
                     {{ $s->class }} — Sec {{ $s->section }}
                 </option>
             @endforeach
         </select>
+        <input type="hidden" name="class" value="{{ $class }}">
+        <input type="hidden" name="section" value="{{ $section }}">
     </div>
+    <script>
+        function pickClassSection(sel) {
+            var v = sel.value || '';
+            var parts = v.split('|');
+            var form = sel.closest('form');
+            form.querySelector('input[name="class"]').value   = parts[0] || '';
+            form.querySelector('input[name="section"]').value = parts[1] || '';
+            form.submit();
+        }
+    </script>
     @if($view === 'daily')
     <div>
         <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Date</label>
