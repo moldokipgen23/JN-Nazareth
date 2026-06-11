@@ -34,7 +34,9 @@
                     @endphp
                     <div style="display:flex;align-items:center;gap:4px;">
                         <a href="{{ route('teacher.marks.sheet',['exam'=>$exam->id,'class'=>$slot->class,'section'=>$slot->section,'subject'=>$slot->subject]) }}" style="font-size:12px;font-weight:600;color:#0f766e;background:#f0fdf4;border:1px solid #bbf7d0;padding:7px 14px;border-radius:8px;text-decoration:none;display:inline-flex;align-items:center;">{{ $exam->name }}{{ $exam->code?' ('.$exam->code.')':'' }}</a>
-                        @if($slotStatus === 'revised')
+                        @if($slotStatus === 'rejected')
+                            <span style="background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">↩ Sent back</span>
+                        @elseif($slotStatus === 'revised')
                             <span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">⚠️ Revised</span>
                         @elseif($slotStatus === 'approved')
                             <span style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">✅</span>

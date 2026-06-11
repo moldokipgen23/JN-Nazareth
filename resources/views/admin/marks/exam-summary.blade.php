@@ -27,8 +27,10 @@
     {{-- Overall stats --}}
     @php
         $totalExpected = $classData->sum('expected_count');
-        $totalQ = $classData->sum('questions_done');
-        $totalM = $classData->sum('marks_done');
+        $totalQ        = $classData->sum('questions_done');
+        $totalApproved = $classData->sum('marks_done');
+        $totalPending  = $classData->sum('marks_pending');
+        $totalRejected = $classData->sum('marks_rejected');
     @endphp
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px;">
         <div style="background:#f1f5f9;border-radius:10px;padding:14px 16px;">
@@ -39,10 +41,20 @@
             <div style="font-size:22px;font-weight:700;">{{ $totalQ }}/{{ $totalExpected }}</div>
             <div style="font-size:11px;font-weight:600;">Questions Approved</div>
         </div>
-        <div style="background:#dbeafe;border-radius:10px;padding:14px 16px;color:#1d4ed8;">
-            <div style="font-size:22px;font-weight:700;">{{ $totalM }}/{{ $totalExpected }}</div>
-            <div style="font-size:11px;font-weight:600;">Marks Submitted</div>
+        <div style="background:#ede9fe;border-radius:10px;padding:14px 16px;color:#6d28d9;">
+            <div style="font-size:22px;font-weight:700;">{{ $totalApproved }}/{{ $totalExpected }}</div>
+            <div style="font-size:11px;font-weight:600;">Marks Approved</div>
         </div>
+        <div style="background:#fef3c7;border-radius:10px;padding:14px 16px;color:#92400e;">
+            <div style="font-size:22px;font-weight:700;">{{ $totalPending }}</div>
+            <div style="font-size:11px;font-weight:600;">Pending Approval</div>
+        </div>
+        @if($totalRejected > 0)
+        <div style="background:#fee2e2;border-radius:10px;padding:14px 16px;color:#b91c1c;">
+            <div style="font-size:22px;font-weight:700;">{{ $totalRejected }}</div>
+            <div style="font-size:11px;font-weight:600;">Sent Back</div>
+        </div>
+        @endif
         <div style="background:#f0fdf4;border-radius:10px;padding:14px 16px;color:#15803d;">
             <div style="font-size:22px;font-weight:700;">{{ $classData->where('all_complete', true)->count() }}/{{ $classData->count() }}</div>
             <div style="font-size:11px;font-weight:600;">Classes Ready</div>
@@ -80,12 +92,22 @@
             {{-- Marks bar --}}
             <div style="margin-bottom:10px;">
                 <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
-                    <span style="color:#64748b;">📊 Marks</span>
+                    <span style="color:#64748b;">📊 Marks Approved</span>
                     <span style="font-weight:600;color:{{ $cd['marks_complete'] ? '#15803d' : '#92400e' }};">{{ $cd['marks_done'] }}/{{ $cd['expected_count'] }}</span>
                 </div>
                 <div style="height:5px;background:#f1f5f9;border-radius:99px;overflow:hidden;">
                     <div style="height:100%;width:{{ $mPct }}%;background:{{ $cd['marks_complete'] ? '#22c55e' : '#eab308' }};border-radius:99px;"></div>
                 </div>
+                @if(($cd['marks_pending'] ?? 0) > 0 || ($cd['marks_rejected'] ?? 0) > 0)
+                <div style="display:flex;gap:6px;font-size:10px;margin-top:4px;flex-wrap:wrap;">
+                    @if(($cd['marks_pending'] ?? 0) > 0)
+                        <span style="background:#fef3c7;color:#92400e;padding:1px 7px;border-radius:99px;font-weight:700;">⏳ {{ $cd['marks_pending'] }} pending</span>
+                    @endif
+                    @if(($cd['marks_rejected'] ?? 0) > 0)
+                        <span style="background:#fee2e2;color:#b91c1c;padding:1px 7px;border-radius:99px;font-weight:700;">↩ {{ $cd['marks_rejected'] }} sent back</span>
+                    @endif
+                </div>
+                @endif
             </div>
 
             {{-- Quick links --}}

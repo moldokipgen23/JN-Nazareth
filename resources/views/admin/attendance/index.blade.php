@@ -63,10 +63,61 @@
     @endif
 </form>
 
+{{-- Global pending inbox — shown whenever there are pending records, regardless of class filter --}}
+@if($pendingInbox->isNotEmpty())
+<div style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:14px;font-weight:700;color:#0f172a;">
+            ⏳ Pending Attendance Approvals
+            <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;margin-left:6px;">{{ $pendingCount }}</span>
+        </div>
+        <form method="POST" action="{{ route('admin.attendance.approve-all') }}" style="margin:0;">
+            @csrf
+            <button type="button" onclick="customConfirm('Approve ALL {{ $pendingCount }} pending attendance records?',()=>this.closest('form').submit())"
+                    style="background:#0f766e;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Approve All</button>
+        </form>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
+        @foreach($pendingInbox as $p)
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                <span style="font-size:13px;font-weight:700;color:#0f172a;">{{ $p->class }} — Sec {{ $p->section }}</span>
+                <span style="font-size:10px;background:#fef3c7;color:#92400e;font-weight:700;padding:2px 8px;border-radius:99px;">{{ $p->student_count }} student{{ $p->student_count !== 1 ? 's' : '' }}</span>
+            </div>
+            <div style="font-size:11px;color:#64748b;">
+                {{ \Carbon\Carbon::parse($p->date)->format('d M Y') }} · marked by {{ $p->marker?->name ?? 'unknown' }}
+            </div>
+            <div style="font-size:10px;color:#94a3b8;margin:4px 0 8px;">{{ $p->first_marked_at ? \Carbon\Carbon::parse($p->first_marked_at)->diffForHumans() : '' }}</div>
+            <div style="display:flex;gap:6px;">
+                <a href="{{ route('admin.attendance.index', ['view' => 'daily', 'class' => $p->class, 'section' => $p->section, 'date' => \Carbon\Carbon::parse($p->date)->toDateString(), 'approval_status' => 'pending']) }}"
+                   style="flex:1;background:#0f766e;color:#fff;text-align:center;padding:6px 0;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;">Review</a>
+                <form method="POST" action="{{ route('admin.attendance.approve-day') }}" style="flex-shrink:0;margin:0;">
+                    @csrf
+                    <input type="hidden" name="class" value="{{ $p->class }}">
+                    <input type="hidden" name="section" value="{{ $p->section }}">
+                    <input type="hidden" name="date" value="{{ \Carbon\Carbon::parse($p->date)->toDateString() }}">
+                    <button type="submit" style="background:#dcfce7;color:#15803d;border:1px solid #86efac;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Approve</button>
+                </form>
+                <form method="POST" action="{{ route('admin.attendance.reject-day') }}" style="flex-shrink:0;margin:0;">
+                    @csrf
+                    <input type="hidden" name="class" value="{{ $p->class }}">
+                    <input type="hidden" name="section" value="{{ $p->section }}">
+                    <input type="hidden" name="date" value="{{ \Carbon\Carbon::parse($p->date)->toDateString() }}">
+                    <button type="button" onclick="customConfirm('Reject this submission?',()=>this.closest('form').submit())" style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Reject</button>
+                </form>
+            </div>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
 @if(!$class)
+    @if($pendingInbox->isEmpty())
     <div style="background:#fff;border-radius:12px;padding:36px 20px;text-align:center;color:#94a3b8;box-shadow:0 1px 3px rgba(15,23,42,.06);">
         Select a class above to view attendance.
     </div>
+    @endif
 @elseif($view === 'daily')
     {{-- Daily View --}}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">

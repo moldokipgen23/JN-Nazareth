@@ -124,9 +124,26 @@ class AttendanceController extends Controller
             ? AttendanceRecord::forActiveYear()->where('approval_status', 'pending')->count()
             : 0;
 
+        // Global pending inbox — grouped by class/section/date/marker so admin can see WHO submitted WHAT
+        $pendingInbox = collect();
+        if ($year && $pendingCount > 0) {
+            $pendingInbox = AttendanceRecord::forActiveYear()
+                ->where('approval_status', 'pending')
+                ->with('marker:id,name')
+                ->select('class', 'section', 'date', 'marked_by')
+                ->selectRaw('COUNT(*) as student_count')
+                ->selectRaw('MIN(created_at) as first_marked_at')
+                ->groupBy('class', 'section', 'date', 'marked_by')
+                ->orderByDesc('date')
+                ->orderBy('class')
+                ->orderBy('section')
+                ->limit(50)
+                ->get();
+        }
+
         return view('admin.attendance.index', compact(
             'year', 'class', 'section', 'date', 'view', 'slots', 'month',
-            'records', 'summary', 'approvalStatus', 'pendingCount',
+            'records', 'summary', 'approvalStatus', 'pendingCount', 'pendingInbox',
             'studentStats', 'monthlyTrend', 'classAvgPct', 'monthStart', 'monthEnd', 'totalDays',
         ));
     }

@@ -45,7 +45,17 @@
 @php
     $isSubmitted = $existing->first()?->submitted_at !== null;
     $allSubmitted = $existing->isNotEmpty() && $existing->every(fn($m) => $m->submitted_at !== null);
+    $_rejected = $existing->filter(fn($m) => $m->rejected_at && !$m->submitted_at);
+    $_latestRej = $_rejected->sortByDesc('rejected_at')->first();
 @endphp
+
+@if($_latestRej)
+<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:12px 14px;font-size:13px;margin-bottom:12px;">
+    <div style="font-weight:700;color:#b91c1c;margin-bottom:4px;">↩ Admin sent these marks back for revision</div>
+    <div style="color:#7f1d1d;"><strong>Reason:</strong> {{ $_latestRej->rejection_note }}</div>
+    <div style="font-size:11px;color:#991b1b;margin-top:4px;">By {{ $_latestRej->rejectedBy?->name ?? 'admin' }} · {{ $_latestRej->rejected_at->diffForHumans() }}. Edit below and resubmit.</div>
+</div>
+@endif
 
 @if($enrollments->isEmpty())
     <div style="background:#fff;border-radius:14px;padding:48px 24px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06);">

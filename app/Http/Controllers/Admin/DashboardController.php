@@ -75,6 +75,13 @@ class DashboardController extends Controller
         // Pending reviews
         $pendingQuestions = $year ? ExamQuestion::where('academic_year_id', $year->id)->where('status', 'pending')->count() : 0;
         $pendingNotes     = 0;
+        $pendingMarks     = $year
+            ? \App\Models\Mark::where('academic_year_id', $year->id)
+                ->whereNotNull('submitted_at')->whereNull('approved_at')->count()
+            : 0;
+        $pendingAttendance = $year
+            ? AttendanceRecord::forActiveYear()->where('approval_status', 'pending')->count()
+            : 0;
 
         // Marks distribution (basic)
         $totalMarked  = 0;
@@ -92,7 +99,7 @@ class DashboardController extends Controller
         return view('admin.dashboard', compact(
             'stats', 'classCounts', 'recentActivity', 'recentStudents', 'upcomingEvents',
             'todayMarked', 'todayExpected', 'todayPct',
-            'pendingQuestions', 'pendingNotes',
+            'pendingQuestions', 'pendingNotes', 'pendingMarks', 'pendingAttendance',
             'totalMarked', 'passMarked', 'marksPassPct'
         ));
     }

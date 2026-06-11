@@ -66,8 +66,11 @@ class MarksController extends Controller
                 if ($marks->isEmpty()) continue;
                 $hasRevised = $marks->contains(fn ($m) => $m->entered_by && $m->entered_by !== $teacherId);
                 $anySubmitted = $marks->contains(fn ($m) => $m->submitted_at);
+                $anyRejected = $marks->contains(fn ($m) => $m->rejected_at && !$m->submitted_at);
                 $allApproved = $anySubmitted && $marks->every(fn ($m) => $m->approved_at);
-                $status = $hasRevised ? 'revised' : ($allApproved ? 'approved' : ($anySubmitted ? 'pending' : 'draft'));
+                $status = $anyRejected ? 'rejected'
+                    : ($hasRevised ? 'revised'
+                        : ($allApproved ? 'approved' : ($anySubmitted ? 'pending' : 'draft')));
                 $slotStatuses[$slot->class][$slot->section][$slot->subject][$exam->id] = $status;
             }
         }
@@ -217,7 +220,10 @@ class MarksController extends Controller
                 'submitted_at'     => $isSubmit ? now() : null,
             ];
             if ($isSubmit) {
-                $markData['entered_by'] = auth()->id();
+                $markData['entered_by']     = auth()->id();
+                $markData['rejection_note'] = null;
+                $markData['rejected_at']    = null;
+                $markData['rejected_by']    = null;
             }
             Mark::updateOrCreate(
                 ['exam_id' => $exam->id, 'student_enrollment_id' => $enrollmentId, 'subject' => $subject],

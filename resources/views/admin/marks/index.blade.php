@@ -115,7 +115,17 @@ function syncSection(form) {
             $_anyPending = $records->contains(fn($r) => $r->submitted_at && !$r->approved_at);
             $_allApproved = $records->isNotEmpty() && $records->every(fn($r) => $r->approved_at);
             $_anySubmitted = $records->contains(fn($r) => $r->submitted_at);
+            $_rejectedRows = $records->filter(fn($r) => $r->rejected_at && !$r->submitted_at);
+            $_latestReject = $_rejectedRows->sortByDesc('rejected_at')->first();
         @endphp
+
+        @if($_latestReject)
+        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:12px 16px;margin-bottom:14px;">
+            <div style="font-size:13px;font-weight:700;color:#b91c1c;margin-bottom:4px;">↩ Sent back for revision — {{ $_rejectedRows->count() }} student(s)</div>
+            <div style="font-size:12px;color:#7f1d1d;"><strong>Reason:</strong> {{ $_latestReject->rejection_note }}</div>
+            <div style="font-size:11px;color:#991b1b;margin-top:4px;">By {{ $_latestReject->rejectedBy?->name ?? 'admin' }} · {{ $_latestReject->rejected_at->diffForHumans() }}</div>
+        </div>
+        @endif
 
         @if($_anyPending)
         <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
@@ -154,7 +164,8 @@ function syncSection(form) {
                 <input type="hidden" name="class" value="{{ $class }}">
                 <input type="hidden" name="section" value="{{ $section }}">
                 <input type="hidden" name="subject" value="{{ $subject }}">
-                <button type="button" onclick="customConfirm('Send back all marks for {{ $subject }}? Teacher will re-edit and resubmit.',()=>this.closest('form').submit())"
+                <input type="hidden" name="rejection_note" value="">
+                <button type="button" onclick="var n=prompt('Reason for sending back {{ $subject }} marks? (visible to teacher)');if(n&&n.trim().length>=3){this.previousElementSibling.value=n.trim();this.closest('form').submit();}else if(n!==null){alert('Note must be at least 3 characters.');}"
                         style="background:#fef3c7;color:#92400e;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">↩ Send Back All</button>
             </form>
         </div>
@@ -220,6 +231,8 @@ function syncSection(form) {
                                 <span style="color:#6d28d9;font-size:11px;font-weight:600;">✅ {{ $r->approved_at->format('d M') }}</span>
                             @elseif($r->submitted_at)
                                 <span style="color:#92400e;font-size:11px;font-weight:600;">⏳ Pending</span>
+                            @elseif($r->rejected_at)
+                                <span style="color:#b91c1c;font-size:11px;font-weight:600;" title="{{ $r->rejection_note }}">↩ Sent back {{ $r->rejected_at->format('d M') }}</span>
                             @else
                                 <span style="color:#94a3b8;font-size:11px;">—</span>
                             @endif
@@ -242,7 +255,8 @@ function syncSection(form) {
                                 @if($r->submitted_at)
                                 <form method="POST" action="{{ route('admin.marks.send-back', $r) }}" style="display:inline;flex-shrink:0;">
                                     @csrf
-                                    <button type="button" style="background:#fef3c7;color:#92400e;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;" onclick="customConfirm('Send back for revision? Teacher will be able to re-edit.',()=>this.closest('form').submit())">{{ $r->approved_at ? 'Send Back' : 'Edit' }}</button>
+                                    <input type="hidden" name="rejection_note" value="">
+                                    <button type="button" style="background:#fef3c7;color:#92400e;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;" onclick="var n=prompt('Reason for sending back? (visible to teacher)');if(n&&n.trim().length>=3){this.previousElementSibling.value=n.trim();this.closest('form').submit();}else if(n!==null){alert('Note must be at least 3 characters.');}">{{ $r->approved_at ? 'Send Back' : 'Send Back' }}</button>
                                 </form>
                                 @endif
                             </div>
@@ -314,7 +328,8 @@ function syncSection(form) {
                                 <input type="hidden" name="class" value="{{ $pr->class }}">
                                 <input type="hidden" name="section" value="{{ $pr->section }}">
                                 <input type="hidden" name="subject" value="{{ $pr->subject }}">
-                                <button type="button" onclick="customConfirm('Send back all marks for {{ $pr->subject }} for revision? Teacher can re-edit.',()=>this.closest('form').submit())"
+                                <input type="hidden" name="rejection_note" value="">
+                                <button type="button" onclick="var n=prompt('Reason for sending back {{ $pr->subject }} marks? (visible to teacher)');if(n&&n.trim().length>=3){this.previousElementSibling.value=n.trim();this.closest('form').submit();}else if(n!==null){alert('Note must be at least 3 characters.');}"
                                         style="background:#fef3c7;color:#92400e;border:none;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Send Back</button>
                             </form>
                             <form method="POST" action="{{ route('admin.marks.approve-subject') }}" style="flex-shrink:0;">

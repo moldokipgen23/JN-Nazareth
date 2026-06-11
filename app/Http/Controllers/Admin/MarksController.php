@@ -906,28 +906,36 @@ class MarksController extends Controller
     }
 
     /**
-     * Send a mark back for teacher revision (reset submitted_at so teacher can re-edit).
+     * Send a mark back for teacher revision with a required note.
      */
     public function sendBack(Request $request, Mark $mark)
     {
-        $mark->update([
-            'submitted_at' => null,
-            'approved_at' => null,
-            'approved_by' => null,
+        $data = $request->validate([
+            'rejection_note' => 'required|string|min:3|max:1000',
         ]);
-        return back()->with('success', 'Mark sent back for revision. Teacher can now edit.');
+
+        $mark->update([
+            'submitted_at'   => null,
+            'approved_at'    => null,
+            'approved_by'    => null,
+            'rejection_note' => $data['rejection_note'],
+            'rejected_at'    => now(),
+            'rejected_by'    => auth()->id(),
+        ]);
+        return back()->with('success', 'Mark sent back for revision.');
     }
 
     /**
-     * Send back all marks for a subject (exam, class, section, subject) for teacher revision.
+     * Send back all marks for a subject with a required note.
      */
     public function sendBackSubject(Request $request)
     {
         $data = $request->validate([
-            'exam_id' => 'required|integer|exists:exams,id',
-            'class'   => 'required|string',
-            'section' => 'required|string',
-            'subject' => 'required|string',
+            'exam_id'        => 'required|integer|exists:exams,id',
+            'class'          => 'required|string',
+            'section'        => 'required|string',
+            'subject'        => 'required|string',
+            'rejection_note' => 'required|string|min:3|max:1000',
         ]);
 
         $year = AcademicYear::current();
@@ -942,12 +950,15 @@ class MarksController extends Controller
             ->where('subject', $data['subject'])
             ->whereNotNull('submitted_at')
             ->update([
-                'submitted_at' => null,
-                'approved_at' => null,
-                'approved_by' => null,
+                'submitted_at'   => null,
+                'approved_at'    => null,
+                'approved_by'    => null,
+                'rejection_note' => $data['rejection_note'],
+                'rejected_at'    => now(),
+                'rejected_by'    => auth()->id(),
             ]);
 
-        return back()->with('success', "Sent back {$count} mark(s) for {$data['subject']}. Teacher can now re-edit.");
+        return back()->with('success', "Sent back {$count} mark(s) for {$data['subject']}. Teacher can now re-edit with your note.");
     }
 
     /**
@@ -1269,9 +1280,24 @@ class MarksController extends Controller
                 ->select('class', 'subject')->distinct()->get()
                 ->groupBy('class')->map(fn ($g) => $g->pluck('subject')->toArray());
 
-            $submittedMSubjects = Mark::where('academic_year_id', $year->id)
+            $approvedMSubjects = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $examId)
                 ->whereNotNull('approved_at')
+                ->select('class', 'subject')->distinct()->get()
+                ->groupBy('class')->map(fn ($g) => $g->pluck('subject')->toArray());
+
+            $pendingMSubjects = Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)
+                ->whereNotNull('submitted_at')
+                ->whereNull('approved_at')
+                ->select('class', 'subject')->distinct()->get()
+                ->groupBy('class')->map(fn ($g) => $g->pluck('subject')->toArray());
+
+            $rejectedMSubjects = Mark::where('academic_year_id', $year->id)
+                ->where('exam_id', $examId)
+                ->whereNotNull('rejected_at')
+                ->whereNull('submitted_at')
+                ->whereNull('approved_at')
                 ->select('class', 'subject')->distinct()->get()
                 ->groupBy('class')->map(fn ($g) => $g->pluck('subject')->toArray());
 
@@ -1281,19 +1307,28 @@ class MarksController extends Controller
                 if ($expected->isEmpty()) continue;
 
                 $expectedArr = $expected->values()->toArray();
-                $qApproved = $approvedQSubjects->get($c, []);
-                $mSubmitted = $submittedMSubjects->get($c, []);
+                $qApproved   = $approvedQSubjects->get($c, []);
+                $mApproved   = $approvedMSubjects->get($c, []);
+                $mPending    = $pendingMSubjects->get($c, []);
+                $mRejected   = $rejectedMSubjects->get($c, []);
+
+                $approvedCount = count(array_intersect($mApproved, $expectedArr));
+                $pendingCount  = count(array_intersect($mPending, $expectedArr));
+                $rejectedCount = count(array_intersect($mRejected, $expectedArr));
+                $expectedCount = count($expectedArr);
 
                 $classData->push([
-                    'class' => $c,
-                    'expected_count' => count($expectedArr),
-                    'questions_done' => count(array_intersect($qApproved, $expectedArr)),
-                    'marks_done' => count(array_intersect($mSubmitted, $expectedArr)),
-                    'questions_complete' => count(array_intersect($qApproved, $expectedArr)) === count($expectedArr),
-                    'marks_complete' => count(array_intersect($mSubmitted, $expectedArr)) === count($expectedArr),
-                    'all_complete' => count(array_intersect($qApproved, $expectedArr)) === count($expectedArr)
-                        && count(array_intersect($mSubmitted, $expectedArr)) === count($expectedArr),
-                    'section' => 'A',
+                    'class'              => $c,
+                    'expected_count'     => $expectedCount,
+                    'questions_done'     => count(array_intersect($qApproved, $expectedArr)),
+                    'marks_done'         => $approvedCount,
+                    'marks_pending'      => $pendingCount,
+                    'marks_rejected'     => $rejectedCount,
+                    'questions_complete' => count(array_intersect($qApproved, $expectedArr)) === $expectedCount,
+                    'marks_complete'     => $approvedCount === $expectedCount,
+                    'all_complete'       => count(array_intersect($qApproved, $expectedArr)) === $expectedCount
+                        && $approvedCount === $expectedCount,
+                    'section'            => 'A',
                 ]);
             }
         }
