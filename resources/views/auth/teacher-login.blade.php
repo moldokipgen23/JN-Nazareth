@@ -7,7 +7,7 @@
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('teacher.login') }}">
+    <form method="POST" action="{{ route('teacher.login') }}" autocomplete="on">
         @csrf
 
         <!-- Email Address -->
@@ -32,8 +32,8 @@
         <!-- Remember Me -->
         <div class="block mt-4">
             <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
+                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember" value="1">
+                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }} <span style="color:#94a3b8;font-size:11px;">(keeps you signed in for 30 days)</span></span>
             </label>
         </div>
 
