@@ -863,7 +863,7 @@ class MarksController extends Controller
     public function resetSubmission(Request $request, Mark $mark)
     {
         $mark->update(['submitted_at' => null, 'approved_at' => null, 'approved_by' => null]);
-        return back()->with('success', 'Submission reset. Teacher can now edit marks.');
+        return redirect()->backFresh()->with('success', 'Submission reset. Teacher can now edit marks.');
     }
 
     /**
@@ -875,7 +875,7 @@ class MarksController extends Controller
             'approved_at' => now(),
             'approved_by' => auth()->id(),
         ]);
-        return back()->with('success', 'Mark approved.');
+        return redirect()->backFresh()->with('success', 'Mark approved.');
     }
 
     /**
@@ -907,7 +907,7 @@ class MarksController extends Controller
                 'approved_by' => auth()->id(),
             ]);
 
-        return back()->with('success', "Approved {$count} mark(s) for {$data['subject']}.");
+        return redirect()->backFresh()->with('success', "Approved {$count} mark(s) for {$data['subject']}.");
     }
 
     /**
@@ -927,7 +927,7 @@ class MarksController extends Controller
             'rejected_at'    => now(),
             'rejected_by'    => auth()->id(),
         ]);
-        return back()->with('success', 'Mark sent back for revision.');
+        return redirect()->backFresh()->with('success', 'Mark sent back for revision.');
     }
 
     /**
@@ -963,7 +963,7 @@ class MarksController extends Controller
                 'rejected_by'    => auth()->id(),
             ]);
 
-        return back()->with('success', "Sent back {$count} mark(s) for {$data['subject']}. Teacher can now re-edit with your note.");
+        return redirect()->backFresh()->with('success', "Sent back {$count} mark(s) for {$data['subject']}. Teacher can now re-edit with your note.");
     }
 
     /**
@@ -990,7 +990,7 @@ class MarksController extends Controller
             ->where('subject', $data['subject'])
             ->delete();
 
-        return back()->with('success', "Deleted {$count} mark(s) for {$data['subject']}.");
+        return redirect()->backFresh()->with('success', "Deleted {$count} mark(s) for {$data['subject']}.");
     }
 
     /**
@@ -1013,7 +1013,7 @@ class MarksController extends Controller
             ->where('class', $data['class'])
             ->delete();
 
-        return back()->with('success', "Deleted {$count} mark(s) for class {$data['class']}.");
+        return redirect()->backFresh()->with('success', "Deleted {$count} mark(s) for class {$data['class']}.");
     }
 
     /**
@@ -1277,7 +1277,7 @@ class MarksController extends Controller
 
         $mark->update($updates);
 
-        return back()->with('success', 'Mark updated and approved.');
+        return redirect()->backFresh()->with('success', 'Mark updated and approved.');
     }
 
     public function examSummary(Request $request)
