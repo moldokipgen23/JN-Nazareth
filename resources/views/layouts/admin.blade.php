@@ -520,14 +520,25 @@ function closeConfirm() {
 
 // Belt-and-braces bfcache defeat. Cache-Control: no-store already tells browsers
 // not to bfcache this page, but Chrome and iOS Safari ignore it in some cases.
-// Registering an unload listener makes the page bfcache-ineligible per spec
-// (browsers won't store a page that has unload handlers).
+// Registering an unload listener makes the page bfcache-ineligible per spec.
 window.addEventListener('unload', function () { /* noop */ });
 
-// As a final safety net: if pageshow fires with persisted=true, the page DID
-// come from bfcache despite everything — force a fresh server fetch.
+// Safety net: bfcache restore -> force fresh fetch.
 window.addEventListener('pageshow', function (e) {
     if (e.persisted) window.location.reload();
+});
+
+// Auto-refresh when admin switches BACK to this browser tab after being away.
+// Threshold: 5 seconds. Anything shorter creates a flicker every time you
+// click into devtools or briefly switch apps.
+var _hiddenAt = null;
+document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+        _hiddenAt = Date.now();
+    } else if (_hiddenAt && Date.now() - _hiddenAt > 5000) {
+        _hiddenAt = null;
+        window.location.reload();
+    }
 });
 </script>
 @stack('scripts')
