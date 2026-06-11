@@ -14,6 +14,8 @@ use App\Models\Inquiry;
 use App\Models\ExamQuestion;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
+use App\Models\SchoolHoliday;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -96,11 +98,47 @@ class DashboardController extends Controller
         }
         $marksPassPct = $totalMarked > 0 ? round(($passMarked / $totalMarked) * 100) : 0;
 
+        // Classes that haven't marked attendance today — daily-marking enforcement.
+        // Only shown on school days (skip weekends + scheduled holidays).
+        $missingAttendanceClasses = collect();
+        $isSchoolDayToday = false;
+        if ($year) {
+            $todayCarbon = Carbon::today();
+            $isWeekend   = $todayCarbon->isSaturday() || $todayCarbon->isSunday();
+            $isHoliday   = SchoolHoliday::whereDate('date', $today)->exists();
+            $isSchoolDayToday = !$isWeekend && !$isHoliday;
+
+            if ($isSchoolDayToday) {
+                // All active class+section combos for this year
+                $allSlots = StudentEnrollment::forActiveYear()->active()
+                    ->select('class', 'section')
+                    ->groupBy('class', 'section')
+                    ->selectRaw('COUNT(*) as student_count')
+                    ->get();
+
+                // Slots that DO have at least one attendance record today
+                $markedSlots = AttendanceRecord::forActiveYear()
+                    ->whereDate('date', $today)
+                    ->select('class', 'section')
+                    ->distinct()
+                    ->get()
+                    ->map(fn ($r) => $r->class.'|'.$r->section)
+                    ->all();
+
+                $classOrder = array_flip(Student::classes());
+                $missingAttendanceClasses = $allSlots
+                    ->filter(fn ($s) => ! in_array($s->class.'|'.$s->section, $markedSlots, true))
+                    ->sortBy(fn ($s) => [$classOrder[$s->class] ?? 999, $s->section])
+                    ->values();
+            }
+        }
+
         return view('admin.dashboard', compact(
             'stats', 'classCounts', 'recentActivity', 'recentStudents', 'upcomingEvents',
             'todayMarked', 'todayExpected', 'todayPct',
             'pendingQuestions', 'pendingNotes', 'pendingMarks', 'pendingAttendance',
-            'totalMarked', 'passMarked', 'marksPassPct'
+            'totalMarked', 'passMarked', 'marksPassPct',
+            'missingAttendanceClasses', 'isSchoolDayToday'
         ));
     }
 }

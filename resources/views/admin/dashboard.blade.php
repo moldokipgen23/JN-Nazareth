@@ -149,6 +149,39 @@
 
 </div>
 
+{{-- Daily attendance enforcement widget --}}
+@if($isSchoolDayToday && $missingAttendanceClasses->isNotEmpty())
+<div style="background:#fff;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:12px;padding:16px 20px;margin-bottom:24px;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+        <div>
+            <div style="font-size:14px;font-weight:700;color:#92400e;">⚠️ Attendance not marked yet today</div>
+            <div style="font-size:11px;color:#78350f;margin-top:2px;">{{ \Carbon\Carbon::today()->format('l, d M Y') }} · {{ $missingAttendanceClasses->count() }} class{{ $missingAttendanceClasses->count() === 1 ? '' : 'es' }} pending</div>
+        </div>
+        <a href="{{ route('admin.attendance.index') }}" style="font-size:12px;background:#0f766e;color:#fff;padding:7px 14px;border-radius:8px;font-weight:600;text-decoration:none;">Go to Attendance</a>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        @foreach($missingAttendanceClasses as $cs)
+            <a href="{{ route('admin.attendance.index', ['view' => 'daily', 'class' => $cs->class, 'section' => $cs->section, 'date' => \Carbon\Carbon::today()->toDateString()]) }}"
+               style="font-size:11px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;padding:5px 12px;border-radius:99px;text-decoration:none;font-weight:600;">
+                {{ $cs->class }} — Sec {{ $cs->section }} <span style="opacity:.7;">({{ $cs->student_count }})</span>
+            </a>
+        @endforeach
+    </div>
+</div>
+@elseif($isSchoolDayToday)
+<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #16a34a;border-radius:12px;padding:12px 18px;margin-bottom:24px;display:flex;align-items:center;gap:10px;">
+    <span style="font-size:18px;">✅</span>
+    <div>
+        <div style="font-size:13px;font-weight:700;color:#15803d;">All classes have marked attendance today</div>
+        <div style="font-size:11px;color:#166534;">{{ \Carbon\Carbon::today()->format('l, d M Y') }}</div>
+    </div>
+</div>
+@else
+<div style="background:#f1f5f9;border-left:4px solid #94a3b8;border-radius:12px;padding:10px 16px;margin-bottom:24px;font-size:12px;color:#475569;">
+    📅 No school today — {{ \Carbon\Carbon::today()->format('l, d M Y') }}
+</div>
+@endif
+
 {{-- Students by class + Upcoming events --}}
 <div class="dash-event-side" style="display:grid; grid-template-columns:1fr 360px; gap:20px; margin-bottom:24px;">
 
