@@ -160,18 +160,28 @@ class MarksController extends Controller
 
         $isSubmit = $request->input('action') === 'submit';
 
+        // A row is considered "entered" when any of theory / assignment / total
+        // has a value — including the literal 0 (a student scoring 0 or absent
+        // must be recordable). Empty across all three means truly missing.
+        $rowEntered = function (?array $row): bool {
+            if (!$row) return false;
+            foreach (['theory', 'assignment', 'total'] as $k) {
+                $v = $row[$k] ?? null;
+                if ($v !== null && $v !== '') return true;
+            }
+            return false;
+        };
+
         if ($isSubmit) {
             $missing = [];
             foreach ($enrollmentIds as $eid) {
-                $row = $data['marks'][$eid] ?? null;
-                $total = $row['total'] ?? null;
-                if ($total === null || $total === '') {
+                if (!$rowEntered($data['marks'][$eid] ?? null)) {
                     $student = StudentEnrollment::find($eid)?->student?->name ?? "ID #{$eid}";
                     $missing[] = $student;
                 }
             }
             if (!empty($missing)) {
-                return back()->with('error', 'Cannot submit: marks missing for: '.implode(', ', $missing))
+                return back()->with('error', 'Cannot submit — these students have no marks (use the Absent toggle to mark as 0): '.implode(', ', $missing))
                     ->withInput();
             }
         }
@@ -187,10 +197,18 @@ class MarksController extends Controller
             $assignment = $row['assignment'] ?? null;
             $total      = $row['total'] ?? null;
 
-            // Server-side: if both theory and assignment provided, total MUST equal their sum
-            if ($theory !== null && $theory !== '' && $assignment !== null && $assignment !== '') {
-                $total = ((float) $theory) + ((float) $assignment);
+            $theoryHas     = $theory !== null && $theory !== '';
+            $assignmentHas = $assignment !== null && $assignment !== '';
+            $totalHas      = $total !== null && $total !== '';
+
+            // If any component is entered, authoritatively recompute total = theory + assignment
+            // (treat missing components as 0). This handles single-component exams, 0-scores,
+            // and ensures the saved total always matches the inputs.
+            if ($theoryHas || $assignmentHas) {
+                $total = ((float) ($theoryHas ? $theory : 0)) + ((float) ($assignmentHas ? $assignment : 0));
             }
+            // If only total is provided (assignment column not used), keep what was sent.
+            // If nothing is provided, total stays null and the row stays a draft skip.
 
             if ($total !== null && $total !== '' && (float) $total > (float) $data['full_marks']) {
                 return back()->withErrors([

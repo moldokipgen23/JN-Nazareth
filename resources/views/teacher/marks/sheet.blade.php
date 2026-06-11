@@ -125,6 +125,13 @@
         </div>
     </div>
 
+    {{-- Bulk helpers --}}
+    <div style="background:#fff;border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;box-shadow:0 1px 3px rgba(15,23,42,.06);">
+        <span style="font-size:11px;color:#64748b;font-weight:600;">Quick fill:</span>
+        <button type="button" onclick="fillEmptyWithZero()" style="background:#f1f5f9;color:#0f172a;border:1px solid #e2e8f0;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Mark blank rows as 0 (Absent)</button>
+        <span style="font-size:11px;color:#94a3b8;flex:1;min-width:160px;">Use the per-row "Absent" checkbox to mark a student as absent / scored 0. Empty rows block submission.</span>
+    </div>
+
     {{-- Column headers --}}
     <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">
         <div style="width:32px;flex-shrink:0;"></div>
@@ -134,6 +141,7 @@
         <div style="width:60px;text-align:center;">Total</div>
         <div style="width:60px;text-align:center;">Grade</div>
         <div style="width:50px;text-align:center;">Status</div>
+        <div style="width:70px;text-align:center;">Absent</div>
     </div>
 
     @foreach($enrollments as $i => $e)
@@ -151,17 +159,22 @@
             <div class="mk-input-group" style="display:flex;gap:6px;align-items:center;">
                 <input type="number" name="marks[{{ $e->id }}][theory]" value="{{ $theory }}"
                        step="0.01" min="0" placeholder="T"
-                       class="mk-input" oninput="recalc(this)">
+                       class="mk-input theory-input" oninput="recalc(this)">
                 <input type="number" name="marks[{{ $e->id }}][assignment]" value="{{ $assignment }}"
                        step="0.01" min="0" placeholder="A"
-                       class="mk-input" oninput="recalc(this)">
+                       class="mk-input assignment-input" oninput="recalc(this)">
                 <input type="text" name="marks[{{ $e->id }}][total]" value="{{ $total }}" readonly
                        class="mk-input-auto total-display">
                 <input type="hidden" name="marks[{{ $e->id }}][grade]" class="grade-input" value="{{ $grade ?? '' }}">
-                <span class="mk-grade grade-badge" style="color:{{ $total ? '#0f766e' : '#94a3b8' }};">{{ $grade ?: '—' }}</span>
+                <span class="mk-grade grade-badge" style="color:{{ ($total !== null && $total !== '') ? '#0f766e' : '#94a3b8' }};">{{ $grade ?: '—' }}</span>
                 <span class="mk-status {{ $total === null || $total === '' ? 'empty' : ((float)$total >= (float)$defaultPass ? 'pass' : 'fail') }}">
                     {{ $total === null || $total === '' ? '—' : ((float)$total >= (float)$defaultPass ? 'PASS' : 'FAIL') }}
                 </span>
+                <label style="display:flex;align-items:center;justify-content:center;width:70px;cursor:pointer;font-size:11px;color:#64748b;gap:4px;">
+                    <input type="checkbox" class="absent-toggle" onchange="toggleAbsent(this)"
+                           {{ ($theory === '0' || $theory === 0 || $theory === '0.00') && ($assignment === '0' || $assignment === 0 || $assignment === '0.00') ? 'checked' : '' }}
+                           style="width:16px;height:16px;cursor:pointer;accent-color:#b91c1c;">
+                </label>
             </div>
         </div>
     @endforeach
@@ -222,8 +235,14 @@ function closeStd() {
 
 function recalc(input) {
     var row = input.closest('.mk-row');
-    var theory = parseFloat(row.querySelector('input[name*="[theory]"]').value) || 0;
-    var assignment = parseFloat(row.querySelector('input[name*="[assignment]"]').value) || 0;
+    var theoryEl = row.querySelector('input[name*="[theory]"]');
+    var assignEl = row.querySelector('input[name*="[assignment]"]');
+    var theoryRaw = theoryEl.value.trim();
+    var assignRaw = assignEl.value.trim();
+    var theoryHas = theoryRaw !== '';
+    var assignHas = assignRaw !== '';
+    var theory = parseFloat(theoryRaw) || 0;
+    var assignment = parseFloat(assignRaw) || 0;
     var total = theory + assignment;
     var full = parseFloat(document.getElementById('fullMarks').value) || 0;
     var pass = parseFloat(document.getElementById('passMarks').value) || 0;
@@ -233,7 +252,13 @@ function recalc(input) {
     var gradeBadge = row.querySelector('.grade-badge');
     var statusEl = row.querySelector('.mk-status');
 
-    totalDisplay.value = total > 0 ? total.toFixed(2) : '';
+    // Show 0.00 (not blank) when any component is entered, even if sum is zero.
+    // Only show blank when BOTH components are empty.
+    if (theoryHas || assignHas) {
+        totalDisplay.value = total.toFixed(2);
+    } else {
+        totalDisplay.value = '';
+    }
 
     // Compute grade from percentage
     var pct = full > 0 ? (total / full) * 100 : 0;
@@ -247,15 +272,77 @@ function recalc(input) {
     gradeBadge.style.color = grade ? '#0f766e' : '#94a3b8';
 
     // Status
-    if (total <= 0) { statusEl.className = 'mk-status empty'; statusEl.textContent = '—'; }
-    else if (total >= pass) { statusEl.className = 'mk-status pass'; statusEl.textContent = 'PASS'; }
-    else { statusEl.className = 'mk-status fail'; statusEl.textContent = 'FAIL'; }
+    if (!theoryHas && !assignHas) {
+        statusEl.className = 'mk-status empty';
+        statusEl.textContent = '—';
+    } else if (total >= pass) {
+        statusEl.className = 'mk-status pass';
+        statusEl.textContent = 'PASS';
+    } else {
+        statusEl.className = 'mk-status fail';
+        statusEl.textContent = 'FAIL';
+    }
 
     // Validation highlight
     if (full > 0 && total > full) {
         row.querySelectorAll('.mk-input').forEach(function(el) { el.style.borderColor = '#ef4444'; });
     } else {
         row.querySelectorAll('.mk-input').forEach(function(el) { el.style.borderColor = ''; });
+    }
+
+    // Keep the absent checkbox in sync with the actual values
+    var absentBox = row.querySelector('.absent-toggle');
+    if (absentBox) {
+        absentBox.checked = theoryHas && assignHas && theory === 0 && assignment === 0;
+    }
+}
+
+function toggleAbsent(checkbox) {
+    var row = checkbox.closest('.mk-row');
+    var theoryEl = row.querySelector('input[name*="[theory]"]');
+    var assignEl = row.querySelector('input[name*="[assignment]"]');
+    if (checkbox.checked) {
+        theoryEl.value = 0;
+        assignEl.value = 0;
+        theoryEl.disabled = true;
+        assignEl.disabled = true;
+        // Need to keep them in the form payload even when disabled — use hidden mirrors.
+        row.querySelectorAll('.absent-mirror').forEach(function(el) { el.remove(); });
+        var h1 = document.createElement('input');
+        h1.type = 'hidden'; h1.name = theoryEl.name; h1.value = '0'; h1.className = 'absent-mirror';
+        var h2 = document.createElement('input');
+        h2.type = 'hidden'; h2.name = assignEl.name; h2.value = '0'; h2.className = 'absent-mirror';
+        row.appendChild(h1); row.appendChild(h2);
+    } else {
+        theoryEl.disabled = false;
+        assignEl.disabled = false;
+        row.querySelectorAll('.absent-mirror').forEach(function(el) { el.remove(); });
+    }
+    recalc(theoryEl);
+}
+
+function fillEmptyWithZero() {
+    var rows = document.querySelectorAll('.mk-row');
+    var filled = 0;
+    rows.forEach(function(row) {
+        var theoryEl = row.querySelector('input[name*="[theory]"]');
+        var assignEl = row.querySelector('input[name*="[assignment]"]');
+        if (!theoryEl || !assignEl) return;
+        var theoryEmpty = theoryEl.value.trim() === '';
+        var assignEmpty = assignEl.value.trim() === '';
+        if (theoryEmpty && assignEmpty) {
+            theoryEl.value = 0;
+            assignEl.value = 0;
+            var absentBox = row.querySelector('.absent-toggle');
+            if (absentBox) { absentBox.checked = true; toggleAbsent(absentBox); }
+            else { recalc(theoryEl); }
+            filled++;
+        }
+    });
+    if (filled === 0) {
+        alert('No empty rows to fill — all students already have marks entered.');
+    } else {
+        alert(filled + ' student(s) marked as Absent (0). Click Submit & Lock to finalize.');
     }
 }
 
