@@ -518,20 +518,12 @@ function closeConfirm() {
     _confirmCb = null;
 }
 
-// Defeat back-forward cache (bfcache) and stale data after Save/Approve actions.
-// When the page is restored from history/bfcache (e.g. user clicks back, or switches
-// tabs and comes back), force a fresh server fetch so admin always sees live data.
+// Only force a fresh fetch when the browser actually restored the page from
+// the back-forward cache (e.g. iOS Safari ignoring Cache-Control: no-store).
+// Do NOT reload on every back/forward navigation — that turns normal navigation
+// into a flicker and surfaces stale flash messages.
 window.addEventListener('pageshow', function (e) {
-    if (e.persisted || (window.performance && performance.getEntriesByType('navigation')[0]?.type === 'back_forward')) {
-        window.location.reload();
-    }
-});
-// Also refresh when the tab regains focus after >5 minutes idle (catches the case
-// where admin opens the tab next day and the server data has changed).
-var _lastBlur = Date.now();
-window.addEventListener('blur',  function () { _lastBlur = Date.now(); });
-window.addEventListener('focus', function () {
-    if (Date.now() - _lastBlur > 5 * 60 * 1000) window.location.reload();
+    if (e.persisted) window.location.reload();
 });
 </script>
 @stack('scripts')
