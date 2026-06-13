@@ -72,6 +72,62 @@ class PortalController extends Controller
         ]);
     }
 
+    /** Teacher-side class detail — student roster + their own teaching scope. */
+    public function showClass(string $class)
+    {
+        $teacher = $this->teacher();
+        $year    = AcademicYear::current();
+
+        // Authorise: teacher must actually teach this class (class-teacher OR
+        // subject-teacher OR legacy). Admin can see any.
+        $isAdmin = auth()->user()->hasRole('admin');
+        if (!$isAdmin) {
+            $allowed = $this->classRows($teacher, $year)->pluck('class')->all();
+            abort_unless(in_array($class, $allowed, true), 404);
+        }
+
+        // Sections the teacher touches in this class.
+        $sections = collect();
+        if ($year) {
+            $sections = collect()
+                ->merge(ClassTeacherAssignment::where('teacher_id', $teacher->id)
+                    ->where('academic_year_id', $year->id)
+                    ->where('class', $class)->pluck('section'))
+                ->merge(SubjectTeacherAssignment::where('teacher_id', $teacher->id)
+                    ->where('academic_year_id', $year->id)
+                    ->where('class', $class)->pluck('section'))
+                ->filter()->unique()->sort()->values();
+        }
+        if ($sections->isEmpty()) $sections = collect(['A']); // sensible default
+
+        // Roster across all sections this teacher touches in the class.
+        $students = $year
+            ? StudentEnrollment::forActiveYear()->active()
+                ->where('class', $class)
+                ->whereIn('section', $sections)
+                ->with('student')
+                ->orderBy('section')->orderBy('roll_number')
+                ->get()
+            : collect();
+
+        // What this teacher teaches in this class (subject list).
+        $mySubjects = $year
+            ? SubjectTeacherAssignment::where('teacher_id', $teacher->id)
+                ->where('academic_year_id', $year->id)
+                ->where('class', $class)
+                ->pluck('subject')->unique()->values()
+            : collect();
+
+        return view('teacher.classes.show', [
+            'teacher'    => $teacher,
+            'year'       => $year,
+            'class'      => $class,
+            'sections'   => $sections,
+            'students'   => $students,
+            'mySubjects' => $mySubjects,
+        ]);
+    }
+
     /** My Subjects — one row per subject/class/section assignment. */
     public function subjects()
     {

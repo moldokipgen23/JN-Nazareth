@@ -15,7 +15,7 @@
             <div style="font-size:14px;font-weight:600;color:#0f172a;">{{ $s->subject }}</div>
             <div style="font-size:12px;color:#64748b;margin-top:3px;">{{ $s->class }}{{ $s->section?' — Sec '.$s->section:'' }}</div>
         </div>
-        <a href="{{ route('admin.classes.show',['class'=>$s->class]) }}" style="font-size:12px;font-weight:600;color:#0f766e;background:#f0fdf4;border:1px solid #bbf7d0;padding:6px 12px;border-radius:8px;text-decoration:none;white-space:nowrap;">View Class</a>
+        <a href="{{ route('teacher.classes.show',['class'=>$s->class]) }}" style="font-size:12px;font-weight:600;color:#0f766e;background:#f0fdf4;border:1px solid #bbf7d0;padding:6px 12px;border-radius:8px;text-decoration:none;white-space:nowrap;">View Class</a>
     </div>
 @empty
     <div class="card" style="padding:40px 20px;text-align:center;">

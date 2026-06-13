@@ -61,7 +61,7 @@
 @forelse($classes->take(5) as $row)
     @php
         $section = $row['section'] ? ' — Sec '.$row['section'] : '';
-        $href    = route('admin.classes.show', ['class' => $row['class']]);
+        $href    = route('teacher.classes.show', ['class' => $row['class']]);
     @endphp
     <a href="{{ $href }}" style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:12px;padding:13px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(15,23,42,.06);text-decoration:none;">
         <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#ccfbf1,#99f6e4);color:#0f766e;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">{{ strtoupper(substr($row['class'],0,2)) }}</div>

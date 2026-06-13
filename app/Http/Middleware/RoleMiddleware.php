@@ -15,6 +15,13 @@ class RoleMiddleware
             if ($request->is('teacher*')) {
                 abort(404);
             }
+            // Hard separation: if a teacher is logged in (on the teacher guard)
+            // and accidentally hits an /admin/* URL, do not bounce them to the
+            // admin login form — that makes it feel like a portal swap. 404 it,
+            // so the teacher portal stays the teacher portal.
+            if (auth('teacher')->check()) {
+                abort(404);
+            }
             return redirect()->route('login');
         }
 

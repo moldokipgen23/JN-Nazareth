@@ -459,6 +459,7 @@ Route::prefix('teacher')
     ->group(function () {
         Route::get('/',         [TeacherPortalController::class, 'dashboard'])->name('dashboard');
         Route::get('/classes',  [TeacherPortalController::class, 'classes'])->name('classes');
+        Route::get('/classes/{class}', [TeacherPortalController::class, 'showClass'])->name('classes.show');
         Route::get('/subjects', [TeacherPortalController::class, 'subjects'])->name('subjects');
 
         // Attendance
