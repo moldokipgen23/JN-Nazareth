@@ -64,13 +64,20 @@ class MarksController extends Controller
                     ->where('subject', $slot->subject)
                     ->get();
                 if ($marks->isEmpty()) continue;
-                $hasRevised = $marks->contains(fn ($m) => $m->entered_by && $m->entered_by !== $teacherId);
                 $anySubmitted = $marks->contains(fn ($m) => $m->submitted_at);
-                $anyRejected = $marks->contains(fn ($m) => $m->rejected_at && !$m->submitted_at);
-                $allApproved = $anySubmitted && $marks->every(fn ($m) => $m->approved_at);
-                $status = $anyRejected ? 'rejected'
-                    : ($hasRevised ? 'revised'
-                        : ($allApproved ? 'approved' : ($anySubmitted ? 'pending' : 'draft')));
+                $anyRejected  = $marks->contains(fn ($m) => $m->rejected_at && !$m->submitted_at);
+                $allApproved  = $anySubmitted && $marks->every(fn ($m) => $m->approved_at);
+                // "Revised" means admin edited a row that is not yet approved.
+                // Once approved, the source of edits no longer matters — show approved.
+                $hasRevised = !$allApproved && $marks->contains(
+                    fn ($m) => $m->entered_by && $m->entered_by !== $teacherId && !$m->approved_at
+                );
+
+                $status = $anyRejected   ? 'rejected'
+                        : ($allApproved  ? 'approved'
+                        : ($anySubmitted ? 'pending'
+                        : ($hasRevised   ? 'revised'
+                        : 'draft')));
                 $slotStatuses[$slot->class][$slot->section][$slot->subject][$exam->id] = $status;
             }
         }
@@ -131,12 +138,20 @@ class MarksController extends Controller
         $this->ensureExamInYear($exam, $year);
         $this->ensureSubmissionWindow($exam);
 
-        // Block editing if already submitted (unless admin reset)
-        $anySubmitted = Mark::where('exam_id', $exam->id)
-            ->where('subject', $subject)->where('class', $class)->where('section', $section)
-            ->whereNotNull('submitted_at')->exists();
-        if ($anySubmitted && !auth()->user()->isAdmin()) {
-            return back()->with('error', 'Marks have already been submitted for this subject. Contact admin to re-open.');
+        // Block editing if already submitted/approved AND not currently in a
+        // sent-back state. Admin can always edit.
+        if (!auth()->user()->isAdmin()) {
+            $existingForSlot = Mark::where('exam_id', $exam->id)
+                ->where('subject', $subject)->where('class', $class)->where('section', $section)
+                ->get(['submitted_at', 'approved_at', 'rejected_at']);
+
+            $anySubmitted = $existingForSlot->contains(fn ($m) => $m->submitted_at !== null);
+            $anyApproved  = $existingForSlot->contains(fn ($m) => $m->approved_at !== null);
+            $anyRejected  = $existingForSlot->contains(fn ($m) => $m->rejected_at && !$m->submitted_at);
+
+            if (($anySubmitted || $anyApproved) && !$anyRejected) {
+                return back()->with('error', 'Marks have already been submitted for this subject. Contact admin if you need to revise.');
+            }
         }
 
         $data = $request->validate([

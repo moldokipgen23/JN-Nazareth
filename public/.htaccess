@@ -1,41 +1,13 @@
-# ─────────────────────────────────────────────────────────────────────────
-# Defeat ALL HTML caching. cPanel ships LiteSpeed which page-caches dynamic
-# responses aggressively, ignoring Laravel's Cache-Control: no-store header.
-# Stale pages = approved marks reappearing as pending, badge counts wrong,
-# and a generally broken admin experience.
-#
-# This is layered on purpose:
-#   1. <IfModule LiteSpeed> + CacheDisable — proper LiteSpeed opt-out
-#   2. <IfModule Litespeed> (lowercase 'speed') — some cPanel builds use it
-#   3. RewriteRule [E=...] flags — passes hints into the FastCGI pipeline
-#   4. mod_headers — unconditionally sets Cache-Control on every response
-#      EXCEPT static assets (CSS/JS/fonts/images stay cacheable).
-# ─────────────────────────────────────────────────────────────────────────
-
+# Disable LiteSpeed's page cache so admin/teacher pages always reflect the
+# real DB state. Laravel's NoHttpCache middleware sets the Cache-Control
+# headers — we only need .htaccess to tell LiteSpeed not to serve from its
+# own page cache layer. Keeping this minimal avoids the heavy mod_headers
+# regex which was making some pages appear to hang under load.
 <IfModule LiteSpeed>
     CacheDisable public /
 </IfModule>
 <IfModule Litespeed>
     CacheDisable public /
-</IfModule>
-
-RewriteEngine On
-RewriteRule .* - [E=Cache-Control:no-cache,E=cache-control:no-cache]
-RewriteRule .* - [E=X-LiteSpeed-Cache-Control:no-cache]
-
-<IfModule mod_headers.c>
-    # Force no-cache on dynamic responses. Skip for static assets so CSS/JS
-    # bundles can still be served quickly.
-    <FilesMatch "\.(css|js|woff|woff2|ttf|otf|eot|png|jpg|jpeg|gif|svg|ico|webp|map)$">
-        # Let static files cache normally — leave headers alone.
-    </FilesMatch>
-    <FilesMatch "^(?!.*\.(css|js|woff2?|ttf|otf|eot|png|jpg|jpeg|gif|svg|ico|webp|map)$).*$">
-        Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
-        Header always set Pragma "no-cache"
-        Header always set Expires "Thu, 01 Jan 1970 00:00:00 GMT"
-        Header always set X-LiteSpeed-Cache-Control "no-cache"
-        Header always set X-Accel-Expires "0"
-    </FilesMatch>
 </IfModule>
 
 <IfModule mod_rewrite.c>

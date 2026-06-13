@@ -1,53 +1,27 @@
-const CACHE_NAME = 'teacher-portal-v2';
-const OFFLINE_URL = '/offline';
+// Service worker disabled. The previous implementation cached every page
+// response with stale-while-revalidate, causing teachers to see old marks
+// long after admin approval. Any browser that still has this SW registered
+// will trigger the activate listener below, which clears all caches and
+// unregisters the SW so the next page load goes directly to the network.
 
-const PRECACHE_URLS = [
-  '/',
-  '/teacher',
-];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_URLS);
-    })
-  );
-  self.skipWaiting();
+self.addEventListener('install', function () {
+    self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(
-        keyList.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
+self.addEventListener('activate', function (event) {
+    event.waitUntil(
+        Promise.all([
+            self.caches.keys().then(function (keys) {
+                return Promise.all(keys.map(function (k) { return self.caches.delete(k); }));
+            }),
+            self.registration.unregister(),
+        ]).then(function () {
+            return self.clients.matchAll();
+        }).then(function (clients) {
+            clients.forEach(function (c) { c.navigate(c.url); });
         })
-      );
-    })
-  );
-  self.clients.claim();
+    );
 });
 
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && event.request.url.startsWith(self.location.origin)) {
-          const clone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, clone);
-          });
-        }
-        return networkResponse;
-      }).catch(() => {
-        return caches.match(OFFLINE_URL);
-      });
-
-      return cachedResponse || fetchPromise;
-    })
-  );
-});
+// Pass every fetch straight through to the network — no caching layer.
+self.addEventListener('fetch', function () { return; });

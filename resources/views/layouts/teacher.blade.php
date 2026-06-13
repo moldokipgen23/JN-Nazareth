@@ -253,11 +253,57 @@
     </div>
 </div>
 
+{{-- ═══ CONFIRM MODAL (used by Submit & Lock etc.) ═══ --}}
+<div id="confirmOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:200;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#fff;border-radius:14px;max-width:420px;width:100%;padding:22px 24px;box-shadow:0 24px 60px rgba(15,23,42,.3);">
+        <div id="confirmMessage" style="font-size:14px;color:#0f172a;font-weight:500;line-height:1.5;margin-bottom:18px;"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button onclick="closeConfirm()" style="background:#f1f5f9;color:#475569;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
+            <button id="confirmOkBtn" onclick="confirmOk()" style="background:#0f766e;color:#fff;border:none;padding:9px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Confirm</button>
+        </div>
+    </div>
+</div>
+
 {{-- ═══ SCRIPTS ═══ --}}
 <script>
 function toggleSidebar(){var s=document.getElementById('sidebar'),o=document.getElementById('mob-overlay');if(window.innerWidth<768){s.classList.toggle('open');o.style.display=s.classList.contains('open')?'block':'none'}else{s.style.display=s.style.display==='none'?'flex':'none'}}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('mob-overlay').style.display='none'}
-if('serviceWorker'in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').then(function(r){console.log('SW registered:',r.scope)},function(e){console.log('SW failed:',e)})})}
+
+// Confirm modal — used by Submit & Lock and other destructive teacher actions.
+let _confirmCb = null;
+function customConfirm(message, cb, okText) {
+    document.getElementById('confirmMessage').textContent = message;
+    document.getElementById('confirmOverlay').style.display = 'flex';
+    document.getElementById('confirmOkBtn').textContent = okText || 'Confirm';
+    _confirmCb = cb;
+}
+function confirmOk() {
+    document.getElementById('confirmOverlay').style.display = 'none';
+    if (_confirmCb) _confirmCb();
+    _confirmCb = null;
+}
+function closeConfirm() {
+    document.getElementById('confirmOverlay').style.display = 'none';
+    _confirmCb = null;
+}
+
+// Unregister any old service worker. The previous SW used stale-while-revalidate
+// which served cached HTML before the network fetch — teachers saw old marks
+// even after submitting/admin approving. Live data only from now on.
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (r) { r.unregister(); });
+    });
+    if (window.caches) {
+        caches.keys().then(function (keys) {
+            keys.forEach(function (k) { caches.delete(k); });
+        });
+    }
+}
+
+// bfcache defeat — same as admin layout.
+window.addEventListener('unload', function () { /* noop */ });
+window.addEventListener('pageshow', function (e) { if (e.persisted) window.location.reload(); });
 </script>
 
 @stack('scripts')

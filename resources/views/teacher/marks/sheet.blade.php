@@ -43,10 +43,18 @@
 @endif
 
 @php
-    $isSubmitted = $existing->first()?->submitted_at !== null;
-    $allSubmitted = $existing->isNotEmpty() && $existing->every(fn($m) => $m->submitted_at !== null);
-    $_rejected = $existing->filter(fn($m) => $m->rejected_at && !$m->submitted_at);
-    $_latestRej = $_rejected->sortByDesc('rejected_at')->first();
+    // Lock the sheet for teachers as soon as ANY row in this subject is in the
+    // submission pipeline (submitted, pending admin, or approved). Once admin
+    // sends it back, rejected_at is set and submitted_at is cleared — only
+    // then is the sheet editable again. Adding new students later does NOT
+    // re-open editing — admin must handle.
+    $_anySubmitted   = $existing->contains(fn($m) => $m->submitted_at !== null);
+    $_anyApproved    = $existing->contains(fn($m) => $m->approved_at !== null);
+    $_rejected       = $existing->filter(fn($m) => $m->rejected_at && !$m->submitted_at);
+    $_latestRej      = $_rejected->sortByDesc('rejected_at')->first();
+    $_lockedForTeacher = ($_anySubmitted || $_anyApproved) && $_rejected->isEmpty();
+    $isSubmitted     = $_anySubmitted;
+    $allSubmitted    = $_lockedForTeacher;
 @endphp
 
 @if($_latestRej)
