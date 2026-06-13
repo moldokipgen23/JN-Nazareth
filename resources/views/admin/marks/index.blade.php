@@ -133,7 +133,7 @@ function syncSection(form) {
                 <span style="font-size:13px;font-weight:700;color:#6d28d9;">⏳ Pending Approval</span>
                 <span style="font-size:11px;color:#6d28d9;">{{ $records->filter(fn($r) => $r->submitted_at && !$r->approved_at)->count() }} student(s) awaiting approval</span>
             </div>
-            <div style="display:flex;gap:6px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
                 <form method="POST" action="{{ route('admin.marks.approve-subject') }}">
                     @csrf
                     <input type="hidden" name="exam_id" value="{{ $examId }}">
@@ -142,6 +142,17 @@ function syncSection(form) {
                     <input type="hidden" name="subject" value="{{ $subject }}">
                     <button type="button" onclick="customConfirm('Approve all pending marks for {{ $subject }}?',()=>this.closest('form').submit())"
                             style="background:linear-gradient(135deg,#6d28d9,#7c3aed);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">✅ Approve All</button>
+                </form>
+                <form method="POST" action="{{ route('admin.marks.send-back-subject') }}">
+                    @csrf
+                    <input type="hidden" name="exam_id" value="{{ $examId }}">
+                    <input type="hidden" name="class" value="{{ $class }}">
+                    <input type="hidden" name="section" value="{{ $section }}">
+                    <input type="hidden" name="subject" value="{{ $subject }}">
+                    <input type="hidden" name="rejection_note" value="">
+                    <button type="button"
+                            onclick="var n=prompt('Reason for sending back {{ $subject }} marks to the teacher? (visible to teacher)');if(n&&n.trim().length>=3){this.previousElementSibling.value=n.trim();this.closest('form').submit();}else if(n!==null){alert('Note must be at least 3 characters.');}"
+                            style="background:#fef3c7;color:#92400e;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">↩ Send Back All</button>
                 </form>
                 <form method="POST" action="{{ route('admin.marks.delete-subject') }}">
                     @csrf
@@ -152,7 +163,6 @@ function syncSection(form) {
                     <button type="button" onclick="customConfirm('Delete all pending marks for {{ $subject }}? This cannot be undone.',()=>this.closest('form').submit(),'Delete')"
                             style="background:#fee2e2;color:#b91c1c;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">🗑 Delete All</button>
                 </form>
-                <form method="POST" action="{{ route('admin.marks.index', ['view' => 'review', 'exam' => $examId, 'class' => $class, 'section' => $section, 'subject' => $subject]) }}" style="display:none;"></form>
             </div>
         </div>
         @elseif($_allApproved)
@@ -252,13 +262,7 @@ function syncSection(form) {
                                     <input type="text" name="grade" value="{{ $r->grade ?: $r->computedGrade() }}" maxlength="5" placeholder="Grd" style="width:38px;padding:4px 4px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;text-align:center;">
                                     <button type="submit" style="background:#0f766e;color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;">Save</button>
                                 </form>
-                                @if($r->submitted_at)
-                                <form method="POST" action="{{ route('admin.marks.send-back', $r) }}" style="display:inline;flex-shrink:0;">
-                                    @csrf
-                                    <input type="hidden" name="rejection_note" value="">
-                                    <button type="button" style="background:#fef3c7;color:#92400e;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;" onclick="var n=prompt('Reason for sending back? (visible to teacher)');if(n&&n.trim().length>=3){this.previousElementSibling.value=n.trim();this.closest('form').submit();}else if(n!==null){alert('Note must be at least 3 characters.');}">{{ $r->approved_at ? 'Send Back' : 'Send Back' }}</button>
-                                </form>
-                                @endif
+                                {{-- Send Back is now a subject-wide action only — see banner above. --}}
                             </div>
                         </td>
                     </tr>
