@@ -71,28 +71,30 @@ class ResultCardController extends Controller
                 ->when($section, fn ($q) => $q->where('section', $section))
                 ->select('subject')->distinct()->pluck('subject');
 
+        // Result card / class result is only unlocked when EVERY enrolled student
+        // in the class+section has an approved mark for EVERY expected subject.
+        // submittedCount-based gates let partially-approved subjects through and
+        // silently dropped non-approved students from rankings.
+        $enrolled = \App\Models\StudentEnrollment::forActiveYear()->active()
+            ->where('class', $class)
+            ->when($section, fn ($q) => $q->where('section', $section))
+            ->count();
+
         $pending = [];
         foreach ($subjects as $subj) {
-            $submittedCount = Mark::where('academic_year_id', $year->id)
-                ->where('exam_id', $exam->id)->where('class', $class)
-                ->when($section, fn ($q) => $q->where('section', $section))
-                ->where('subject', $subj)
-                ->whereNotNull('submitted_at')
-                ->count();
             $approvedCount = Mark::where('academic_year_id', $year->id)
                 ->where('exam_id', $exam->id)->where('class', $class)
                 ->when($section, fn ($q) => $q->where('section', $section))
                 ->where('subject', $subj)
                 ->whereNotNull('approved_at')
                 ->count();
-            $isComplete = $submittedCount > 0 && $approvedCount >= $submittedCount;
-            if (!$isComplete) {
+            if ($enrolled === 0 || $approvedCount < $enrolled) {
                 $pending[] = $subj;
             }
         }
 
         if (!empty($pending)) {
-            abort(409, 'Results not yet available. Pending subjects: '.implode(', ', $pending));
+            abort(409, 'Results not yet available. Subjects not fully approved: '.implode(', ', $pending));
         }
     }
 

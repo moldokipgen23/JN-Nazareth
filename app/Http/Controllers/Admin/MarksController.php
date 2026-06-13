@@ -323,18 +323,22 @@ class MarksController extends Controller
             return back()->with('error', 'Select exam, class, and subject to export.');
         }
 
+        // CSV export must only include APPROVED marks. Draft / pending / sent-back
+        // rows shouldn't leak into a downloadable artefact that could end up in
+        // a parent's hand.
         $records = Mark::where('academic_year_id', $year->id)
             ->where('exam_id', $examId)
             ->where('class', $class)
             ->when($section, fn ($q) => $q->where('section', $section))
             ->where('subject', $subject)
+            ->whereNotNull('approved_at')
             ->with(['enrollment.student'])
             ->get()
             ->filter(fn ($r) => $r->enrollment !== null)
             ->sortBy(fn ($r) => [(int) ($r->enrollment?->roll_number ?: 999999), $r->enrollment?->student?->name ?? '']);
 
         if ($records->isEmpty()) {
-            return back()->with('error', 'No marks found for this combination.');
+            return back()->with('error', 'No approved marks to export for this combination — admin must approve marks before they can be exported.');
         }
 
         $examName = Exam::find($examId)?->name ?? 'exam';

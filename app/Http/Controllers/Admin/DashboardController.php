@@ -90,7 +90,10 @@ class DashboardController extends Controller
         $passMarked   = 0;
         if ($year) {
             $yearId = $year->id;
+            // Pass rate counts only APPROVED marks. Pending or rejected rows
+            // would otherwise inflate the school-wide stat with unvetted data.
             $allMarks = \App\Models\Mark::where('academic_year_id', $yearId)
+                ->whereNotNull('approved_at')
                 ->selectRaw('count(*) as total, SUM(CASE WHEN total_marks >= pass_marks THEN 1 ELSE 0 END) as passed')
                 ->first();
             $totalMarked = $allMarks?->total ?? 0;
