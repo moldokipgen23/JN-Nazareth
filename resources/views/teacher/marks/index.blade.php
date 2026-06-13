@@ -35,15 +35,17 @@
                     <div style="display:flex;align-items:center;gap:4px;">
                         <a href="{{ route('teacher.marks.sheet',['exam'=>$exam->id,'class'=>$slot->class,'section'=>$slot->section,'subject'=>$slot->subject]) }}" style="font-size:12px;font-weight:600;color:#0f766e;background:#f0fdf4;border:1px solid #bbf7d0;padding:7px 14px;border-radius:8px;text-decoration:none;display:inline-flex;align-items:center;">{{ $exam->name }}{{ $exam->code?' ('.$exam->code.')':'' }}</a>
                         @if($slotStatus === 'rejected')
-                            <span style="background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">↩ Sent back</span>
+                            <span style="background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;">↩ Sent back — fix &amp; resubmit</span>
                         @elseif($slotStatus === 'revised')
-                            <span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">⚠️ Revised</span>
+                            <span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;">⚠️ Admin revised</span>
                         @elseif($slotStatus === 'approved')
-                            <span style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">✅</span>
+                            <span style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;">✅ Approved</span>
                         @elseif($slotStatus === 'pending')
-                            <span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">⏳</span>
+                            <span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;">⏳ Submitted — awaiting approval</span>
                         @elseif($slotStatus === 'draft')
-                            <span style="background:#f1f5f9;color:#475569;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;border:1px dashed #cbd5e1;">📝 Draft</span>
+                            <span style="background:#f1f5f9;color:#475569;font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;border:1px dashed #cbd5e1;">📝 Draft — not submitted</span>
+                        @else
+                            <span style="background:#fafafa;color:#94a3b8;font-size:10px;font-weight:600;padding:3px 9px;border-radius:99px;border:1px dashed #e2e8f0;">Not started</span>
                         @endif
                     </div>
                 @endforeach
