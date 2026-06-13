@@ -175,7 +175,7 @@ function syncSection(form) {
                     <input type="hidden" name="subject" value="{{ $subject }}">
                     <input type="hidden" name="rejection_note" value="">
                     <button type="button"
-                            onclick="var n=prompt('Reason for sending back {{ $subject }} marks to the teacher? (visible to teacher)');if(n&&n.trim().length>=3){this.previousElementSibling.value=n.trim();this.closest('form').submit();}else if(n!==null){alert('Note must be at least 3 characters.');}"
+                            onclick="var btn=this;customPrompt({title:'Send back {{ $subject }} marks',hint:'Tell the teacher what to fix. Visible to them.',okText:'Send Back',onSubmit:function(n){btn.previousElementSibling.value=n;btn.closest('form').submit();}})"
                             style="background:#fef3c7;color:#92400e;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">↩ Send Back All</button>
                 </form>
                 @endif
@@ -354,7 +354,7 @@ function syncSection(form) {
                                 <input type="hidden" name="section" value="{{ $pr->section }}">
                                 <input type="hidden" name="subject" value="{{ $pr->subject }}">
                                 <input type="hidden" name="rejection_note" value="">
-                                <button type="button" onclick="var n=prompt('Reason for sending back {{ $pr->subject }} marks? (visible to teacher)');if(n&&n.trim().length>=3){this.previousElementSibling.value=n.trim();this.closest('form').submit();}else if(n!==null){alert('Note must be at least 3 characters.');}"
+                                <button type="button" onclick="var btn=this;customPrompt({title:'Send back {{ $pr->subject }} marks',hint:'Tell the teacher what to fix. Visible to them.',okText:'Send Back',onSubmit:function(n){btn.previousElementSibling.value=n;btn.closest('form').submit();}})"
                                         style="width:100%;background:#fef3c7;color:#92400e;border:none;padding:7px 0;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Send Back</button>
                             </form>
                             <form method="POST" action="{{ route('admin.marks.delete-subject') }}" style="margin:0;">

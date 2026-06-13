@@ -499,6 +499,22 @@ function closeSidebar() {
         </div>
     </div>
 </div>
+
+{{-- Branded prompt dialog — replaces window.prompt() so the input modal
+     matches the rest of the app instead of falling back to the browser's
+     unstyled native dialog. --}}
+<div id="promptOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target===this)closePrompt()">
+    <div style="background:#fff;border-radius:14px;padding:24px 26px;max-width:460px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+        <div id="promptTitle" style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:6px;">Reason</div>
+        <div id="promptHint" style="font-size:12px;color:#64748b;margin-bottom:14px;">Tell the teacher what to fix. Visible to them.</div>
+        <textarea id="promptInput" rows="3" maxlength="500" placeholder="At least 3 characters…" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+        <div id="promptError" style="display:none;font-size:11px;color:#b91c1c;margin-top:6px;font-weight:600;">Please enter at least 3 characters.</div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+            <button onclick="closePrompt()" style="background:#f1f5f9;color:#475569;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
+            <button id="promptOkBtn" onclick="promptOk()" style="background:#0f766e;color:#fff;border:none;padding:9px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Send</button>
+        </div>
+    </div>
+</div>
 <script>
 let _confirmCb = null;
 function customConfirm(message, cb, okText) {
@@ -517,6 +533,52 @@ function closeConfirm() {
     document.getElementById('confirmOverlay').style.display = 'none';
     _confirmCb = null;
 }
+
+// Branded prompt dialog (replacement for window.prompt).
+// customPrompt({ title, hint, okText, minLength, onSubmit })
+let _promptCb = null;
+let _promptMinLen = 3;
+function customPrompt(opts) {
+    var t = document.getElementById('promptTitle');
+    var h = document.getElementById('promptHint');
+    var i = document.getElementById('promptInput');
+    var b = document.getElementById('promptOkBtn');
+    var e = document.getElementById('promptError');
+    t.textContent = opts.title || 'Reason';
+    h.textContent = opts.hint  || 'Tell the teacher what to fix. Visible to them.';
+    b.textContent = opts.okText || 'Send';
+    i.value = '';
+    i.placeholder = 'At least ' + (opts.minLength || 3) + ' characters…';
+    e.style.display = 'none';
+    _promptMinLen = opts.minLength || 3;
+    _promptCb = opts.onSubmit || null;
+    document.getElementById('promptOverlay').style.display = 'flex';
+    setTimeout(function () { i.focus(); }, 50);
+}
+function promptOk() {
+    var i = document.getElementById('promptInput');
+    var e = document.getElementById('promptError');
+    var v = (i.value || '').trim();
+    if (v.length < _promptMinLen) {
+        e.style.display = 'block';
+        i.focus();
+        return;
+    }
+    document.getElementById('promptOverlay').style.display = 'none';
+    if (_promptCb) _promptCb(v);
+    _promptCb = null;
+}
+function closePrompt() {
+    document.getElementById('promptOverlay').style.display = 'none';
+    _promptCb = null;
+}
+// Enter submits the prompt (Shift+Enter inserts a newline).
+document.addEventListener('keydown', function (e) {
+    var ov = document.getElementById('promptOverlay');
+    if (!ov || ov.style.display === 'none') return;
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); promptOk(); }
+    if (e.key === 'Escape') closePrompt();
+});
 
 // Belt-and-braces bfcache defeat. Cache-Control: no-store already tells browsers
 // not to bfcache this page, but Chrome and iOS Safari ignore it in some cases.
