@@ -635,17 +635,32 @@ function syncSection(form) {
                         ->where('class', $c)->where('section', $sec)->count();
                     if ($enrolled === 0) continue;
 
-                    $perSubject = [];
+                    $perSubject       = [];   // true = fully approved
+                    $perSubjectState  = [];   // 'approved' | 'pending' | 'partial' | 'none'
                     foreach ($expected as $subj) {
-                        $submittedCount = \App\Models\Mark::where('academic_year_id', $year->id)
-                            ->where('exam_id', $examId)->where('class', $c)
-                            ->where('section', $sec)->where('subject', $subj)
-                            ->whereNotNull('submitted_at')->count();
                         $approvedCount = \App\Models\Mark::where('academic_year_id', $year->id)
                             ->where('exam_id', $examId)->where('class', $c)
                             ->where('section', $sec)->where('subject', $subj)
                             ->whereNotNull('approved_at')->count();
-                        $perSubject[$subj] = $submittedCount > 0 && $approvedCount >= $submittedCount;
+                        $pendingCount = \App\Models\Mark::where('academic_year_id', $year->id)
+                            ->where('exam_id', $examId)->where('class', $c)
+                            ->where('section', $sec)->where('subject', $subj)
+                            ->whereNotNull('submitted_at')->whereNull('approved_at')->count();
+
+                        // Subject is "approved" only when EVERY enrolled student has
+                        // an approved mark. Partial approvals stay pending.
+                        $fullyApproved = $approvedCount >= $enrolled;
+                        $perSubject[$subj] = $fullyApproved;
+
+                        if ($fullyApproved) {
+                            $perSubjectState[$subj] = 'approved';
+                        } elseif ($pendingCount > 0) {
+                            $perSubjectState[$subj] = 'pending';   // teacher submitted, awaiting admin
+                        } elseif ($approvedCount > 0) {
+                            $perSubjectState[$subj] = 'partial';   // some students approved, others missing
+                        } else {
+                            $perSubjectState[$subj] = 'none';      // not started
+                        }
                     }
                     $doneCount = count(array_filter($perSubject));
                     $totalExp = $expected->count();
@@ -658,6 +673,7 @@ function syncSection(form) {
                         'pending' => array_keys(array_filter($perSubject, fn ($v) => !$v)),
                         'complete' => $doneCount >= $totalExp,
                         'subjects' => $perSubject,
+                        'states'   => $perSubjectState,
                     ]);
                 }
             }
@@ -678,8 +694,17 @@ function syncSection(form) {
                 @php $sorted = collect($cd['subjects'])->sortKeys(); @endphp
                 <div style="display:flex;flex-direction:column;gap:3px;">
                     @foreach($sorted as $subjName => $submitted)
-                        <span style="font-size:11px;font-weight:600;color:{{ $submitted ? '#15803d' : '#92400e' }};display:flex;align-items:center;gap:4px;">
-                            {{ $submitted ? '✅' : '⏳' }} {{ $subjName }}
+                        @php
+                            $_state = $cd['states'][$subjName] ?? 'none';
+                            $_meta = match($_state) {
+                                'approved' => ['#15803d', '✅', ''],
+                                'pending'  => ['#1d4ed8', '⏳', ' — awaiting approval'],
+                                'partial'  => ['#92400e', '⚠️', ' — incomplete'],
+                                default    => ['#94a3b8', '○', ' — not started'],
+                            };
+                        @endphp
+                        <span style="font-size:11px;font-weight:600;color:{{ $_meta[0] }};display:flex;align-items:center;gap:4px;">
+                            {{ $_meta[1] }} {{ $subjName }}<span style="opacity:.75;font-weight:500;">{{ $_meta[2] }}</span>
                         </span>
                     @endforeach
                 </div>
