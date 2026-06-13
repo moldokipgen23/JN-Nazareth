@@ -281,14 +281,19 @@ function syncSection(form) {
                     $_expected = $ss->expected;
                     $_pending  = $_submitted - $_approved;
 
-                    if ($_entered === 0 && $_rejected === 0) {
+                    $_missing = max(0, $_expected - $_entered);
+
+                    if ($_entered === 0 && $_rejected === 0 && $_approved === 0) {
                         $_bg = '#f1f5f9'; $_fg = '#64748b'; $_icon = '⚪'; $_label = 'Not started';
-                    } elseif ($_approved > 0 && $_approved === $_expected) {
+                    } elseif ($_approved > 0 && $_approved >= $_expected) {
                         $_bg = '#f0fdf4'; $_fg = '#15803d'; $_icon = '✅'; $_label = 'Fully approved';
                     } elseif ($_pending > 0) {
                         $_bg = '#fef3c7'; $_fg = '#92400e'; $_icon = '⏳'; $_label = $_pending.' pending approval';
                     } elseif ($_rejected > 0) {
                         $_bg = '#fee2e2'; $_fg = '#b91c1c'; $_icon = '↩'; $_label = $_rejected.' sent back';
+                    } elseif ($_approved > 0 && $_missing > 0) {
+                        // Partial: some students approved, the rest never had a mark.
+                        $_bg = '#fef3c7'; $_fg = '#92400e'; $_icon = '⚠️'; $_label = $_missing.' student'.($_missing === 1 ? '' : 's').' missing — need marks';
                     } elseif ($_entered > $_submitted) {
                         $_bg = '#ffedd5'; $_fg = '#9a3412'; $_icon = '📝'; $_label = ($_entered - $_submitted).' draft(s) — not submitted';
                     } else {
