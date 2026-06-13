@@ -1237,25 +1237,33 @@ class MarksController extends Controller
             $updates['remarks'] = $data['remarks'];
         }
 
-        // Admin entry = implicit approval. If the resulting row has a final score,
-        // mark it as submitted + approved by admin so it surfaces in summary/results.
+        // Any save by admin pushes the row into the pending bucket. This keeps
+        // the audit trail honest: every score that surfaces in summary/results
+        // has been through an explicit admin Approve click. Includes:
+        //   - fresh entries (no prior submission)
+        //   - edits of teacher submissions
+        //   - edits of already-approved marks (revert to pending)
         $finalTotal = $updates['total_marks']
             ?? $updates['obtained_marks']
             ?? $mark->total_marks
             ?? $mark->obtained_marks;
 
+        $msg = 'Mark updated.';
         if ($finalTotal !== null && $finalTotal !== '') {
             $updates['submitted_at']   = $mark->submitted_at ?? now();
-            $updates['approved_at']    = $mark->approved_at ?? now();
-            $updates['approved_by']    = $mark->approved_by ?? auth()->id();
+            $updates['approved_at']    = null;
+            $updates['approved_by']    = null;
             $updates['rejection_note'] = null;
             $updates['rejected_at']    = null;
             $updates['rejected_by']    = null;
+            $msg = $mark->approved_at
+                ? 'Mark updated. Approval reset — needs your re-approval.'
+                : 'Mark updated. Awaiting approval.';
         }
 
         $mark->update($updates);
 
-        return redirect()->backFresh()->with('success', 'Mark updated and approved.');
+        return redirect()->backFresh()->with('success', $msg);
     }
 
     public function examSummary(Request $request)
