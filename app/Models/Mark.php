@@ -111,6 +111,83 @@ class Mark extends Model
         return $grade?->name;
     }
 
+    /**
+     * Canonical per-subject status. Single source of truth used by:
+     *   - Teacher portal subject list (status pills)
+     *   - Admin /admin/marks "Submission Status per Subject" panel
+     *   - Admin /admin/marks?view=summary class cards (each subject)
+     *
+     * Same rule everywhere — a subject is "approved" only when every
+     * enrolled student in that class+section has an approved mark.
+     *
+     * Returns:
+     *   state           : 'approved' | 'pending' | 'rejected' | 'partial' | 'draft' | 'not_started'
+     *   label           : short human label e.g. "12 awaiting approval"
+     *   icon            : single-char emoji for the pill
+     *   color, bg       : hex colours for the pill
+     *   enrolled        : active students in class+section
+     *   entered/submitted/approved/rejected/pending/missing : counts
+     */
+    public static function subjectStatus(int $examId, string $class, string $section, string $subject, int $yearId): array
+    {
+        $enrolled = StudentEnrollment::forActiveYear()->active()
+            ->where('class', $class)->where('section', $section)
+            ->count();
+
+        $agg = self::where('academic_year_id', $yearId)
+            ->where('exam_id', $examId)
+            ->where('class', $class)->where('section', $section)
+            ->where('subject', $subject)
+            ->selectRaw('
+                SUM(CASE WHEN total_marks IS NOT NULL THEN 1 ELSE 0 END) as entered,
+                SUM(CASE WHEN submitted_at IS NOT NULL THEN 1 ELSE 0 END) as submitted,
+                SUM(CASE WHEN approved_at IS NOT NULL THEN 1 ELSE 0 END) as approved,
+                SUM(CASE WHEN rejected_at IS NOT NULL AND submitted_at IS NULL THEN 1 ELSE 0 END) as rejected
+            ')->first();
+
+        $entered   = (int) ($agg->entered   ?? 0);
+        $submitted = (int) ($agg->submitted ?? 0);
+        $approved  = (int) ($agg->approved  ?? 0);
+        $rejected  = (int) ($agg->rejected  ?? 0);
+        $pending   = max(0, $submitted - $approved);
+        $missing   = max(0, $enrolled - $entered);
+
+        if ($rejected > 0) {
+            $state = 'rejected';
+            $label = $rejected.' sent back';
+        } elseif ($enrolled > 0 && $approved >= $enrolled) {
+            $state = 'approved';
+            $label = 'Approved';
+        } elseif ($pending > 0) {
+            $state = 'pending';
+            $label = $pending.' awaiting approval';
+        } elseif ($approved > 0 && $missing > 0) {
+            $state = 'partial';
+            $label = $missing.' student'.($missing === 1 ? '' : 's').' missing';
+        } elseif ($entered > 0 && $submitted === 0) {
+            $state = 'draft';
+            $label = $entered.' draft'.($entered === 1 ? '' : 's');
+        } else {
+            $state = 'not_started';
+            $label = 'Not started';
+        }
+
+        $styles = [
+            'approved'    => ['#15803d', '#f0fdf4', '✅'],
+            'pending'     => ['#1d4ed8', '#dbeafe', '⏳'],
+            'rejected'    => ['#b91c1c', '#fee2e2', '↩'],
+            'partial'     => ['#92400e', '#fef3c7', '⚠️'],
+            'draft'       => ['#9a3412', '#ffedd5', '📝'],
+            'not_started' => ['#64748b', '#f1f5f9', '○'],
+        ];
+        [$color, $bg, $icon] = $styles[$state];
+
+        return compact(
+            'state', 'label', 'icon', 'color', 'bg',
+            'enrolled', 'entered', 'submitted', 'approved', 'rejected', 'pending', 'missing'
+        );
+    }
+
     public function computedGradePoint(): ?float
     {
         $pct = $this->percentage();

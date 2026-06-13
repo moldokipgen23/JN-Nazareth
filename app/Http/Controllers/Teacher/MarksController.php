@@ -53,32 +53,14 @@ class MarksController extends Controller
         $order = array_flip(Student::classes());
         $slots = $slots->sortBy(fn ($s) => [$order[$s->class] ?? 999, $s->section, $s->subject])->values();
 
+        // Canonical per-subject status from Mark::subjectStatus — same rule the
+        // admin views use, so teacher and admin always agree on state.
         $slotStatuses = [];
-        $teacherId = auth()->id();
         foreach ($slots as $slot) {
             foreach ($exams as $exam) {
-                $marks = Mark::where('academic_year_id', $year->id)
-                    ->where('exam_id', $exam->id)
-                    ->where('class', $slot->class)
-                    ->where('section', $slot->section)
-                    ->where('subject', $slot->subject)
-                    ->get();
-                if ($marks->isEmpty()) continue;
-                $anySubmitted = $marks->contains(fn ($m) => $m->submitted_at);
-                $anyRejected  = $marks->contains(fn ($m) => $m->rejected_at && !$m->submitted_at);
-                $allApproved  = $anySubmitted && $marks->every(fn ($m) => $m->approved_at);
-                // "Revised" means admin edited a row that is not yet approved.
-                // Once approved, the source of edits no longer matters — show approved.
-                $hasRevised = !$allApproved && $marks->contains(
-                    fn ($m) => $m->entered_by && $m->entered_by !== $teacherId && !$m->approved_at
-                );
-
-                $status = $anyRejected   ? 'rejected'
-                        : ($allApproved  ? 'approved'
-                        : ($anySubmitted ? 'pending'
-                        : ($hasRevised   ? 'revised'
-                        : 'draft')));
-                $slotStatuses[$slot->class][$slot->section][$slot->subject][$exam->id] = $status;
+                $s = Mark::subjectStatus($exam->id, $slot->class, $slot->section, $slot->subject, $year->id);
+                if ($s['state'] === 'not_started') continue;
+                $slotStatuses[$slot->class][$slot->section][$slot->subject][$exam->id] = $s;
             }
         }
 

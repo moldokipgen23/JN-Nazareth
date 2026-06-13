@@ -239,19 +239,6 @@ class MarksController extends Controller
         // Submission summary per subject — includes ALL class_subjects even with zero marks
         $submissionStatus = collect();
         if ($year && $examId && $class && $section) {
-            $totalStudents = StudentEnrollment::forActiveYear()->active()
-                ->where('class', $class)->where('section', $section)->count();
-
-            // Get marks stats per subject (approval status)
-            $subjectsWithMarks = Mark::where('academic_year_id', $year->id)
-                ->where('exam_id', $examId)->where('class', $class)->where('section', $section)
-                ->select('subject')
-                ->selectRaw('SUM(CASE WHEN total_marks IS NOT NULL THEN 1 ELSE 0 END) as entered_count')
-                ->selectRaw('SUM(CASE WHEN submitted_at IS NOT NULL THEN 1 ELSE 0 END) as total')
-                ->selectRaw('SUM(CASE WHEN approved_at IS NOT NULL THEN 1 ELSE 0 END) as approved_count')
-                ->selectRaw('SUM(CASE WHEN rejected_at IS NOT NULL AND submitted_at IS NULL THEN 1 ELSE 0 END) as rejected_count')
-                ->groupBy('subject')->get()->keyBy('subject');
-
             // Get expected subjects from class_subjects
             $classSubjectNames = \App\Models\ClassSubject::where('academic_year_id', $year->id)
                 ->where('class', $class)
@@ -260,28 +247,19 @@ class MarksController extends Controller
                 }))
                 ->with('subject')->get()->pluck('subject.name');
 
-            if ($classSubjectNames->isNotEmpty()) {
-                foreach ($classSubjectNames as $s) {
-                    $subjStats = $subjectsWithMarks->get($s);
-                    $submissionStatus->push((object) [
-                        'subject'        => $s,
-                        'entered_count'  => $subjStats ? (int) $subjStats->entered_count : 0,
-                        'total'          => $subjStats ? (int) $subjStats->total : 0,
-                        'approved_count' => $subjStats ? (int) $subjStats->approved_count : 0,
-                        'rejected_count' => $subjStats ? (int) $subjStats->rejected_count : 0,
-                        'expected'       => $totalStudents,
-                    ]);
-                }
-            } else {
-                // Fallback: use whatever marks exist
-                $submissionStatus = $subjectsWithMarks->map(fn ($s) => (object) [
-                    'subject'        => $s->subject,
-                    'entered_count'  => (int) $s->entered_count,
-                    'total'          => (int) $s->total,
-                    'approved_count' => (int) $s->approved_count,
-                    'rejected_count' => (int) $s->rejected_count,
-                    'expected'       => $totalStudents,
-                ])->values();
+            // If class_subjects is unset, fall back to whatever subjects have any marks already.
+            if ($classSubjectNames->isEmpty()) {
+                $classSubjectNames = Mark::where('academic_year_id', $year->id)
+                    ->where('exam_id', $examId)->where('class', $class)->where('section', $section)
+                    ->select('subject')->distinct()->pluck('subject');
+            }
+
+            // Canonical per-subject status from the shared Mark::subjectStatus helper.
+            foreach ($classSubjectNames as $s) {
+                $submissionStatus->push((object) array_merge(
+                    ['subject' => $s],
+                    Mark::subjectStatus($examId, $class, $section, $s, $year->id)
+                ));
             }
         }
 

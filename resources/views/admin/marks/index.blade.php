@@ -273,40 +273,13 @@ function syncSection(form) {
             <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">Submission Status per Subject</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">
                 @foreach($submissionStatus as $ss)
-                @php
-                    $_entered  = $ss->entered_count ?? 0;
-                    $_submitted = $ss->total;
-                    $_approved = $ss->approved_count;
-                    $_rejected = $ss->rejected_count ?? 0;
-                    $_expected = $ss->expected;
-                    $_pending  = $_submitted - $_approved;
-
-                    $_missing = max(0, $_expected - $_entered);
-
-                    if ($_entered === 0 && $_rejected === 0 && $_approved === 0) {
-                        $_bg = '#f1f5f9'; $_fg = '#64748b'; $_icon = '⚪'; $_label = 'Not started';
-                    } elseif ($_approved > 0 && $_approved >= $_expected) {
-                        $_bg = '#f0fdf4'; $_fg = '#15803d'; $_icon = '✅'; $_label = 'Fully approved';
-                    } elseif ($_pending > 0) {
-                        $_bg = '#fef3c7'; $_fg = '#92400e'; $_icon = '⏳'; $_label = $_pending.' pending approval';
-                    } elseif ($_rejected > 0) {
-                        $_bg = '#fee2e2'; $_fg = '#b91c1c'; $_icon = '↩'; $_label = $_rejected.' sent back';
-                    } elseif ($_approved > 0 && $_missing > 0) {
-                        // Partial: some students approved, the rest never had a mark.
-                        $_bg = '#fef3c7'; $_fg = '#92400e'; $_icon = '⚠️'; $_label = $_missing.' student'.($_missing === 1 ? '' : 's').' missing — need marks';
-                    } elseif ($_entered > $_submitted) {
-                        $_bg = '#ffedd5'; $_fg = '#9a3412'; $_icon = '📝'; $_label = ($_entered - $_submitted).' draft(s) — not submitted';
-                    } else {
-                        $_bg = '#f1f5f9'; $_fg = '#64748b'; $_icon = '⚪'; $_label = 'Not started';
-                    }
-                @endphp
-                <div style="background:{{ $_bg }};border-radius:8px;padding:8px 12px;">
+                <div style="background:{{ $ss->bg }};border-radius:8px;padding:8px 12px;">
                     <div style="font-size:12px;font-weight:600;color:#0f172a;">{{ $ss->subject }}</div>
                     <div style="font-size:11px;color:#64748b;">
-                        Entered: {{ $_entered }}/{{ $_expected }} ·
-                        Approved: {{ $_approved }}/{{ $_expected }}
+                        Entered: {{ $ss->entered }}/{{ $ss->enrolled }} ·
+                        Approved: {{ $ss->approved }}/{{ $ss->enrolled }}
                     </div>
-                    <span style="font-size:10px;color:{{ $_fg }};font-weight:700;">{{ $_icon }} {{ $_label }}</span>
+                    <span style="font-size:10px;color:{{ $ss->color }};font-weight:700;">{{ $ss->icon }} {{ $ss->label }}</span>
                 </div>
                 @endforeach
             </div>
@@ -640,32 +613,13 @@ function syncSection(form) {
                         ->where('class', $c)->where('section', $sec)->count();
                     if ($enrolled === 0) continue;
 
-                    $perSubject       = [];   // true = fully approved
-                    $perSubjectState  = [];   // 'approved' | 'pending' | 'partial' | 'none'
+                    // Canonical status per subject from the shared helper.
+                    $perSubject       = [];
+                    $perSubjectStatus = [];
                     foreach ($expected as $subj) {
-                        $approvedCount = \App\Models\Mark::where('academic_year_id', $year->id)
-                            ->where('exam_id', $examId)->where('class', $c)
-                            ->where('section', $sec)->where('subject', $subj)
-                            ->whereNotNull('approved_at')->count();
-                        $pendingCount = \App\Models\Mark::where('academic_year_id', $year->id)
-                            ->where('exam_id', $examId)->where('class', $c)
-                            ->where('section', $sec)->where('subject', $subj)
-                            ->whereNotNull('submitted_at')->whereNull('approved_at')->count();
-
-                        // Subject is "approved" only when EVERY enrolled student has
-                        // an approved mark. Partial approvals stay pending.
-                        $fullyApproved = $approvedCount >= $enrolled;
-                        $perSubject[$subj] = $fullyApproved;
-
-                        if ($fullyApproved) {
-                            $perSubjectState[$subj] = 'approved';
-                        } elseif ($pendingCount > 0) {
-                            $perSubjectState[$subj] = 'pending';   // teacher submitted, awaiting admin
-                        } elseif ($approvedCount > 0) {
-                            $perSubjectState[$subj] = 'partial';   // some students approved, others missing
-                        } else {
-                            $perSubjectState[$subj] = 'none';      // not started
-                        }
+                        $s = \App\Models\Mark::subjectStatus($examId, $c, $sec, $subj, $year->id);
+                        $perSubject[$subj]       = $s['state'] === 'approved';
+                        $perSubjectStatus[$subj] = $s;
                     }
                     $doneCount = count(array_filter($perSubject));
                     $totalExp = $expected->count();
@@ -678,7 +632,7 @@ function syncSection(form) {
                         'pending' => array_keys(array_filter($perSubject, fn ($v) => !$v)),
                         'complete' => $doneCount >= $totalExp,
                         'subjects' => $perSubject,
-                        'states'   => $perSubjectState,
+                        'statuses' => $perSubjectStatus,
                     ]);
                 }
             }
@@ -696,20 +650,11 @@ function syncSection(form) {
                 <div style="height:6px;background:#f1f5f9;border-radius:99px;overflow:hidden;margin-bottom:8px;">
                     <div style="height:100%;width:{{ $pct }}%;background:{{ $cd['complete'] ? '#22c55e' : '#eab308' }};border-radius:99px;"></div>
                 </div>
-                @php $sorted = collect($cd['subjects'])->sortKeys(); @endphp
+                @php $sorted = collect($cd['statuses'])->sortKeys(); @endphp
                 <div style="display:flex;flex-direction:column;gap:3px;">
-                    @foreach($sorted as $subjName => $submitted)
-                        @php
-                            $_state = $cd['states'][$subjName] ?? 'none';
-                            $_meta = match($_state) {
-                                'approved' => ['#15803d', '✅', ''],
-                                'pending'  => ['#1d4ed8', '⏳', ' — awaiting approval'],
-                                'partial'  => ['#92400e', '⚠️', ' — incomplete'],
-                                default    => ['#94a3b8', '○', ' — not started'],
-                            };
-                        @endphp
-                        <span style="font-size:11px;font-weight:600;color:{{ $_meta[0] }};display:flex;align-items:center;gap:4px;">
-                            {{ $_meta[1] }} {{ $subjName }}<span style="opacity:.75;font-weight:500;">{{ $_meta[2] }}</span>
+                    @foreach($sorted as $subjName => $st)
+                        <span style="font-size:11px;font-weight:600;color:{{ $st['color'] }};display:flex;align-items:center;gap:4px;">
+                            {{ $st['icon'] }} {{ $subjName }}<span style="opacity:.75;font-weight:500;">{{ $st['state'] === 'approved' ? '' : ' — '.$st['label'] }}</span>
                         </span>
                     @endforeach
                 </div>
