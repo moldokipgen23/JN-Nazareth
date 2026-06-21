@@ -6,6 +6,73 @@ Newest entries on top.
 
 ---
 
+## Session: 2026-06-21 — Flutter Teacher Mobile App + Laravel API Backend
+
+### New features
+- **Laravel Sanctum API backend** — 21 REST API endpoints for the teacher portal, token-based auth (Sanctum), CORS configured for Flutter app.
+- **Flutter native teacher app** — Complete Android APK + iOS IPA build. Feature parity with web teacher portal.
+
+### API endpoints (routes/api.php)
+- `POST /api/v1/login` — Teacher login (email + password → Sanctum token)
+- `POST /api/v1/logout` — Token invalidation
+- `GET /api/v1/profile` / `PUT /api/v1/profile` — Profile view/update
+- `GET /api/v1/teacher/dashboard` — Dashboard stats, classes, subjects, active exams, grade scale
+- `GET /api/v1/teacher/classes` / `GET /api/v1/teacher/classes/{class}` — Class list + student roster
+- `GET /api/v1/teacher/subjects` — Subject assignments list
+- `GET /api/v1/teacher/attendance` — Attendance class list
+- `GET /api/v1/teacher/attendance/mark` — Attendance form (roster + existing records)
+- `POST /api/v1/teacher/attendance` — Save attendance (one-time submit)
+- `GET /api/v1/teacher/marks` — Marks slots × exams with status
+- `GET /api/v1/teacher/marks/sheet` — Marks entry form (enrollments + config + lock state)
+- `POST /api/v1/teacher/marks` — Save/submit marks (draft or submit)
+- `GET /api/v1/teacher/questions` — Questions list + exams + slots
+- `POST /api/v1/teacher/questions` — Submit question
+- `PUT /api/v1/teacher/questions/{question}` — Revise question
+- `DELETE /api/v1/teacher/questions/{question}` — Delete question
+- `GET /api/v1/teacher/notes` — Notes list + slots
+- `POST /api/v1/teacher/notes` — Publish note/assignment
+- `DELETE /api/v1/teacher/notes/{note}` — Delete note
+
+### Flutter app features
+- **Auth**: Login screen with email/password, secure token storage (flutter_secure_storage), auto-login on app launch
+- **Dashboard**: Welcome card, stats (classes/subjects/students), quick actions, class list, active exams
+- **Classes**: Class list with teacher badges, class detail with student roster
+- **Attendance**: Class list with marked/unmarked status, mark attendance screen (P/A/L/E pills, bulk all-present/all-absent)
+- **Marks**: Marks entry sheet with per-student theory/assignment inputs, auto-calculation, grade computation, draft/submit, lock detection
+- **Questions**: Question list with status badges, add question dialog, revision workflow
+- **Notes**: Note/assignment list, publish dialog with class/subject selection
+- **Profile**: User info display, sign out
+
+### Tech stack (Flutter)
+- Flutter 3.41.5, Dart 3.11.3
+- State management: Riverpod (Notifier pattern)
+- Navigation: GoRouter
+- HTTP: Dio with interceptors
+- Storage: flutter_secure_storage
+- Theme: Material 3 with custom teal brand theme
+
+### Files changed (CMS backend)
+- `app/Models/User.php` — Added `HasApiTokens` trait (Sanctum)
+- `bootstrap/app.php` — Added API route registration
+- `routes/api.php` — **Created** (21 endpoints)
+- `app/Http/Controllers/Api/V1/Teacher/` — **Created** (8 controllers)
+- `config/cors.php` — **Published** and configured
+- `config/sanctum.php` — **Published**
+
+### Flutter app location
+- `/Users/moldokipgen/Projects/EHLOM DIGITAL/JN Nazareth/jn_teacher_app/`
+- APK: `build/app/outputs/flutter-apk/app-release.apk` (53MB)
+
+### Known limitations
+- Marks marks marks marks marks marks marks
+- API base URL hardcoded to `http://10.0.2.2:8000` (Android emulator). Change to production URL for release.
+- No offline support yet (would need Hive/Isar local cache)
+- No push notifications yet (would need Firebase Cloud Messaging)
+- iOS build requires Xcode + Apple Developer account for signing
+- File upload (questions/notes) not yet implemented in Flutter (would need image_picker + dio multipart)
+
+---
+
 ## Session: 2026-06-06 (part 2) — Performance: remove Google Fonts + fix stale-page-after-save cache issue
 
 ### What changed
