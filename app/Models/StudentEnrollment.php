@@ -61,6 +61,14 @@ class StudentEnrollment extends Model
         }
 
         $year = AcademicYear::activeOrCreate($student->academic_year);
+        $section = $student->section ?: 'A';
+
+        // A student's profile is the current-year view, so keep it aligned
+        // with the enrollment record. Without this, an empty section was
+        // stored as "A" on the enrollment but remained blank on the profile.
+        if ($student->section !== $section) {
+            $student->updateQuietly(['section' => $section]);
+        }
 
         return static::updateOrCreate(
             [
@@ -69,7 +77,7 @@ class StudentEnrollment extends Model
             ],
             [
                 'class' => $student->class,
-                'section' => $student->section ?: 'A',
+                'section' => $section,
                 'roll_number' => $student->roll_number,
                 'status' => $student->is_active ? self::STATUS_ACTIVE : self::STATUS_DROPPED,
                 'enrolled_on' => $student->admission_date,

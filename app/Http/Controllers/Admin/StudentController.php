@@ -95,15 +95,14 @@ class StudentController extends Controller
         // Class + section selected — show student table
         $query = Student::query();
 
-        $query->whereHas('enrollments', function ($q) use ($selectedYearId, $enrollmentStatus) {
+        $query->whereHas('enrollments', function ($q) use ($selectedYearId, $enrollmentStatus, $currentClass, $selectedSection) {
             $q->where('academic_year_id', $selectedYearId);
             if ($enrollmentStatus && $enrollmentStatus !== 'all') {
                 $q->where('status', $enrollmentStatus);
             }
+            $q->where('class', $currentClass)
+              ->where('section', $selectedSection);
         });
-
-        $query->where('class', $currentClass);
-        $query->where('section', $selectedSection);
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
