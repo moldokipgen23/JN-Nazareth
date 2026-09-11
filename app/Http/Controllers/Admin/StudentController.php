@@ -10,6 +10,7 @@ use App\Models\Mark;
 use App\Models\Section;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
+use App\Support\ClassSection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -155,6 +156,7 @@ class StudentController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate($this->rules());
+        $validated['section'] = ClassSection::forStudent($validated['class'] ?? null, $validated['section'] ?? null);
 
         $validated['is_active'] = $request->boolean('is_active', true);
 
@@ -323,6 +325,7 @@ class StudentController extends Controller
     public function update(Request $request, Student $student)
     {
         $validated = $request->validate($this->rules($student->id));
+        $validated['section'] = ClassSection::forStudent($validated['class'] ?? null, $validated['section'] ?? null);
 
         $validated['is_active'] = $request->boolean('is_active', true);
 
@@ -439,6 +442,7 @@ class StudentController extends Controller
 
         $imported = 0;
         $skipped  = 0;
+        $invalidSections = 0;
         $line     = 1;
 
         while (($row = fgetcsv($handle)) !== false) {
@@ -453,6 +457,14 @@ class StudentController extends Controller
             $class = $get($row, 'class') ?: $defaultClass;
             if ($class && ! in_array($class, Student::classes(), true)) {
                 $class = null;
+            }
+
+            try {
+                $section = ClassSection::forStudent($class, $get($row, 'section') ?: $defaultSection);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                $skipped++;
+                $invalidSections++;
+                continue;
             }
 
             $dob = $get($row, 'date_of_birth');
@@ -473,7 +485,7 @@ class StudentController extends Controller
                 'admission_number' => $get($row, 'admission_number') ?: null,
                 'aadhar_number'    => $get($row, 'aadhar_number') ?: null,
                 'class'         => $class ?: null,
-                'section'       => ($get($row, 'section') ?: $defaultSection) ?: null,
+                'section'       => $section,
                 'academic_year' => ($get($row, 'academic_year') ?: $defaultYear) ?: null,
                 'father_name'   => $get($row, 'father_name') ?: null,
                 'mother_name'   => $get($row, 'mother_name') ?: null,
@@ -494,7 +506,10 @@ class StudentController extends Controller
 
         $msg = "Imported {$imported} student(s).";
         if ($skipped > 0) {
-            $msg .= " Skipped {$skipped} row(s) with no name.";
+            $msg .= " Skipped {$skipped} invalid row(s).";
+        }
+        if ($invalidSections > 0) {
+            $msg .= " {$invalidSections} used an invalid class/section and were not imported.";
         }
 
         return redirect()->route('admin.students.index')->with('success', $msg);

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Support\ClassSection;
 
 class StudentEnrollment extends Model
 {
@@ -61,7 +62,7 @@ class StudentEnrollment extends Model
         }
 
         $year = AcademicYear::activeOrCreate($student->academic_year);
-        $section = $student->section ?: 'A';
+        $section = ClassSection::forStudent($student->class, $student->section);
 
         // A student's profile is the current-year view, so keep it aligned
         // with the enrollment record. Without this, an empty section was

@@ -10,6 +10,7 @@ use App\Models\Mark;
 use App\Models\Section;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
+use App\Support\ClassSection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -317,7 +318,12 @@ class AcademicYearController extends Controller
                     $targetYear = AcademicYear::find($targetYearId);
                     if (!$targetYear) continue;
 
-                    $sec = !empty($section) ? $section : $enrollment->section;
+                    try {
+                        $sec = ClassSection::forStudent($nextClass, !empty($section) ? $section : $enrollment->section);
+                    } catch (\Illuminate\Validation\ValidationException $e) {
+                        $errors[] = "{$enrollment->student->name}: invalid section.";
+                        continue;
+                    }
 
                     StudentEnrollment::updateOrCreate(
                         [
@@ -343,8 +349,11 @@ class AcademicYearController extends Controller
                 $redirect .= '?class=' . urlencode($class);
             }
 
-            return redirect($redirect)
-                ->with('success', "{$promoted} student(s) promoted successfully.");
+            $response = redirect($redirect)->with('success', "{$promoted} student(s) promoted successfully.");
+            if ($errors) {
+                $response->with('error', implode(' ', array_unique($errors)));
+            }
+            return $response;
         }
 
         // Single promotion (existing behavior)
@@ -378,7 +387,7 @@ class AcademicYearController extends Controller
         }
 
         $targetYear = AcademicYear::findOrFail($data['target_year_id']);
-        $section = ! empty($data['section']) ? $data['section'] : $enrollment->section;
+        $section = ClassSection::forStudent($data['next_class'], ! empty($data['section']) ? $data['section'] : $enrollment->section);
         $remarks = $data['notes'] ?: "Promoted from {$enrollment->class} – {$academicYear->name}";
 
         DB::transaction(function () use ($enrollment, $targetYear, $data, $section, $remarks) {
