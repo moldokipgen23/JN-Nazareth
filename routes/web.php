@@ -434,7 +434,7 @@ Route::prefix('admin')
             Route::post('teachers/{teacher}/year-status', [TeacherController::class, 'updateYearStatus'])
                  ->name('teachers.year-status');
 
-            Route::redirect('teacher-assignments', '/admin/teachers', 301)
+            Route::get('teacher-assignments', [TeacherAssignmentController::class, 'index'])
                  ->name('teacher-assignments.index');
             Route::post('teacher-assignments/class', [TeacherAssignmentController::class, 'storeClassTeacher'])
                  ->name('teacher-assignments.class.store');
